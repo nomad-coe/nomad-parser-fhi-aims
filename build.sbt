@@ -1,2 +1,2 @@
-extra-resources += baseDirectory.value / "parser-fhi-aims"
+(unmanagedResourceDirectories in Compile) += baseDirectory.value / "parser"
 
