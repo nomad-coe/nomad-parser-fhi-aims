@@ -8,7 +8,7 @@ import traceback
 import hashlib
 import logging
 
-from ase.atoms import Atoms
+#from ase.atoms import Atoms
 
 nLog = logging.getLogger("nomad")
 #nLog.setLevel(logging.DEBUG)
@@ -313,45 +313,46 @@ class Property(object):
         #dSet[i]=value
 
     def handleProperty(self, logger, globalContext, localContext, value=None):
-        try:
-            nLog.debug("handleProperty %s, kind: %s", self.detailedName(),self.kind)
-            context=globalContext.context.runInfo
-            if not self.contextName is None:
-                context=localContext
-                while not context is None and context.section.name != self.contextName:
-                    context=context.superSection
-                if context is None:
-                    logger.addWarning("Property {0} could not find context {1}, ignoring".format(self.name, self.contextName))
-                    return
-                context=context.context
-            else:
-                self.__class__.usedProps.add(self)
-                globalContext.context.runInfoProps.add(self.name)
-            #if self.kind==PropertyKind.configProperty:
-            #    self.addConfigProperty(logger,globalContext,value)
-            if self.kind==PropertyKind.commonProperty:
-                section=self.singleSuperSectionVal(context, globalContext.context.logger)
-                if self.repeats:
-                    if not self.name in section:
-                        section[self.name]=[]
-                    section[self.name].append(value)
-                else:
-                    if self.name in section:
-                        logger.addWarning("Non repeated Property {0} has been repeated, dropping previous value {1}".format(self.detailedName(), section[self.name]))
-                    section[self.name]=value
-            elif self.kind==PropertyKind.configProperty:
-                self.addConfigProperty(logger,globalContext,value)
-            elif self.kind==PropertyKind.section:
-                if value is None:
-                    value={}
-                section=self.singleSuperSectionVal(context,globalContext.context.logger)
-                if self.repeats:
-                    if not self.name in section:
-                        section[self.name]=[value]
-                    else:
-                        section[self.name].append(value)
-        except:
-            raise Exception("Exception while handling property {0} at {1}: {2}".format(self.name, globalContext.lineFile.posStr(), traceback.format_exc()))
+        globalContext.context.backend.addProperty(self.name, value)
+        #try:
+        #    nLog.debug("handleProperty %s, kind: %s", self.detailedName(),self.kind)
+        #    context=globalContext.context.runInfo
+        #    if not self.contextName is None:
+        #        context=localContext
+        #        while not context is None and context.section.name != self.contextName:
+        #            context=context.superSection
+        #        if context is None:
+        #            logger.addWarning("Property {0} could not find context {1}, ignoring".format(self.name, self.contextName))
+        #            return
+        #        context=context.context
+        #    else:
+        #        self.__class__.usedProps.add(self)
+        #        globalContext.context.runInfoProps.add(self.name)
+        #    #if self.kind==PropertyKind.configProperty:
+        #    #    self.addConfigProperty(logger,globalContext,value)
+        #    if self.kind==PropertyKind.commonProperty:
+        #        section=self.singleSuperSectionVal(context, globalContext.context.logger)
+        #        if self.repeats:
+        #            if not self.name in section:
+        #                section[self.name]=[]
+        #            section[self.name].append(value)
+        #        else:
+        #            if self.name in section:
+        #                logger.addWarning("Non repeated Property {0} has been repeated, dropping previous value {1}".format(self.detailedName(), section[self.name]))
+        #            section[self.name]=value
+        #    elif self.kind==PropertyKind.configProperty:
+        #        self.addConfigProperty(logger,globalContext,value)
+        #    elif self.kind==PropertyKind.section:
+        #        if value is None:
+        #            value={}
+        #        section=self.singleSuperSectionVal(context,globalContext.context.logger)
+        #        if self.repeats:
+        #            if not self.name in section:
+        #                section[self.name]=[value]
+        #            else:
+        #                section[self.name].append(value)
+        #except:
+        #    raise Exception("Exception while handling property {0} at {1}: {2}".format(self.name, globalContext.lineFile.posStr(), traceback.format_exc()))
 
     def toInfoKindEl(self):
         InfoKindEl(name=self.name, kindStr=self.kindStr, description=self.description,
@@ -519,7 +520,8 @@ class LineParser(object):
             if p is None:
                 parser.logger.addWarning("LineParser {0} has parsed group {1} without corresponding property, ignoring {2}".format(self.name, k, v))
             else:
-                p.handleProperty(logger=parser.logger, globalContext=parser, localContext=sectionContext, value=p.strToVal(v, parser.logger))
+                parser.context.backend.addValue(k, value=p.strToVal(v, parser.logger))
+                #p.handleProperty(logger=parser.logger, globalContext=parser, localContext=sectionContext, value=p.strToVal(v, parser.logger))
         return True
 
     def open(self,parser,sectionContext,mode):
@@ -650,7 +652,8 @@ class SectionOpener(LineParser):
         p=self.prop(sectionContext)
         if p is None:
             parser.logger.addWarning("SectionOpener could not find property {0}".format(self.name))
-        p.handleProperty(parser.logger,globalContext=parser, localContext=sectionContext, value={})
+        sectionContext.context[p.name] = parser.context.backend.openSection(p.name)
+        #p.handleProperty(parser.logger,globalContext=parser, localContext=sectionContext, value={})
 
 class CollectDict(LineParser):
     def __init__(self,name, startReStr, kind=MatchKind.Sequenced|MatchKind.Repeating, nItems=None, valProperty=None, **kwds):
@@ -686,7 +689,8 @@ class CollectDict(LineParser):
                 if p is None:
                     parser.logger.addWarning("LineParser {0} has no corresponding property, ignoring parsed value {1}".format(self.name,sectionContext.context["resDict"]))
                 else:
-                    p.handleProperty(logger=parser.logger,globalContext=parser, localContext=sectionContext, value=sectionContext.context["resDict"])
+                    parser.context.backend.closeSection(p.name, sectionContext.context.get(p.name,-1))
+                    #p.handleProperty(logger=parser.logger,globalContext=parser, localContext=sectionContext, value=sectionContext.context["resDict"])
         return super(CollectDict,self).close(parser=parser,
             sectionContext=sectionContext,closeKind=closeKind)
 
@@ -743,7 +747,8 @@ class UnknownKey(LineParser):
         prop=self.key2Prop(key)
         if prop is None:
             return False
-        prop.handleProperty(logger=parser.logger,globalContext=parser, localContext=sectionContext, value=value)
+        parser.context.backend.addValue(prop.name,value)
+        #prop.handleProperty(logger=parser.logger,globalContext=parser, localContext=sectionContext, value=value)
         return True
 
 class GroupSection(LineParser):
@@ -958,7 +963,8 @@ class DictGroupParser(LineParser):
         if p is None:
             parser.logger.addWarning("Could not find property named {0}".format(self.name))
         else:
-            p.handleProperty(logger=parser.logger,globalContext=parser, localContext=sectionContext, value=matchDict)
+            parser.context.backend.addValue(p.name, matchDict)
+            #p.handleProperty(logger=parser.logger,globalContext=parser, localContext=sectionContext, value=matchDict)
         return True
 
 class OneSub(SectionOpener):

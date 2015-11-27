@@ -429,42 +429,6 @@ properties = [
         description="whether the calculation includes GW treatment",
         superKeys=["AccessoryRunInfo"])
 ]
-def disableGroups(regex):
-    """change all groups to non capturing"""
-    i = 0
-    j = 0
-    res = ""
-    l = len(regex)
-    while j < l:
-        c = regex[j]
-        j += 1
-        if c == '\\':
-            j += 1
-        elif c == '(':
-            if j >= l:
-                break
-            c = regex[j]
-            j += 1
-            if c == '?':
-                if j >= l:
-                    break
-                c = regex[j]
-                j += 1
-                if c == ':' :
-                    pass
-                elif c == 'P':
-                    res += regex[i : j - 1] + ":"
-                    k=regex.find('>',j)
-                    if k == -1:
-                        raise Exception("expected (P<xx>)")
-                    i = k + 1
-                else:
-                    raise Exception("unsupported character "+c+" after (?")
-            else:
-                res += regex[i : j - 1] + "?:"
-                i = j -1
-    res += regex[i:]
-    return res
 
 # 2010 CODATA recommended values
 from_Hartree = 4.359744650e-18
