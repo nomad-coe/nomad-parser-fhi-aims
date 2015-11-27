@@ -4,19 +4,22 @@ from nomadcore.parser_backend import JsonParseEventsWriterBackend
 from nomadcore.local_meta_info import loadJsonFile, InfoKindEl
 from nomadcore.parse_streamed_dicts import ParseStreamedDicts
 import os, os.path, sys
+import FhiAimsParser
 
 def parseFile(path, backend):
     backend.startedParsingSession(os.path.abspath(path),
                                   {"name":"fhi-aims-parser", "version": "1.0"})
+    parser = FhiAimsParser.FhiAimsParser(backend, None, fileToParse)
+    parser.parse()
     backend.finishedParsingSession(os.path.abspath(path),
                                    {"name":"fhi-aims-parser", "version": "1.0"})
 
 
-metaInfoPath = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)),"../../../nomad-meta-info/nomad_meta_info/fhi_aims.nomadmetainfo.json"))
+metaInfoPath = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)),"../../../../nomad-meta-info/meta_info/nomad_meta_info/fhi_aims.nomadmetainfo.json"))
 metaInfoEnv, warnings = loadJsonFile(filePath = metaInfoPath, dependencyLoader = None, extraArgsHandling = InfoKindEl.ADD_EXTRA_ARGS, uri = None)
 
 if __name__ == "__main__":
-    usage = """{exeName} [--meta-info] [--help] [--specialize] [--stream] [path/toFile]
+    usage = """{exeName} [--meta-info] [--help] [--specialize] [--stream] [--uri uri] [path/toFile]
 
     --meta-info outputs the meta info supported by this parser
     --help prints this message
@@ -30,6 +33,7 @@ if __name__ == "__main__":
     specialize = False
     stream = False
     fileToParse = None
+    uri = None
     ii = 1
     while ii < len(sys.argv):
         arg = sys.argv[ii]
@@ -43,12 +47,19 @@ if __name__ == "__main__":
             specialize = True
         elif arg == "--stream":
             stream = True
+        elif arg == "--uri":
+            if ii >= len(sys.argv):
+                raise Exception("missing uri after --uri")
+            uri = arg
+            ii += 1
         elif not fileToParse:
             fileToParse = arg
         else:
             sys.stderr.write("unexpected argument " + arg + "\n")
             sys.stderr.write(usage)
             sys.exit(1)
+    if uri is None and fileToParse:
+        uri = "file://" + fileToParse
     outF.write("[")
     writeComma = False
     if metaInfo:
@@ -57,7 +68,7 @@ if __name__ == "__main__":
         else:
             writeComma = True
         metaInfoEnv.embedDeps()
-        metaInfoEnv.serialize(self, outF.write, subGids = True, selfGid = True)
+        metaInfoEnv.serialize(outF.write, subGids = True, selfGid = True)
         outF.flush()
     dictReader = ParseStreamedDicts(sys.stdin)
     toOuput = list(metaInfoEnv.infoKinds.keys())

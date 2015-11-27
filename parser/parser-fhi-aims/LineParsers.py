@@ -305,9 +305,12 @@ class Property(object):
 
     def addConfigProperty(self, logger, globalContext, value):
         self.usedProps.add(self)
-        i, dSet = globalContext.context.datasetForProperty(self,numpy.shape(value))
-        nLog.debug("%s %s sets value %s %s %r %r",self.name,self.dtype,value,type(value), dSet, i)
-        dSet[i]=value
+        if type(value) == numpy.ndarray :
+            value = value.tolist()
+        globalContext.context.backend.addValue(self.name,value)
+        #i, dSet = globalContext.context.datasetForProperty(self,numpy.shape(value))
+        #nLog.debug("%s %s sets value %s %s %r %r",self.name,self.dtype,value,type(value), dSet, i)
+        #dSet[i]=value
 
     def handleProperty(self, logger, globalContext, localContext, value=None):
         try:
