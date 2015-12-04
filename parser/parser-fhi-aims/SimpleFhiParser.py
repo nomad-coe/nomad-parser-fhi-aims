@@ -3,7 +3,7 @@ from nomadcore.simple_parser import SimpleParserBuilder, SimpleParser, SimpleMat
 from nomadcore.parser_backend import JsonParseEventsWriterBackend
 from nomadcore.local_meta_info import loadJsonFile, InfoKindEl
 from nomadcore.parse_streamed_dicts import ParseStreamedDicts
-import os, sys
+import os, sys, json
 
 # description of the input
 
@@ -12,14 +12,14 @@ mainFileDescription = SimpleMatcher(name = "root",
               startReStr = "",
               subMatchers = [
   SimpleMatcher(name = 'newRun',
-                startReStr = r"^ *Invoking FHI-aims \.\.\. *$",
+                startReStr = r"\W*Invoking FHI-aims \.\.\.\W*",
                 repeats  = True,
                 required   = True,
                 forwardMatch = True,
                 sections   = ["section_run"],
                 subMatchers = [
     SimpleMatcher(name = "ProgramHeader",
-                  startReStr = "^ *Invoking FHI-aims \.\.\. *$",
+                  startReStr = "\W*Invoking FHI-aims \.\.\.\W*",
                   subMatchers=[
       SimpleMatcher(r" *Version +(?P<program_version>[0-9a-zA-Z_.]*)"),
       SimpleMatcher(r" *Compiled on +(?P<fhi_aims_program_compilation_date>[0-9/]+) at (?P<fhi_aims_program_compilation_time>[0-9:]+) *on host +(?P<program_compilation_host>[-a-zA-Z0-9._]+)"),
@@ -115,7 +115,13 @@ if __name__ == "__main__":
 
     # initialize the parser builder
     parserBuilder = SimpleParserBuilder(mainFileDescription, metaInfoEnv)
+    #sys.stderr.write("matchers:\n  ")
+    #parserBuilder.writeMatchers(sys.stderr, 2)
+    #sys.stderr.write("\n")
     parserBuilder.compile()
+    #sys.stderr.write("compiledMatchers:\n  ")
+    #parserBuilder.writeCompiledMatchers(sys.stderr, 2)
+    #sys.stderr.write("\n\n")
 
     if fileToParse:
         if writeComma:
