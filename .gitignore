@@ -8,6 +8,7 @@ syntax: glob
 *.old
 *.pyc
 *.bk
+*.swp
 .DS_Store
 
 # eclipse conf file
