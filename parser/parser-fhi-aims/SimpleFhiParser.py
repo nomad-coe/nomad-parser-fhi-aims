@@ -184,5 +184,12 @@ mainFileDescription = SimpleMatcher(name = 'root',
                 ])
               ])
 
+# loading metadata from nomad-meta-info/meta_info/nomad_meta_info/fhi_aims.nomadmetainfo.json
+
+metaInfoPath = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)),"../../../../nomad-meta-info/meta_info/nomad_meta_info/fhi_aims.nomadmetainfo.json"))
+metaInfoEnv, warnings = loadJsonFile(filePath = metaInfoPath, dependencyLoader = None, extraArgsHandling = InfoKindEl.ADD_EXTRA_ARGS, uri = None)
+
+parserInfo = {"name":"fhi-aims-parser", "version": "1.0"}
+
 if __name__ == "__main__":
-    mainFunction(mainFileDescription, metaInfoEnv)
+    mainFunction(mainFileDescription, metaInfoEnv, parserInfo)
