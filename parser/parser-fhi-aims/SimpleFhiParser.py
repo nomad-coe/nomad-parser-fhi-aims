@@ -50,16 +50,6 @@ def parseEigenvalues(parser):
         parser.backend.addArrayValues(evUtility.metaName[ev_value], np.asarray(evUtility.variable[ev_value]))
     return None
 
-# loading metadata from nomad-meta-info/meta_info/nomad_meta_info/fhi_aims.nomadmetainfo.json
-metaInfoPath = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)),"../../../../nomad-meta-info/meta_info/nomad_meta_info/fhi_aims.nomadmetainfo.json"))
-metaInfoEnv, warnings = loadJsonFile(filePath = metaInfoPath, dependencyLoader = None, extraArgsHandling = InfoKindEl.ADD_EXTRA_ARGS, uri = None)
-
-# set up class for eigenvalues that contains variable names and the regular expression
-evUtility = ParseEigenvaluesNamesAndRe(metaInfoEnv = metaInfoEnv,
-                                       metaNameEvNumber = 'eigenvalues_eigenvalues_number',
-                                       metaNameEvOccupation = 'eigenvalues_occupation',
-                                       metaNameEvValue = 'eigenvalues_eigenvalues')
-
 # description of the input
 controlInSubMatchers = []
 geometryInSubMatchers = []
@@ -80,25 +70,25 @@ EigenvaluesSubMatcher = SimpleMatcher(name = 'Eigenvalues',
 TotalEnergyScfSubMatcher = SimpleMatcher(name = 'TotalEnergyScf',
               startReStr = r"\s*Total energy components:",
               subMatchers = [
-  SimpleMatcher(r"\s*\|\s*Sum of eigenvalues\s*:\s*(?P<energy_sum_eigenvalues_sc_scf>[-+0-9.eEdD]+) *Ha\s*[-+0-9.eEdD]+ *eV"),
-  SimpleMatcher(r"\s*\|\s*XC energy correction\s*:\s*(?P<energy_XC_sc_scf>[-+0-9.eEdD]+) *Ha\s*[-+0-9.eEdD]+ eV"),
-  SimpleMatcher(r"\s*\|\s*XC potential correction\s*:\s*(?P<energy_XC_potential_sc_scf>[-+0-9.eEdD]+) *Ha\s*[-+0-9.eEdD]+ *eV"),
+  SimpleMatcher(r"\s*\|\s*Sum of eigenvalues\s*:\s*(?P<energy_sum_eigenvalues_scf_iteration>[-+0-9.eEdD]+) *Ha\s*[-+0-9.eEdD]+ *eV"),
+  SimpleMatcher(r"\s*\|\s*XC energy correction\s*:\s*(?P<energy_XC_scf_iteration>[-+0-9.eEdD]+) *Ha\s*[-+0-9.eEdD]+ eV"),
+  SimpleMatcher(r"\s*\|\s*XC potential correction\s*:\s*(?P<energy_XC_potential_scf_iteration>[-+0-9.eEdD]+) *Ha\s*[-+0-9.eEdD]+ *eV"),
   SimpleMatcher(r"\s*\|\s*Free-atom electrostatic energy\s*:\s*(?P<fhi_aims_energy_electrostatic_free_atom_scf>[-+0-9.eEdD]+) *Ha\s*[-+0-9.eEdD]+ *eV"),
-  SimpleMatcher(r"\s*\|\s*Hartree energy correction\s*:\s*(?P<energy_correction_hartree_scf>[-+0-9.eEdD]+) *Ha\s*[-+0-9.eEdD]+ *eV"),
-  SimpleMatcher(r"\s*\|\s*Entropy correction\s*:\s*(?P<energy_correction_entropy_scf>[-+0-9.eEdD]+) *Ha\s*[-+0-9.eEdD]+ *eV"),
+  SimpleMatcher(r"\s*\|\s*Hartree energy correction\s*:\s*(?P<energy_correction_hartree_scf_iteration>[-+0-9.eEdD]+) *Ha\s*[-+0-9.eEdD]+ *eV"),
+  SimpleMatcher(r"\s*\|\s*Entropy correction\s*:\s*(?P<energy_correction_entropy_scf_iteration>[-+0-9.eEdD]+) *Ha\s*[-+0-9.eEdD]+ *eV"),
   SimpleMatcher(r"\s*\|\s*van der Waals energy corr\.\s*:\s*(?P<energy_van_der_Waals_value>[-+0-9.eEdD]+) *Ha\s*[-+0-9.eEdD]+ *eV"),
   SimpleMatcher(r"\s*\|\s*-{20}-*", weak = True),
-  SimpleMatcher(r"\s*\|\s*Total energy\s*:\s*(?P<energy_total_sc_scf>[-+0-9.eEdD]+) *Ha\s*[-+0-9.eEdD]+ *eV"),
-  SimpleMatcher(r"\s*\|\s*Total energy, T -> 0\s*:\s*(?P<energy_total_T0_sc_scf>[-+0-9.eEdD]+) *Ha\s*[-+0-9.eEdD]+ *eV"),
-  SimpleMatcher(r"\s*\|\s*Electronic free energy\s*:\s*(?P<energy_free_sc_scf>[-+0-9.eEdD]+) *Ha\s*[-+0-9.eEdD]+ *eV"),
+  SimpleMatcher(r"\s*\|\s*Total energy\s*:\s*(?P<energy_total_scf_iteration>[-+0-9.eEdD]+) *Ha\s*[-+0-9.eEdD]+ *eV"),
+  SimpleMatcher(r"\s*\|\s*Total energy, T -> 0\s*:\s*(?P<energy_total_T0_scf_iteration>[-+0-9.eEdD]+) *Ha\s*[-+0-9.eEdD]+ *eV"),
+  SimpleMatcher(r"\s*\|\s*Electronic free energy\s*:\s*(?P<energy_free_scf_iteration>[-+0-9.eEdD]+) *Ha\s*[-+0-9.eEdD]+ *eV"),
   SimpleMatcher(r"\s*Derived energy quantities:"),
-  SimpleMatcher(r"\s*\|\s*Kinetic energy\s*:\s*(?P<electronic_kinetic_energy_scf>[-+0-9.eEdD]+) *Ha\s*[-+0-9.eEdD]+ *eV"),
-  SimpleMatcher(r"\s*\|\s*Electrostatic energy\s*:\s*(?P<energy_electrostatic_scf>[-+0-9.eEdD]+) *Ha\s*[-+0-9.eEdD]+ *eV"),
+  SimpleMatcher(r"\s*\|\s*Kinetic energy\s*:\s*(?P<electronic_kinetic_energy_scf_iteration>[-+0-9.eEdD]+) *Ha\s*[-+0-9.eEdD]+ *eV"),
+  SimpleMatcher(r"\s*\|\s*Electrostatic energy\s*:\s*(?P<energy_electrostatic_scf_iteration>[-+0-9.eEdD]+) *Ha\s*[-+0-9.eEdD]+ *eV"),
   SimpleMatcher(r"\s*\|\s*Energy correction for multipole"),
-  SimpleMatcher(r"\s*\|\s*error in Hartree potential\s*:\s*(?P<energy_hartree_error_scf>[-+0-9.eEdD]+) *Ha\s*[-+0-9.eEdD]+ *eV"),
-  SimpleMatcher(r"\s*\|\s*Sum of eigenvalues per atom\s*:\s*(?P<energy_sum_eigenvalues_per_atom_scf>[-+0-9.eEdD]+) *eV"),
-  SimpleMatcher(r"\s*\|\s*Total energy \(T->0\) per atom\s*:\s*(?P<energy_total_T0_sc_per_atom_scf>[-+0-9.eEdD]+) *eV"),
-  SimpleMatcher(r"\s*\|\s*Electronic free energy per atom\s*:\s*(?P<energy_free_sc_per_atom_scf>[-+0-9.eEdD]+) *eV"),
+  SimpleMatcher(r"\s*\|\s*error in Hartree potential\s*:\s*(?P<energy_hartree_error_scf_iteration>[-+0-9.eEdD]+) *Ha\s*[-+0-9.eEdD]+ *eV"),
+  SimpleMatcher(r"\s*\|\s*Sum of eigenvalues per atom\s*:\s*(?P<energy_sum_eigenvalues_per_atom_scf_iteration>[-+0-9.eEdD]+) *eV"),
+  SimpleMatcher(r"\s*\|\s*Total energy \(T->0\) per atom\s*:\s*(?P<energy_total_T0_per_atom_scf_iteration>[-+0-9.eEdD]+) *eV"),
+  SimpleMatcher(r"\s*\|\s*Electronic free energy per atom\s*:\s*(?P<energy_free_per_atom_scf_iteration>[-+0-9.eEdD]+) *eV"),
               ])
 
 # main Parser
@@ -165,7 +155,7 @@ mainFileDescription = SimpleMatcher(name = 'root',
         TotalEnergyScfSubMatcher
                      ]),
       SimpleMatcher(name = 'ScfIteration',
-                    startReStr = r"\s*Begin self-consistency iteration #\s*(?P<scf_dft_niter>[0-9]+)",
+                    startReStr = r"\s*Begin self-consistency iteration #\s*(?P<scf_dft_number_of_iterations>[0-9]+)",
                     sections = ['section_scf_iteration'],
                     repeats = True,
                     subMatchers = [
@@ -175,7 +165,7 @@ mainFileDescription = SimpleMatcher(name = 'root',
         SimpleMatcher(r"\s*Self-consistency convergence accuracy:"),
         SimpleMatcher(r"\s*\|\s*Change of charge(?:/spin)? density\s*:\s*[-+0-9.eEdD]+\s*[-+0-9.eEdD]*"),
         SimpleMatcher(r"\s*\|\s*Change of sum of eigenvalues\s*:\s*[-+0-9.eEdD]+ *eV"),
-        SimpleMatcher(r"\s*\|\s*Change of total energy\s*:\s*(?P<energy_change_sc_scf>[-+0-9.eEdD]+) *eV"),
+        SimpleMatcher(r"\s*\|\s*Change of total energy\s*:\s*(?P<energy_change_scf_iteration>[-+0-9.eEdD]+) *eV"),
         SimpleMatcher(r"\s*\|\s*Change of forces\s*:\s*[-+0-9.eEdD]+ *eV/A"),
         # After convergence eigenvalues are printed in the end instead of usually in the beginning
         EigenvaluesSubMatcher.copy() # need copy since SubMatcher already used for ScfInitialization
@@ -185,9 +175,13 @@ mainFileDescription = SimpleMatcher(name = 'root',
               ])
 
 # loading metadata from nomad-meta-info/meta_info/nomad_meta_info/fhi_aims.nomadmetainfo.json
-
 metaInfoPath = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)),"../../../../nomad-meta-info/meta_info/nomad_meta_info/fhi_aims.nomadmetainfo.json"))
 metaInfoEnv, warnings = loadJsonFile(filePath = metaInfoPath, dependencyLoader = None, extraArgsHandling = InfoKindEl.ADD_EXTRA_ARGS, uri = None)
+# set up class for eigenvalues that contains variable names and the regular expression
+evUtility = ParseEigenvaluesNamesAndRe(metaInfoEnv = metaInfoEnv,
+                                       metaNameEvNumber = 'eigenvalues_eigenvalues_number',
+                                       metaNameEvOccupation = 'eigenvalues_occupation',
+                                       metaNameEvValue = 'eigenvalues_eigenvalues')
 
 parserInfo = {"name":"fhi-aims-parser", "version": "1.0"}
 
