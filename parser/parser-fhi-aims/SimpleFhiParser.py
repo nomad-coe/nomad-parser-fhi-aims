@@ -182,8 +182,10 @@ evUtility = ParseEigenvaluesNamesAndRe(metaInfoEnv = metaInfoEnv,
                                        metaNameEvNumber = 'eigenvalues_eigenvalues_number',
                                        metaNameEvOccupation = 'eigenvalues_occupation',
                                        metaNameEvValue = 'eigenvalues_eigenvalues')
+# default unit conversions (actually it might be better to use the sourceUnits argument of the SimpleMatcher)
+defaultSourceUnits = {}
 
 parserInfo = {"name":"fhi-aims-parser", "version": "1.0"}
 
 if __name__ == "__main__":
-    mainFunction(mainFileDescription, metaInfoEnv, parserInfo)
+    mainFunction(mainFileDescription, metaInfoEnv, parserInfo, defaultSourceUnits = defaultSourceUnits)
