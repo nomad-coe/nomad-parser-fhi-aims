@@ -2,7 +2,8 @@ import setup_paths
 import numpy as np
 from nomadcore.simple_parser import SimpleMatcher, mainFunction
 from nomadcore.local_meta_info import loadJsonFile, InfoKindEl
-import re, os, sys, json
+from nomadcore.caching_backend import CachingLevel
+import re, os, sys, json, logging
 
 # Global names
 ev_number = 'ev_number'
@@ -45,7 +46,7 @@ def parseEigenvalues(parser):
         evUtility.variable[ev_value].append(float(m.groupdict()[ev_value]))
     # write data if at least one eigenvalue was found
     if evUtility.variable[ev_number] > 0:
-        parser.backend.addValue(evUtility.metaName[ev_number], evUtility.variable[ev_number])
+        #parser.backend.addValue(evUtility.metaName[ev_number], evUtility.variable[ev_number])
         parser.backend.addArrayValues(evUtility.metaName[ev_occupation], np.asarray(evUtility.variable[ev_occupation]))
         parser.backend.addArrayValues(evUtility.metaName[ev_value], np.asarray(evUtility.variable[ev_value]))
     return None
@@ -70,7 +71,7 @@ EigenvaluesSubMatcher = SimpleMatcher(name = 'Eigenvalues',
 TotalEnergyScfSubMatcher = SimpleMatcher(name = 'TotalEnergyScf',
               startReStr = r"\s*Total energy components:",
               subMatchers = [
-  SimpleMatcher(r"\s*\|\s*Sum of eigenvalues\s*:\s*(?P<energy_sum_eigenvalues_scf_iteration>[-+0-9.eEdD]+) *Ha\s*[-+0-9.eEdD]+ *eV"),
+  SimpleMatcher(r"\s*\|\s*Sum of eigenvalues\s*:\s*(?P<energy_sum_eigenvalues_scf_iteration__hartree>[-+0-9.eEdD]+) *Ha\s*[-+0-9.eEdD]+ *eV"),
   SimpleMatcher(r"\s*\|\s*XC energy correction\s*:\s*(?P<energy_XC_scf_iteration>[-+0-9.eEdD]+) *Ha\s*[-+0-9.eEdD]+ eV"),
   SimpleMatcher(r"\s*\|\s*XC potential correction\s*:\s*(?P<energy_XC_potential_scf_iteration>[-+0-9.eEdD]+) *Ha\s*[-+0-9.eEdD]+ *eV"),
   SimpleMatcher(r"\s*\|\s*Free-atom electrostatic energy\s*:\s*(?P<fhi_aims_energy_electrostatic_free_atom_scf_iteration>[-+0-9.eEdD]+) *Ha\s*[-+0-9.eEdD]+ *eV"),
@@ -182,10 +183,27 @@ evUtility = ParseEigenvaluesNamesAndRe(metaInfoEnv = metaInfoEnv,
                                        metaNameEvNumber = 'eigenvalues_eigenvalues_number',
                                        metaNameEvOccupation = 'eigenvalues_occupation',
                                        metaNameEvValue = 'eigenvalues_eigenvalues')
-# default unit conversions (actually it might be better to use the sourceUnits argument of the SimpleMatcher)
-defaultSourceUnits = {}
+
+onClose = {}
 
 parserInfo = {"name":"fhi-aims-parser", "version": "1.0"}
 
+class FhiAimsParserContext(object):
+    def __init__(self):
+        self.scfIterNr = 0
+
+    def onClose_section_single_point_evaluation(self, backend, gIndex, section):
+        """trigger called when section_scf_iteration is closed"""
+        #backend.addValue("", self.scfIterNr)
+        logging.getLogger("nomadcore.parsing").info("XXXX bla gIndex %d %s", gIndex, section.simpleValues)
+        self.scfIterNr = 0
+
+    def onClose_section_scf_iteration(self, backend, gIndex, section):
+        """trigger called when section_scf_iteration is closed"""
+        logging.getLogger("nomadcore.parsing").info("YYYY bla gIndex %d %s", gIndex, section.simpleValues)
+        self.scfIterNr += 1
+
+cachingLevelForMetaName = { "eigenvalues_eigenvalues": CachingLevel.Forward }
+
 if __name__ == "__main__":
-    mainFunction(mainFileDescription, metaInfoEnv, parserInfo, defaultSourceUnits = defaultSourceUnits)
+    mainFunction(mainFileDescription, metaInfoEnv, parserInfo, superContext = FhiAimsParserContext(), cachingLevelForMetaName = cachingLevelForMetaName)
