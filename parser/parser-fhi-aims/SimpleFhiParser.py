@@ -12,8 +12,8 @@ class FhiAimsParserContext(object):
         self.eigenvalues_occupation = []
         self.eigenvalues_eigenvalues = []
 
-    def onClose_section_single_point_evaluation(self, backend, gIndex, section):
-        """trigger called when section_single_point_evaluation is closed"""
+    def onClose_section_single_configuration_calculation(self, backend, gIndex, section):
+        """trigger called when section_single_configuration_calculation is closed"""
         backend.addValue('scf_dft_number_of_iterations', self.scfIterNr)
         # start with -1 since zeroth iteration is the initialization
         self.scfIterNr = -1
@@ -164,7 +164,7 @@ mainFileDescription = SimpleMatcher(name = 'root',
                   startReStr = r"\s*Begin self-consistency loop: (?:I|Re-i)nitialization\.",
                   repeats = True,
                   forwardMatch = True,
-                  sections = ['section_single_point_evaluation'],
+                  sections = ['section_single_configuration_calculation'],
                   subMatchers = [
       SimpleMatcher(name = 'ScfInitialization',
                     startReStr = r"\s*Begin self-consistency loop: (?:I|Re-i)nitialization\.",
