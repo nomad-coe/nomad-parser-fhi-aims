@@ -193,9 +193,9 @@ mainFileDescription = SimpleMatcher(name = 'root',
         SimpleMatcher(r"\s*Self-consistency cycle converged\.")
                     ]),
       SimpleMatcher(r"\s*Energy and forces in a compact form:"),
-      SimpleMatcher(r"\s*\|\s*Total energy uncorrected\s*:\s*(?P<energy_total>[-+0-9.eEdD]+) *eV"),
-      SimpleMatcher(r"\s*\|\s*Total energy corrected\s*:\s*(?P<energy_total_T0>[-+0-9.eEdD]+) *eV"),
-      SimpleMatcher(r"\s*\|\s*Electronic free energy\s*:\s*(?P<energy_free>[-+0-9.eEdD]+) *eV")
+      SimpleMatcher(r"\s*\|\s*Total energy uncorrected\s*:\s*(?P<energy_total_scf_converged>[-+0-9.eEdD]+) *eV"),
+      SimpleMatcher(r"\s*\|\s*Total energy corrected\s*:\s*(?P<energy_total_T0_scf_converged>[-+0-9.eEdD]+) *eV"),
+      SimpleMatcher(r"\s*\|\s*Electronic free energy\s*:\s*(?P<energy_free_scf_converged>[-+0-9.eEdD]+) *eV")
                   ])
                 ])
               ])
