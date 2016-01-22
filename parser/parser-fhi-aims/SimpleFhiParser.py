@@ -455,12 +455,6 @@ onClose = {}
 parserInfo = {'name':'fhi-aims-parser', 'version': '1.0'}
 # adjust caching of metadata
 cachingLevelForMetaName = {
-                           'fhi_aims_controlIn_relativistic': CachingLevel.Forward,
-                           'fhi_aims_controlIn_k_grid': CachingLevel.Forward,
-                           'fhi_aims_controlIn_k1': CachingLevel.Cache,
-                           'fhi_aims_controlIn_k2': CachingLevel.Cache,
-                           'fhi_aims_controlIn_k3': CachingLevel.Cache,
-                           'fhi_aims_controlIn_relativistic_zora': CachingLevel.Cache,
                            'fhi_aims_energy_hartree_fock_X_scf_iteration': CachingLevel.Cache,
                            'fhi_aims_section_eigenvalues_list': CachingLevel.Ignore,
                            'fhi_aims_section_eigenvalues_spin': CachingLevel.Ignore,
@@ -487,4 +481,7 @@ cachingLevelForMetaName = {
                           }
 
 if __name__ == "__main__":
+    for name, metaI in metaInfoEnv.infoKinds.items():
+        if name.startswith('fhi_aims_controlIn_'):
+            cachingLevelForMetaName[name] = CachingLevel.Cache
     mainFunction(mainFileDescription, metaInfoEnv, parserInfo, superContext = FhiAimsParserContext(), cachingLevelForMetaName = cachingLevelForMetaName, onClose = onClose)
