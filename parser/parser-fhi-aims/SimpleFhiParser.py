@@ -1,5 +1,6 @@
 import setup_paths
 import numpy as np
+import nomadcore.ActivateLogging
 from nomadcore.simple_parser import SimpleMatcher, mainFunction
 from nomadcore.local_meta_info import loadJsonFile, InfoKindEl
 from nomadcore.caching_backend import CachingLevel
@@ -12,8 +13,7 @@ import re, os, sys, json, logging
 # since not all energies are given in hartree.
 ############################################################
 
-logger = logging.getLogger("FhiAimsParser") 
-logger.addHandler(logging.StreamHandler())
+logger = logging.getLogger("nomad.FhiAimsParser") 
 
 class FhiAimsParserContext(object):
     def __init__(self):
@@ -21,22 +21,17 @@ class FhiAimsParserContext(object):
         self.secSystemDescriptionIndex = None
         self.scalarZORA = False
         self.periodicCalc = False
+        self.MD = False
         self.xc = None
         self.energy_hartree_fock_X = None
         # start with -1 since zeroth iteration is the initialization
         self.scfIterNr = -1
         self.eigenvalues_occupation = []
-        self.eigenvalues_occupation_spin = []
-        self.eigenvalues_occupation_spin_tmp = []
         self.eigenvalues_eigenvalues = []
-        self.eigenvalues_eigenvalues_spin = []
-        self.eigenvalues_eigenvalues_spin_tmp = []
-        self.eigenvalues_kpoints_spin = []
-        self.eigenvalues_kpoints_spin_tmp = []
+        self.eigenvalues_kpoints = []
         # dictonary of energy values, which are tracked between scf iterations and printed after convergence
         self.totalEnergyList = {
                                 'energy_sum_eigenvalues': None,
-                                'energy_XC': None,
                                 'energy_XC_potential': None,
                                 'energy_correction_hartree': None,
                                 'energy_correction_entropy': None,
@@ -50,124 +45,202 @@ class FhiAimsParserContext(object):
         # dictonary for conversion of xc functional name in aims to metadata format
         # TODO hybrid GGA and mGGA functionals and vdW functionals
         self.xcDict = {
-                       'pw-lda': 'LDA_C_PW_LDA_X',
-                       'pz-lda': 'LDA_C_PZ_LDA_X',
-                       'vwn': 'LDA_C_VWN_LDA_X',
-                       'vwn-gauss': 'LDA_C_VWN_RPA_LDA_X',
-                       'am05': 'GGA_C_AM05_GGA_X_AM05',
-                       'blyp': 'GGA_C_LYP_GGA_X_B88',
-                       'pbe': 'GGA_C_PBE_GGA_X_PBE',
-                       'pbeint': 'GGA_C_PBEINT_GGA_X_PBEINT',
-                       'pbesol': 'GGA_C_PBE_SOL_GGA_X_PBE_SOL',
-                       'rpbe': 'GGA_C_PBE_GGA_X_RPBE',
-                       'revpbe': 'GGA_C_PBE_GGA_X_PBE_R',
-                       'pw91_gga': 'GGA_C_PW91_GGA_X_PW91',
-                       'm06-l': 'MGGA_C_M06_L_MGGA_X_M06_L',
-                       'm11-l': 'MGGA_C_M11_L_MGGA_X_M11_L',
-                       'tpss': 'MGGA_C_TPSS_MGGA_X_TPSS',
-                       'tpssloc': 'MGGA_C_TPSSLOC_MGGA_X_TPSS',
-                       'hf': 'HF_X',
+                       'Perdew-Wang parametrisation of Ceperley-Alder LDA': 'LDA_C_PW_LDA_X',
+                       'Perdew-Zunger parametrisation of Ceperley-Alder LDA': 'LDA_C_PZ_LDA_X',
+                       'VWN-LDA parametrisation of VWN5 form': 'LDA_C_VWN_LDA_X',
+                       'VWN-LDA parametrisation of VWN-RPA form': 'LDA_C_VWN_RPA_LDA_X',
+                       'AM05 gradient-corrected functionals': 'GGA_C_AM05_GGA_X_AM05',
+                       'BLYP functional': 'GGA_C_LYP_GGA_X_B88',
+                       'PBE gradient-corrected functionals': 'GGA_C_PBE_GGA_X_PBE',
+                       'PBEint gradient-corrected functional': 'GGA_C_PBEINT_GGA_X_PBEINT',
+                       'PBEsol gradient-corrected functionals': 'GGA_C_PBE_SOL_GGA_X_PBE_SOL',
+                       'RPBE gradient-corrected functionals': 'GGA_C_PBE_GGA_X_RPBE',
+                       'revPBE gradient-corrected functionals': 'GGA_C_PBE_GGA_X_PBE_R',
+                       'PW91 gradient-corrected functionals': 'GGA_C_PW91_GGA_X_PW91',
+                       'M06-L gradient-corrected functionals': 'MGGA_C_M06_L_MGGA_X_M06_L',
+                       'M11-L gradient-corrected functionals': 'MGGA_C_M11_L_MGGA_X_M11_L',
+                       'TPSS gradient-corrected functionals': 'MGGA_C_TPSS_MGGA_X_TPSS',
+                       'TPSSloc gradient-corrected functionals': 'MGGA_C_TPSSLOC_MGGA_X_TPSS',
+                       'Hartree-Fock': 'HF_X',
                       }
+        # dictonary for conversion of relativistic treatment in aims to metadata format
+        self.relativisticDict = {
+                                 'Non-relativistic': '',
+                                 'ZORA': 'scalar_relativistic',
+                                 'on-site free-atom approximation to ZORA': 'scalar_relativistic_atomic_ZORA',
+                                }
+
+    def startedParsing(self, name, parser):
+        self.parser = parser
+
+    def onClose_section_run(self, backend, gIndex, section):
+        """trigger called when section_run is closed"""
+        # write the keywords from control.in and the aims output from the parsed control.in, which belong to settings_run
+        # ATTENTION
+        # backend.superBackend is used here instead of only the backend to write the JSON values,
+        # since this allows to bybass the caching setting which was used to collect the values for processing.
+        # However, this also bypasses the checking of validity of the metadata name by the backend.
+        # The scala part will check the validity nevertheless.
+        #
+        # write the last occurrence of a keyword, i.e. [-1], since aims uses the last occurrence of a keyword
+        # convert keyword values which are strings to lowercase for consistency
+        for k,v in section.simpleValues.items():
+            if k.startswith('fhi_aims_controlIn_') or k.startswith('fhi_aims_controlInOut_'):
+                if k.startswith('fhi_aims_controlIn_') and isinstance(v[-1], str):
+                    value = v[-1].lower()
+                else:
+                    value = v[-1]
+                backend.superBackend.addValue(k, value)
+        # reset all variables after parsing a run
+        self.secMethodIndex = None
+        self.secSystemDescriptionIndex = None
+        self.scalarZORA = False
+        self.periodicCalc = False
+        self.MD = False
+        self.xc = None
+        self.energy_hartree_fock_X = None
+        # start with -1 since zeroth iteration is the initialization
+        self.scfIterNr = -1
+        self.eigenvalues_occupation = []
+        self.eigenvalues_eigenvalues = []
+        self.eigenvalues_kpoints = []
 
     def write_system_description(self, backend, gIndex, section):
         """writes atomic positions, atom labels and lattice vectors"""
         # write atomic positions
         atom_pos = []
         for i in ['x', 'y', 'z']:
-            api = section.simpleValues.get('fhi_aims_geometry_atom_position_' + i)
+            api = section['fhi_aims_geometry_atom_position_' + i]
             if api is not None:
                 atom_pos.append(api)
-        if len(atom_pos) == 3:
-            if all(len(x) == len(atom_pos[0]) for x in atom_pos[1:-1]):
-                # Need to transpose array since its shape is given by [number_of_atoms,3] in the metadata
-                backend.addArrayValues('atom_position', np.transpose(np.asarray(atom_pos)))
-            else:
-                raise Exception("The number of atomic positions is not consistent for all components in geometry specification %d:" + len(atom_pos) * " %d" % tuple(map(len, atom_pos)) + (gIndex,))
-        else:
-            raise Exception("Found atomic positions but only %d instead of 3 components in geometry specification %d." % (len(atom_pos), gIndex))
+        if atom_pos is not None:
+            # Need to transpose array since its shape is given by [number_of_atoms,3] in the metadata
+            backend.addArrayValues('atom_position', np.transpose(np.asarray(atom_pos)))
         # write atom labels
-        atom_labels = section.simpleValues.get('fhi_aims_geometry_atom_label')
+        atom_labels = section['fhi_aims_geometry_atom_label']
         if atom_labels is not None:
-            if len(atom_labels) == len(atom_pos[0]):
-                backend.addArrayValues('atom_label', np.asarray(atom_labels))
-            else:
-                raise Exception("The number of atom labels % d is not equal the number of atomic positions %d in geometry specification %d." % (len(atom_labels), len(atom_pos[0]), gIndex))
-        else:
-            raise Exception("Found no atom labels in geometry specification %d." % gIndex)
+            backend.addArrayValues('atom_label', np.asarray(atom_labels))
         # write unit cell if present and set flag self.periodicCalc
         unit_cell = []
         for i in ['x', 'y', 'z']:
-            uci = section.simpleValues.get('fhi_aims_geometry_lattice_vector_' + i)
+            uci = section['fhi_aims_geometry_lattice_vector_' + i]
             if uci is not None:
                 unit_cell.append(uci)
-                self.periodicCalc = True
-        if self.periodicCalc:
-            if len(uci) == 3:
-                if all(len(x) == 3 for x in unit_cell):
-                    # From metadata: The first index is x,y,z and the second index the lattice vector.
-                    # => unit_cell has already the right format
-                    backend.addArrayValues('simulation_cell', np.asarray(unit_cell))
-                    self.periodicCalc = True
-                else:
-                    raise Exception("The number of lattice vectors is not consistent for all components in geometry specification %d:" + len(unit_cell) * " %d" % tuple(map(len, unit_cell)) + (gIndex,))
-            else:
-                raise Exception("Found lattice vectors but only %d instead of 3 components in geometry specification %d." % (len(unit_cell), gIndex))
-
-    def onClose_fhi_aims_section_controlIn(self, backend, gIndex, section):
-        """trigger called when section fhi_aims_section_controlIn is closed"""
-        # write the last occurrence of a keyword, i.e. [-1], since aims uses the last occurrence of a keyword
-        # convert keyword values which are strings to lowercase for consistency
-        for k,v in section.simpleValues.items():
-            # write k_krid if all 3 values are present
-            if k == 'fhi_aims_controlIn_k1':
-                k_grid = []
-                for i in ['1', '2', '3']:
-                    ki = section.simpleValues.get('fhi_aims_controlIn_k' + i)
-                    if ki is not None:
-                        k_grid.append(ki[-1])
-                if len(k_grid) == 3:
-                    backend.superBackend.addArrayValues('fhi_aims_controlIn_k_grid', np.asarray(k_grid))
-                else:
-                    raise Exception("Found keyword k_grid but only %d instead of 3 components." % len(k_grid))
-            # k_grid was already written, therefore, do nothing
-            elif k in ['fhi_aims_controlIn_k2', 'fhi_aims_controlIn_k3']:
-                pass
-            elif k == 'fhi_aims_controlIn_relativistic_label':
-                # check for scalar ZORA setting and convert to one common name
-                if re.match(r"\s*zora\s+scalar", v[-1], re.IGNORECASE):
-                    self.scalarZORA = True
-                    backend.superBackend.addValue('fhi_aims_controlIn_relativistic', 'zora scalar')
-                    # write threshold only for scalar ZORA
-                    threshold = section.simpleValues.get('fhi_aims_controlIn_relativistic_threshold')[-1]
-                    backend.superBackend.addValue('fhi_aims_controlIn_relativistic_threshold', threshold)
-                else:
-                    backend.superBackend.addValue('fhi_aims_controlIn_relativistic', v[-1])
-            # write threshold only for scalar ZORA
-            elif k == 'fhi_aims_controlIn_relativistic_threshold':
-                pass
-            # get value for xc
-            elif k == 'fhi_aims_controlIn_xc':
-                value = v[-1].lower()
-                self.xc = value
-                backend.superBackend.addValue(k, value)
-            # default writing
-            else:
-                if isinstance(v[-1], str):
-                    value = v[-1].lower()
-                else:
-                    value = v[-1]
-                backend.superBackend.addValue(k, value)
+        if unit_cell:
+            # From metadata: The first index is x,y,z and the second index the lattice vector.
+            # => unit_cell has already the right format
+            backend.addArrayValues('simulation_cell', np.asarray(unit_cell))
+            self.periodicCalc = True
 
     def onClose_section_method(self, backend, gIndex, section):
         """trigger called when section_method is closed"""
+        # function to write k-grid for controlIn and controlInOut
+        def write_k_grid(metaName, valuesDict):
+            k_grid = []
+            for i in ['1', '2', '3']:
+                ki = valuesDict.get(metaName + i)
+                if ki is not None:
+                    k_grid.append(ki[-1])
+            if k_grid:
+                backend.superBackend.addArrayValues(metaName + '_grid', np.asarray(k_grid))
         # keep track of the latest method section
         self.secMethodIndex = gIndex
-        # write xc functional
-        xc = self.xcDict.get(self.xc)
-        if xc is not None:
-            backend.addValue('XC_functional', xc)
-        else:
-            logger.warning("The xc functional %s could not be converted to the required string for the metadata. Please add it to the dictionary xcDict." % self.xc)
+        # write the keywords from control.in and the aims output from the parsed control.in which belong to section_method
+        # ATTENTION
+        # backend.superBackend is used here instead of only the backend to write the JSON values,
+        # since this allows to bybass the caching setting which was used to collect the values for processing.
+        # However, this also bypasses the checking of validity of the metadata name by the backend.
+        # The scala part will check the validity nevertheless.
+        #
+        # list of excluded metadata
+        # k_grid is written with k1 so that k2 and k2 are not needed
+        # fhi_aims_controlIn_relativistic_threshold is written with fhi_aims_controlIn_relativistic
+        # the xc setting have to handeled separatly since having more than one gives undifined behavior
+        exclude_list = ['fhi_aims_controlIn_k2',
+                        'fhi_aims_controlIn_k3',
+                        'fhi_aims_controlInOut_k2',
+                        'fhi_aims_controlInOut_k3',
+                        'fhi_aims_controlIn_relativistic_threshold',
+                        'fhi_aims_controlIn_xc',
+                        'fhi_aims_controlInOut_xc',
+                        'fhi_aims_controlIn_hse_omega',
+                        'fhi_aims_controlInOut_hse_omega',
+                       ]
+        # write the last occurrence of a keyword, i.e. [-1], since aims uses the last occurrence of a keyword
+        # convert keyword values which are strings to lowercase for consistency
+        for k,v in section.simpleValues.items():
+            if k.startswith('fhi_aims_controlIn_') or k.startswith('fhi_aims_controlInOut_'):
+                if k in exclude_list:
+                    continue
+                # write k_krid
+                elif k == 'fhi_aims_controlIn_k1':
+                    write_k_grid('fhi_aims_controlIn_k', section.simpleValues)
+                elif k == 'fhi_aims_controlInOut_k1':
+                    write_k_grid('fhi_aims_controlInOut_k', section.simpleValues)
+                elif k == 'fhi_aims_controlIn_relativistic':
+                    # check for scalar ZORA setting and convert to one common name
+                    if re.match(r"\s*zora\s+scalar", v[-1], re.IGNORECASE):
+                        backend.superBackend.addValue(k, 'zora scalar')
+                        # write threshold only for scalar ZORA
+                        value = section[k + '_threshold']
+                        if value is not None:
+                            backend.superBackend.addValue(k + '_threshold', value[-1])
+                    else:
+                        backend.superBackend.addValue(k, v[-1].lower())
+                elif k == 'fhi_aims_controlInOut_relativistic_threshold':
+                    # write threshold only for scalar ZORA
+                    if section['fhi_aims_controlInOut_relativistic'] is not None:
+                        if section['fhi_aims_controlInOut_relativistic'][-1] == 'ZORA':
+                            backend.superBackend.addValue(k, v[-1])
+                # default writeout
+                else:
+                    if k.startswith('fhi_aims_controlIn_') and isinstance(v[-1], str):
+                        value = v[-1].lower()
+                    else:
+                        value = v[-1]
+                    backend.superBackend.addValue(k, value)
+        # detect MD
+        if section['fhi_aims_MD_flag'] is not None:
+            self.MD = True
+        # detect scalar ZORA
+        if section['fhi_aims_controlInOut_relativistic'] is not None:
+            if section['fhi_aims_controlInOut_relativistic'][-1] == 'ZORA':
+                self.scalarZORA = True
+        # convert relativistic setting to metadata string
+        InOut_relativistic = section['fhi_aims_controlInOut_relativistic']
+        if InOut_relativistic is not None:
+            relativistic = self.relativisticDict.get(InOut_relativistic[-1])
+            if relativistic is not None:
+                backend.addValue('relativity_method', relativistic)
+            else:
+                logger.warning("The relativistic setting '%s' could not be converted to the required string for the metadata. Please add it to the dictionary relativisticDict." % InOut_relativistic[-1])
+        # handling xc functional
+        In_xc = section['fhi_aims_controlIn_xc']
+        if In_xc is not None:
+            # check if only one xc keyword was found in control.in
+            if len(In_xc) > 1:
+                logger.warning("Found %d settings for the xc functional in control.in. This leads to an undefined behavior und no metadata can be written for fhi_aims_controlIn_xc." % len(In_xc))
+            else:
+                backend.superBackend.addValue('fhi_aims_controlIn_xc', In_xc[-1])
+                In_hse_omega = section['fhi_aims_controlIn_hse_omega']
+                if In_hse_omega is not None:
+                    backend.superBackend.addValue('fhi_aims_controlIn_hse_omega', In_hse_omega[-1])
+        InOut_xc = section['fhi_aims_controlInOut_xc']
+        if InOut_xc is not None:
+            # check if only one xc keyword was found in the aims output from the parsed control.in
+            if len(InOut_xc) > 1:
+                logger.error("Found %d settings for the xc functional in the aims output from the parsed control.in. This leads to an undefined behavior und no metadata can be written for fhi_aims_controlInOut_xc and XC_functional." % len(InOut_xc))
+            else:
+                backend.superBackend.addValue('fhi_aims_controlInOut_xc', InOut_xc[-1])
+                InOut_hse_omega = section['fhi_aims_controlInOut_hse_omega']
+                if InOut_hse_omega is not None:
+                    backend.superBackend.addValue('fhi_aims_controlInOut_hse_omega', InOut_hse_omega[-1])
+                # convert xc functional to metadata string
+                xc = self.xcDict.get(InOut_xc[-1])
+                if xc is not None:
+                    backend.addValue('XC_functional', xc)
+                else:
+                    logger.error("The xc functional '%s' could not be converted to the required string for the metadata. Please add it to the dictionary xcDict." % InOut_xc[-1])
 
     def onClose_section_system_description(self, backend, gIndex, section):
         """trigger called when section_system_description is closed"""
@@ -182,44 +255,38 @@ class FhiAimsParserContext(object):
         # start with -1 since zeroth iteration is the initialization
         self.scfIterNr = -1
         # write eigenvalues if found
-        if self.eigenvalues_occupation_spin and self.eigenvalues_eigenvalues_spin:
-            gIndexGroup = backend.openSection('section_eigenvalues_group')
-            occ = np.asarray(self.eigenvalues_occupation_spin)
-            ev = np.asarray(self.eigenvalues_eigenvalues_spin)
-            if self.periodicCalc:
-                kpt = np.asarray(self.eigenvalues_kpoints_spin)
-            # in onClose_fhi_aims_section_eigenvalues_list it was already checked 
-            # that the lowest lying lists in occupation and eigenvalues have the same length
-            # therefore, eigenvalues_occupation_spin and eigenvalues_eigenvalues_spin should be of the same form
-            if occ.shape != ev.shape:
-                raise Exception("Array of collected eingenvalue occupations and eigenvalues do not have same shape, %s vs. %s" % (occ.shape, ev.shape))
-            # check if the first two dimensions (number of spin chhannels and number of kpoints) are equal
-            if self.periodicCalc:
-                if occ.shape[0:2] != kpt.shape[0:2]:
-                    raise Exception("Array of collected eingenvalue occupations and kpoints do not have same shape for the first two dimensions, %s vs. %s" % (occ.shape[0:2], kpt.shape[0:2]))
-            for i in range (occ.shape[0]):
-                gIndex = backend.openSection('section_eigenvalues')
-                backend.addArrayValues('eigenvalues_occupation', occ[i])
-                backend.addArrayValues('eigenvalues_eigenvalues', ev[i])
-                self.eigenvalues_occupation_spin = []
-                self.eigenvalues_eigenvalues_spin = []
-                if self.periodicCalc:
-                    backend.addArrayValues('eigenvalues_kpoints', kpt[i])
-                    self.eigenvalues_kpoints = []
-                backend.closeSection('section_eigenvalues', gIndex)
-            backend.closeSection('section_eigenvalues_group', gIndexGroup)
+        if self.eigenvalues_occupation and self.eigenvalues_eigenvalues:
+            occ = np.asarray(self.eigenvalues_occupation)
+            ev = np.asarray(self.eigenvalues_eigenvalues)
+            # check if there is the same number of spin channels
+            if len(occ) == len(ev):
+                kpt = None
+                if self.eigenvalues_kpoints:
+                    kpt = np.asarray(self.eigenvalues_kpoints)
+                # check if there is the same number of spin channels for the periodic case
+                if kpt is None or len(kpt) == len(ev):
+                    gIndexGroup = backend.openSection('section_eigenvalues_group')
+                    for i in range(len(occ)):
+                        gIndex = backend.openSection('section_eigenvalues')
+                        backend.addArrayValues('eigenvalues_occupation', occ[i])
+                        backend.addArrayValues('eigenvalues_eigenvalues', ev[i])
+                        if kpt is not None:
+                            backend.addArrayValues('eigenvalues_kpoints', kpt[i])
+                        backend.closeSection('section_eigenvalues', gIndex)
+                    backend.closeSection('section_eigenvalues_group', gIndexGroup)
+                else:
+                    logger.warning("Found %d spin channels for eigenvalue kpoints but %d for eigenvalues in single configuration calculation %d." % (len(kpt), len(ev), gIndex))
+            else:
+                logger.warning("Found %d spin channels for eigenvalue occupation but %d for eigenvalues in single configuration calculation %d." % (len(occ), len(ev), gIndex))
         # write converged energy values
+        if self.energy_hartree_fock_X is not None:
+            backend.addValue('energy_hartree_fock_X', self.energy_hartree_fock_X)
         # with scalar ZORA, the correctly scaled energy values are given in a separate post-processing step, which are read there
         # therefore, we don't write the energy values for scalar ZORA
         if not self.scalarZORA:
             for k,v in self.totalEnergyList.items():
                 if v is not None:
-                    # need to change name of energy_XC to energy_XC_functional according to metadata
-                    if k == 'energy_XC':
-                        k = k + '_functional'
                     backend.addValue(k, v)
-        if self.energy_hartree_fock_X is not None:
-            backend.addValue('energy_hartree_fock_X', self.energy_hartree_fock_X)
         # write the references to section_method and section_system_description
         backend.addValue('single_configuration_calculation_method_ref', self.secMethodIndex)
         backend.addValue('single_configuration_calculation_system_description_ref', self.secSystemDescriptionIndex)
@@ -227,83 +294,64 @@ class FhiAimsParserContext(object):
     def onClose_section_scf_iteration(self, backend, gIndex, section):
         """trigger called when section_scf_iteration is closed"""
         self.scfIterNr += 1
+        # The quantitties that are tracked during the SCF cycle are set to default.
+        # I.e. scalar values are allowed to be set None, and lists are set to empty.
+        # This ensures that after convergence only the values associated with the last SCF iteration are written
+        # and not some values that appeared in earlier SCF iterations
+        #
         # extract current value for the energy values
-        # with scalar ZORA, the correctly scaled energy values are given in a separate post-processing step, which are read there
-        # therefore, we do not track the energy values for scalar ZORA
+        # With scalar ZORA, the correctly scaled energy values are given in a separate post-processing step, which are read there.
+        # Therefore, we do not track the energy values for scalar ZORA.
         if not self.scalarZORA:
             for k in self.totalEnergyList:
-                self.totalEnergyList[k] = section.simpleValues.get(k + '_scf_iteration')
+                self.totalEnergyList[k] = section[k + '_scf_iteration']
         # keep track of full exact exchange energy
-        self.energy_hartree_fock_X = section.simpleValues.get('fhi_aims_energy_hartree_fock_X_scf_iteration')
-
-    def onClose_fhi_aims_section_eigenvalues_list(self, backend, gIndex, section):
-        """trigger called when fhi_aims_section_eigenvalues_list is closed"""
-        # get cached values for occupation and eigenvalues
-        occ = section.simpleValues.get('fhi_aims_eigenvalue_occupation')
-        ev = section.simpleValues.get('fhi_aims_eigenvalue_eigenvalue')
-        # check if values were found
-        if not occ or not ev:
-            raise Exception("Regular expression for eigenvalues were found, but no values could be extracted.")
-        # check for consistent list length of obtained values
-        if len(occ) != len(ev):
-            raise Exception("Found %d eigenvalue occupations but %d eigenvalues." % (len(occ), len(ev)))
-        if self.eigenvalues_occupation:
-            if len(self.eigenvalues_occupation[-1]) != len(occ):
-                raise Exception("Inconsistent number of eigenvalue occupations bewtween kpoints found in SCF cycle %d." % self.scfIterNr + 1)
-        if self.eigenvalues_eigenvalues:
-            if len(self.eigenvalues_eigenvalues[-1]) != len(ev):
-                raise Exception("Inconsistent number of eigenvalues between kpoints found in SCF cycle %d." % self.scfIterNr + 1)
-        # append values for current k-point
-        self.eigenvalues_occupation.append(occ)
-        self.eigenvalues_eigenvalues.append(ev)
-
-    def onClose_fhi_aims_section_eigenvalues_spin(self, backend, gIndex, section):
-        """trigger called when fhi_aims_section_eigenvalues_spin is closed"""
-        # append values for current spin channel
-        self.eigenvalues_occupation_spin_tmp.append(self.eigenvalues_occupation)
-        self.eigenvalues_eigenvalues_spin_tmp.append(self.eigenvalues_eigenvalues)
+        self.energy_hartree_fock_X = section['fhi_aims_energy_hartree_fock_X_scf_iteration']
+        # get eigenvalues of current SCF iteration
         self.eigenvalues_occupation = []
         self.eigenvalues_eigenvalues = []
-        # collect kpoints
-        if self.periodicCalc:
-            kpoints = []
-            for i in ['1', '2', '3']:
-                ki = section.simpleValues.get('fhi_aims_eigenvalue_kpoint' + i)
-                if ki is not None:
-                    kpoints.append(ki)
-            if len(kpoints) == 3:
-                if all(len(x) == len(kpoints[0]) for x in kpoints[1:-1]):
+        self.eigenvalues_kpoints = []
+        # get cached fhi_aims_section_eigenvalues_group
+        sec_ev_group = section['fhi_aims_section_eigenvalues_group']
+        if sec_ev_group is not None:
+            # check if only one group was found
+            if len(sec_ev_group) != 1:
+                logger.warning("Found %d instead of 1 group of eigenvalues. Used entry 0." % len(sec_ev_group))
+            # get cached fhi_aims_section_eigenvalues_group
+            sec_ev_spins = sec_ev_group[0]['fhi_aims_section_eigenvalues_spin']
+            for sec_ev_spin in sec_ev_spins:
+                occs = []
+                evs = []
+                kpoints = []
+                # get cached fhi_aims_section_eigenvalues_list
+                sec_ev_lists = sec_ev_spin['fhi_aims_section_eigenvalues_list']
+                # extract occupatons and eigenvalues
+                for sec_ev_list in sec_ev_lists:
+                    occs.append(sec_ev_list['fhi_aims_eigenvalue_occupation'])
+                    evs.append(sec_ev_list['fhi_aims_eigenvalue_occupation'])
+                # extract kpoints
+                for i in ['1', '2', '3']:
+                    ki = sec_ev_spin['fhi_aims_eigenvalue_kpoint' + i]
+                    if ki is not None:
+                        kpoints.append(ki)
+                # append values for each spin channel
+                self.eigenvalues_occupation.append(occs)
+                self.eigenvalues_eigenvalues.append(evs)
+                if kpoints:
                     # transpose list
                     kpoints = map(lambda *x: list(x), *kpoints)
-                    # append the result
-                    self.eigenvalues_kpoints_spin_tmp.append(kpoints)
-                else:
-                    raise Exception("The number of kpoints of the eigenvalues is not consistent for all components:" + len(kpoints) * " %d" % tuple(map(len, kpoints)))
-            else:
-                raise Exception("Found kpoints for eigenvalues but only %d instead of 3 components." % len(kpoints))
-
-    def onClose_fhi_aims_section_eigenvalues_group(self, backend, gIndex, section):
-        """trigger called when fhi_aims_section_eigenvalues_group is closed"""
-        # override values since we need only the latest eigenvalues which are then written in onClose_section_single_configuration_calculation
-        self.eigenvalues_occupation_spin = self.eigenvalues_occupation_spin_tmp
-        self.eigenvalues_eigenvalues_spin = self.eigenvalues_eigenvalues_spin_tmp
-        self.eigenvalues_occupation_spin_tmp = []
-        self.eigenvalues_eigenvalues_spin_tmp = []
-        if self.periodicCalc:
-            self.eigenvalues_kpoints_spin = self.eigenvalues_kpoints_spin_tmp
-            self.eigenvalues_kpoints_spin_tmp = []
+                    self.eigenvalues_kpoints.append(kpoints) 
 
 ########################################
-# submatcher for controlIn
+# submatcher for control.in
 controlInSubMatcher = SimpleMatcher(name = 'ControlIn',
-              startReStr = r"\s*Parsing control\.in *(?:\.\.\.|\(first pass over file, find array dimensions only\)\.)",
+              startReStr = r"\s*The contents of control\.in will be repeated verbatim below",
               endReStr = r"\s*Completed first pass over input file control\.in \.",
-              sections = ['fhi_aims_section_controlIn'],
               subMatchers = [
-  SimpleMatcher(r"\s*The contents of control\.in will be repeated verbatim below"),
   SimpleMatcher(r"\s*unless switched off by setting 'verbatim_writeout \.false\.' \."),
   SimpleMatcher(r"\s*in the first line of control\.in \."),
-  SimpleMatcher(r"\s*-{20}-*",
+  SimpleMatcher(name = 'ControlInKeywords',
+                startReStr = r"\s*-{20}-*",
                 weak = True,
                 subFlags = SimpleMatcher.SubFlags.Unordered,
                 subMatchers = [
@@ -315,6 +363,7 @@ controlInSubMatcher = SimpleMatcher(name = 'ControlIn',
     # since aims uses the last occurrence of a keyword.
     # List the matchers in alphabetical order according to keyword name.
     #
+    SimpleMatcher(r"^\s*MD_time_step\s+(?P<fhi_aims_controlIn_MD_time_step__ps>[-+0-9.eEdD]+)", repeats = True),
     # need to distinguish different cases
     SimpleMatcher(r"^\s*occupation_type\s+",
                   forwardMatch = True,
@@ -324,16 +373,16 @@ controlInSubMatcher = SimpleMatcher(name = 'ControlIn',
       SimpleMatcher(r"^\s*occupation_type\s+(?P<fhi_aims_controlIn_occupation_type>[-_a-zA-Z]+)\s+(?P<fhi_aims_controlIn_occupation_width>[-+0-9.eEdD]+)")
                               ]),
     SimpleMatcher(r"^\s*override_relativity\s+\.?(?P<fhi_aims_controlIn_override_relativity>[-_a-zA-Z]+)\.?", repeats = True),
-    # need to distinguish different cases
     SimpleMatcher(r"^\s*charge\s+(?P<fhi_aims_controlIn_charge>[-+0-9.eEdD]+)", repeats = True),
     # only the first character is important for aims
-    SimpleMatcher(r"^\s*hse_unit\s+(?P<fhi_aims_controlIn_hse_unit>[a-zA-Z])[-_a-zA-Z0-9]*", repeats = True),
+    SimpleMatcher(r"^\s*hse_unit\s+(?P<fhi_aims_controlIn_hse_unit>[a-zA-Z])[-_a-zA-Z0-9]+", repeats = True),
+    # need to distinguish different cases
     SimpleMatcher(r"^\s*relativistic\s+",
                   forwardMatch = True,
                   repeats = True,
                   subMatchers = [
-      SimpleMatcher(r"^\s*relativistic\s+(?P<fhi_aims_controlIn_relativistic_label>[-_a-zA-Z]+\s*[-_a-zA-Z]+)\s+(?P<fhi_aims_controlIn_relativistic_threshold>[-+0-9.eEdD]+)"),
-      SimpleMatcher(r"^\s*relativistic\s+(?P<fhi_aims_controlIn_relativistic_label>[-_a-zA-Z]+)")
+      SimpleMatcher(r"^\s*relativistic\s+(?P<fhi_aims_controlIn_relativistic>[-_a-zA-Z]+\s+[-_a-zA-Z]+)\s+(?P<fhi_aims_controlIn_relativistic_threshold>[-+0-9.eEdD]+)"),
+      SimpleMatcher(r"^\s*relativistic\s+(?P<fhi_aims_controlIn_relativistic>[-_a-zA-Z]+)")
                               ]),
     SimpleMatcher(r"^\s*sc_accuracy_rho\s+(?P<fhi_aims_controlIn_sc_accuracy_rho>[-+0-9.eEdD]+)", repeats = True),
     SimpleMatcher(r"^\s*sc_accuracy_eev\s+(?P<fhi_aims_controlIn_sc_accuracy_eev>[-+0-9.eEdD]+)", repeats = True),
@@ -348,31 +397,135 @@ controlInSubMatcher = SimpleMatcher(name = 'ControlIn',
                   forwardMatch = True,
                   repeats = True,
                   subMatchers = [
-      SimpleMatcher(r"^\s*xc\s+(?P<fhi_aims_controlIn_xc>[-_a-zA-Z0-9]+)\s+(?P<fhi_aims_controlIn_xc_omega>[-+0-9.eEdD]+)"),
+      SimpleMatcher(r"^\s*xc\s+(?P<fhi_aims_controlIn_xc>[-_a-zA-Z0-9]+)\s+(?P<fhi_aims_controlIn_hse_omega>[-+0-9.eEdD]+)"),
       SimpleMatcher(r"^\s*xc\s+(?P<fhi_aims_controlIn_xc>[-_a-zA-Z0-9]+)")
                   ]),
-                ])
+    SimpleMatcher(r"^\s*verbatim_writeout\s+[.a-zA-Z]+")
+                ]), # END ControlInKeywords
+  SimpleMatcher(r"\s*-{20}-*", weak = True)
+              ])
+########################################
+# submatcher for aims output from the parsed control.in
+controlInOutSubMatcher = SimpleMatcher(name = 'ControlInOut',
+              startReStr = r"\s*Reading file control\.in\.",
+              subMatchers = [
+  SimpleMatcher(name = 'ControlInOutLines',
+                startReStr = r"\s*-{20}-*",
+                weak = True,
+                subFlags = SimpleMatcher.SubFlags.Unordered,
+                subMatchers = [
+    # Now follows the list to match the aims output from the parsed control.in.
+    # The search is done unordered since the output is not in a specific order.
+    # Repating occurrences of the same keywords are captured.
+    # List the matchers in alphabetical order according to metadata name.
+    #
+    # metadata fhi_aims_MD_flag is just used to detect already in the methods section if a MD run was perfomed
+    SimpleMatcher(r"\s*(?P<fhi_aims_MD_flag>Molecular dynamics time step) =\s*(?P<fhi_aims_controlInOut_MD_time_step__ps>[0-9.]+) *ps", repeats = True),
+    SimpleMatcher(r"\s*Scalar relativistic treatment of kinetic energy: (?P<fhi_aims_controlInOut_relativistic>[-a-zA-Z\s]+)\.", repeats = True),
+    SimpleMatcher(r"\s*(?P<fhi_aims_controlInOut_relativistic>Non-relativistic) treatment of kinetic energy\.", repeats = True),
+    SimpleMatcher(r"\s*Threshold value for ZORA:\s*(?P<fhi_aims_controlInOut_relativistic_threshold>[-+0-9.eEdD]+)", repeats = True),
+    SimpleMatcher(r"\s*XC: Using (?P<fhi_aims_controlInOut_xc>[-_a-zA-Z0-9\s()]+)(?:\.| NOTE)", repeats = True),
+    SimpleMatcher(r"\s*XC: Using (?P<fhi_aims_controlInOut_xc>HSE-functional) with OMEGA =\s*(?P<fhi_aims_controlInOut_hse_omega>[-+0-9.eEdD]+)\s*<units>\.", repeats = True),
+    SimpleMatcher(r"\s*XC: Using (?P<fhi_aims_controlInOut_xc>Hybrid M11 gradient-corrected functionals) with OMEGA =\s*[-+0-9.eEdD]+", repeats = True),
+    SimpleMatcher(r"\s*XC:\s*(?P<fhi_aims_controlInOut_xc>HSE) with OMEGA_PBE =\s*[-+0-9.eEdD]+", repeats = True),
+    SimpleMatcher(r"\s*XC: Running (?P<fhi_aims_controlInOut_xc>[-_a-zA-Z0-9\s()]+) \.\.\.", repeats = True),
+    SimpleMatcher(r"\s*(?P<fhi_aims_controlInOut_xc>Hartree-Fock) calculation starts \.\.\.\.\.\.", repeats = True),
+                ]), # END ControlInOutLines
+  SimpleMatcher(r"\s*-{20}-*", weak = True)
+              ])
+########################################
+# subMatcher for geometry.in
+geometryInSubMatcher = SimpleMatcher(name = 'GeometryIn',
+              startReStr = r"\s*Parsing geometry\.in \(first pass over file, find array dimensions only\)\.",
+              endReStr = r"\s*Completed first pass over input file geometry\.in \.",
+              subMatchers = [
+  SimpleMatcher(r"\s*The contents of geometry\.in will be repeated verbatim below"),
+  SimpleMatcher(r"\s*unless switched off by setting 'verbatim_writeout \.false\.' \."),
+  SimpleMatcher(r"\s*in the first line of geometry\.in \."),
+  SimpleMatcher(name = 'GeometryInKeywords',
+                startReStr = r"\s*-{20}-*",
+                weak = True,
+                subFlags = SimpleMatcher.SubFlags.Unordered,
+                subMatchers = [
+    # Explicitly add ^ to ensure that the keyword is not within a comment.
+    # The search is done unordered since the keywords do not appear in a specific order.
+    SimpleMatcher(startReStr = r"^\s*(?:atom|atom_frac)\s+[-+0-9.]+\s+[-+0-9.]+\s+[-+0-9.]+\s+[a-zA-Z]+",
+                  repeats = True,
+                  subFlags = SimpleMatcher.SubFlags.Unordered,
+                  subMatchers = [
+      SimpleMatcher(r"^\s*constrain_relaxation\s+(?:x|y|z|\.true\.|\.false\.)", repeats = True),
+      SimpleMatcher(r"^\s*initial_charge\s+[-+0.9.eEdD]", repeats = True),
+      SimpleMatcher(r"^\s*initial_moment\s+[-+0.9.eEdD]", repeats = True),
+      SimpleMatcher(r"^\s*velocity\s+[-+0.9.eEdD]\s+[-+0.9.eEdD]\s+[-+0.9.eEdD]", repeats = True)
+                  ]),
+    SimpleMatcher(r"^\s*hessian_block\s+[0-9]+\s+[0-9]+" + 9 * r"\s+[-+0-9.eEdD]+", repeats = True),
+    SimpleMatcher(r"^\s*hessian_block_lv\s+[0-9]+\s+[0-9]+" + 9 * r"\s+[-+0-9.eEdD]+", repeats = True),
+    SimpleMatcher(r"^\s*hessian_block_lv_atom\s+[0-9]+\s+[0-9]+" + 9 * r"\s+[-+0-9.eEdD]+", repeats = True),
+    SimpleMatcher(startReStr = r"^\s*lattice_vector\s+[-+0-9.]+\s+[-+0-9.]+\s+[-+0-9.]+",
+                  repeats = True,
+                  subMatchers = [
+      SimpleMatcher(r"^\s*constrain_relaxation\s+(?:x|y|z|\.true\.|\.false\.)", repeats = True)
+                  ]),
+    SimpleMatcher(r"^\s*trust_radius\s+[-+0-9.eEdD]+", repeats = True),
+    SimpleMatcher(r"^\s*verbatim_writeout\s+[.a-zA-Z]+")
+                ]), # END GeometryInKeywords
+  SimpleMatcher(r"\s*-{20}-*", weak = True)
               ])
 ########################################
 # subMatcher for geometry
-# the verbatim writeout of the geometry.in is not considered
+# the verbatim writeout of the geometry.in is not considered for getting the structure data
 # using the geometry output of aims has the advantage that it has a clearer structure
 geometrySubMatcher = SimpleMatcher(name = 'Geometry',
               startReStr = r"\s*Reading geometry description geometry\.in\.",
               sections = ['section_system_description'],
               subMatchers = [
+  SimpleMatcher(r"\s*-{20}-*", weak = True),
   SimpleMatcher(r"\s*The structure contains\s*[0-9]+\s*atoms,\s*and a total of\s*[0-9.]\s*electrons\."),
   SimpleMatcher(r"\s*Input geometry:"),
   SimpleMatcher(r"\s*\|\s*No unit cell requested\."),
   SimpleMatcher(startReStr = r"\s*\|\s*Unit cell:",
                 subMatchers = [
-    SimpleMatcher(startReStr = r"\s*\|\s*(?P<fhi_aims_geometry_lattice_vector_x__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_lattice_vector_y__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_lattice_vector_z__angstrom>[-+0-9.]+)", repeats = True)
+    SimpleMatcher(r"\s*\|\s*(?P<fhi_aims_geometry_lattice_vector_x__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_lattice_vector_y__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_lattice_vector_z__angstrom>[-+0-9.]+)", repeats = True)
                 ]),
   SimpleMatcher(startReStr = r"\s*\|\s*Atomic structure:",
                 subMatchers = [
     SimpleMatcher(r"\s*\|\s*Atom\s*x \[A\]\s*y \[A\]\s*z \[A\]"),
-    SimpleMatcher(startReStr = r"\s*\|\s*[0-9]+:\s*Species\s*(?P<fhi_aims_geometry_atom_label>[a-zA-z]+)\s+(?P<fhi_aims_geometry_atom_position_x__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_atom_position_y__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_atom_position_z__angstrom>[-+0-9.]+)", repeats = True)
+    SimpleMatcher(r"\s*\|\s*[0-9]+:\s*Species\s+(?P<fhi_aims_geometry_atom_label>[a-zA-Z]+)\s+(?P<fhi_aims_geometry_atom_position_x__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_atom_position_y__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_atom_position_z__angstrom>[-+0-9.]+)", repeats = True)
                 ])
+              ])
+########################################
+# subMatcher for geometry after relaxation step
+geometryRelaxationSubMatcher = SimpleMatcher(name = 'GeometryRelaxation',
+              startReStr = r"\s*Updated atomic structure:",
+              sections = ['section_system_description'],
+              subMatchers = [
+  SimpleMatcher(r"\s*x \[A\]\s*y \[A\]\s*z \[A\]"),
+  SimpleMatcher(startReStr = r"\s*lattice_vector\s*[-+0-9.]+\s+[-+0-9.]+\s+[-+0-9.]+",
+                forwardMatch = True,
+                subMatchers = [
+    SimpleMatcher(r"\s*lattice_vector\s+(?P<fhi_aims_geometry_lattice_vector_x__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_lattice_vector_y__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_lattice_vector_z__angstrom>[-+0-9.]+)", repeats = True)
+                ]),
+  SimpleMatcher(r"\s*atom\s+(?P<fhi_aims_geometry_atom_position_x__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_atom_position_y__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_atom_position_z__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_atom_label>[a-zA-Z]+)", repeats = True),
+  SimpleMatcher(startReStr = r"\s*Fractional coordinates:",
+                subMatchers = [
+    SimpleMatcher("\s*L1\s*L2\s*L3"),
+    SimpleMatcher(r"\s*atom_frac\s+[-+0-9.]+\s+[-+0-9.]+\s+[-+0-9.]+\s+[a-zA-Z]+", repeats = True),
+  SimpleMatcher(r'\s*Writing the current geometry to file "geometry\.in\.next_step"\.'),
+  SimpleMatcher(r"\s*-{20}-*", weak = True)
+                ])
+              ])
+########################################
+# subMatcher for geometry after MD step
+geometryMDSubMatcher = SimpleMatcher(name = 'GeometryMD',
+              startReStr = r"\s*Atomic structure \(and velocities\) as used in the preceding time step:",
+              sections = ['section_system_description'],
+              subMatchers = [
+  SimpleMatcher(r"\s*x \[A\]\s*y \[A\]\s*z \[A\]\s*Atom"),
+  SimpleMatcher(startReStr = r"\s*atom\s+(?P<fhi_aims_geometry_atom_position_x__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_atom_position_y__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_atom_position_z__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_atom_label>[a-zA-Z]+)",
+                repeats = True,
+                subMatchers = [
+    SimpleMatcher(r"^\s*velocity\s+[-+0.9.eEdD]\s+[-+0.9.eEdD]\s+[-+0.9.eEdD]")
+                ]),
               ])
 ########################################
 # submatcher for eigenvalue list
@@ -394,7 +547,7 @@ EigenvaluesGroupSubMatcher = SimpleMatcher(name = 'EigenvaluesGroup',
                 sections = ['fhi_aims_section_eigenvalues_spin'],
                 repeats = True,
                 subMatchers = [
-    # Periodic
+    # periodic
     SimpleMatcher(startReStr = r"\s*K-point:\s*[0-9]+\s+at\s+(?P<fhi_aims_eigenvalue_kpoint1>[-+0-9.eEdD]+)\s+(?P<fhi_aims_eigenvalue_kpoint2>[-+0-9.eEdD]+)\s+(?P<fhi_aims_eigenvalue_kpoint3>[-+0-9.eEdD]+)\s+\(in units of recip\. lattice\)",
                   repeats = True,
                   subMatchers = [
@@ -404,13 +557,13 @@ EigenvaluesGroupSubMatcher = SimpleMatcher(name = 'EigenvaluesGroup',
         EigenvaluesListSubMatcher
                     ])
                   ]),
-    # Non-periodic
+    # non-periodic
     SimpleMatcher(startReStr = r"\s*State\s+Occupation\s+Eigenvalue *\[Ha\]\s+Eigenvalue *\[eV\]",
                   forwardMatch = True,
                   subMatchers = [
       EigenvaluesListSubMatcher.copy() # need copy since SubMatcher already used above
                   ])
-                ]),
+                ]), # END EigenvaluesSpin
   # non-spin-polarized, periodic
   SimpleMatcher(name = 'EigenvaluesNoSpinPeriodic',
                 startReStr = r"\s*K-point:\s*[0-9]+\s+at\s+.*\s+\(in units of recip\. lattice\)",
@@ -426,7 +579,7 @@ EigenvaluesGroupSubMatcher = SimpleMatcher(name = 'EigenvaluesGroup',
         EigenvaluesListSubMatcher.copy() # need copy since SubMatcher already used above
                     ])
                   ]),
-                ]),
+                ]), # END EigenvaluesNoSpinPeriodic
   # non-spin-polarized, non-periodic
   SimpleMatcher(name = 'EigenvaluesNoSpinNonPeriodic',
                 startReStr = r"\s*State\s+Occupation\s+Eigenvalue *\[Ha\]\s+Eigenvalue *\[eV\]",
@@ -434,7 +587,7 @@ EigenvaluesGroupSubMatcher = SimpleMatcher(name = 'EigenvaluesGroup',
                 forwardMatch = True,
                 subMatchers = [
     EigenvaluesListSubMatcher.copy() # need copy since SubMatcher already used above
-                ]),
+                ]), # END EigenvaluesNoSpinNonPeriodic
               ])
 ########################################
 # submatcher for total energy components during SCF interation
@@ -442,7 +595,7 @@ TotalEnergyScfSubMatcher = SimpleMatcher(name = 'TotalEnergyScf',
               startReStr = r"\s*Total energy components:",
               subMatchers = [
   SimpleMatcher(r"\s*\|\s*Sum of eigenvalues\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_sum_eigenvalues_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
-  SimpleMatcher(r"\s*\|\s*XC energy correction\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_XC_scf_iteration__eV>[-+0-9.eEdD]+) eV"),
+  SimpleMatcher(r"\s*\|\s*XC energy correction\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_XC_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
   SimpleMatcher(r"\s*\|\s*XC potential correction\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_XC_potential_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
   SimpleMatcher(r"\s*\|\s*Free-atom electrostatic energy\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<fhi_aims_energy_electrostatic_free_atom_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
   SimpleMatcher(r"\s*\|\s*Hartree energy correction\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_correction_hartree_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
@@ -466,7 +619,7 @@ TotalEnergyZORASubMatcher = SimpleMatcher(name = 'TotalEnergyZORA',
               startReStr = r"\s*Total energy components:",
               subMatchers = [
   SimpleMatcher(r"\s*\|\s*Sum of eigenvalues\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_sum_eigenvalues__eV>[-+0-9.eEdD]+) *eV"),
-  SimpleMatcher(r"\s*\|\s*XC energy correction\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_XC_functional__eV>[-+0-9.eEdD]+) eV"),
+  SimpleMatcher(r"\s*\|\s*XC energy correction\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_XC_functional__eV>[-+0-9.eEdD]+) *eV"),
   SimpleMatcher(r"\s*\|\s*XC potential correction\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_XC_potential__eV>[-+0-9.eEdD]+) *eV"),
   SimpleMatcher(r"\s*\|\s*Free-atom electrostatic energy\s*:\s*[-+0-9.eEdD]+ *Ha\s+[-+0-9.eEdD]+ *eV"),
   SimpleMatcher(r"\s*\|\s*Hartree energy correction\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_correction_hartree__eV>[-+0-9.eEdD]+) *eV"),
@@ -493,17 +646,20 @@ mainFileDescription = SimpleMatcher(name = 'Root',
               subMatchers = [
   SimpleMatcher(name = 'NewRun',
                 startReStr = r"\s*Invoking FHI-aims \.\.\.",
+                endReStr = r"\s*Have a nice day\.",
                 repeats = True,
                 required = True,
                 forwardMatch = True,
                 sections   = ['section_run'],
                 subMatchers = [
+    # header specifing version, compilation info, task assignment
     SimpleMatcher(name = 'ProgramHeader',
                   startReStr = r"\s*Invoking FHI-aims \.\.\.",
                   subMatchers = [
       SimpleMatcher(r"\s*Version\s*(?P<program_version>[0-9a-zA-Z_.]+)"),
       SimpleMatcher(r"\s*Compiled on\s*(?P<fhi_aims_program_compilation_date>[0-9/]+)\s*at\s*(?P<fhi_aims_program_compilation_time>[0-9:]+)\s*on host\s*(?P<program_compilation_host>[-a-zA-Z0-9._]+)"),
       SimpleMatcher(r"\s*Date\s*:\s*(?P<fhi_aims_program_execution_date>[-.0-9/]+)\s*,\s*Time\s*:\s*(?P<fhi_aims_program_execution_time>[-+0-9.eEdD]+)"),
+      SimpleMatcher(r"\s*-{20}-*", weak = True),
       SimpleMatcher(r"\s*Time zero on CPU 1\s*:\s*(?P<time_run_cpu1_start>[-+0-9.eEdD]+) *s?\."),
       SimpleMatcher(r"\s*Internal wall clock time zero\s*:\s*(?P<time_run_wall_start>[-+0-9.eEdD]+) *s\."),
       SimpleMatcher(name = "nParallelTasks",
@@ -514,92 +670,169 @@ mainFileDescription = SimpleMatcher(name = 'Root',
                       startReStr = r"\s*Task\s*(?P<fhi_aims_parallel_task_nr>[0-9]+)\s*on host\s+(?P<fhi_aims_parallel_task_host>[-a-zA-Z0-9._]+)\s+reporting\.",
                       repeats = True,
                       sections = ["fhi_aims_section_parallel_task_assignement"])
-                    ])
-                  ]),
-    # parse verbatim writeout of control.in
-    controlInSubMatcher,
-    # parse geometry
-    geometrySubMatcher,
-    # trigger the output of the metadata connected to section_method
-    SimpleMatcher(name = 'ParallelTasksAssignement',
-                  startReStr = r"\s*Preparing all fixed parts of the calculation\.",
-                  sections = ["section_method"]),
-    # this regex should detect the first start of a single configuration calculation and the subsequent starts of relaxation and MD steps with updated configurations
+                    ]), # END nParallelTasks
+      SimpleMatcher(r"\s*Performing system and environment tests:"),
+                  ]), # END ProgramHeader
+    SimpleMatcher(r"\s*Obtaining array dimensions for all initial allocations:"),
+    # parse control and geometry
+    SimpleMatcher(name = 'SectionMethod',
+                  startReStr = r"\s*Parsing control\.in \(first pass over file, find array dimensions only\)\.",
+                  sections = ["section_method"],
+                  subMatchers = [
+      # parse verbatim writeout of control.in
+      controlInSubMatcher,
+      # parse verbatim writeout of geometry.in
+      geometryInSubMatcher,
+      # parse settings writeout of aims
+      controlInOutSubMatcher,
+      # parse geometry writeout of aims
+      geometrySubMatcher
+                  ]), # END SectionMethod
+    SimpleMatcher(r"\s*Preparing all fixed parts of the calculation\."),
+    # this SimpleMatcher groups a single configuration calculation together with output after SCF convergence from Relaxation and MD
     SimpleMatcher(name = 'SingleConfigurationCalculationWithSystemDescription',
-                  startReStr = r"\s*(?:Begin self-consistency loop: Initialization\.|Geometry optimization: Attempting to predict improved coordinates\.|Molecular dynamics: Attempting to update all nuclear coordinates\.)",
+                  startReStr = r"\s*Begin self-consistency loop: (?:I|Re-i)nitialization\.",
                   repeats = True,
                   forwardMatch = True,
                   subMatchers = [
-      # parse updated geometry for relaxation
-      SimpleMatcher(name = 'GeometryRelaxation',
-                    startReStr = r"\s*Geometry optimization: Attempting to predict improved coordinates\.",
-                    subMatchers = [
-                    ]),
-      # parse updated geometry for MD
-      SimpleMatcher(name = 'GeometryRelaxation',
-                    startReStr = r"\s*Molecular dynamics: Attempting to update all nuclear coordinates\.",
-                    subMatchers = [
-                    ]),
       # the actual section for a single configuration calculation starts here
       SimpleMatcher(name = 'SingleConfigurationCalculation',
                     startReStr = r"\s*Begin self-consistency loop: (?:I|Re-i)nitialization\.",
+                    repeats = True,
                     forwardMatch = True,
                     sections = ['section_single_configuration_calculation'],
                     subMatchers = [
+        # initialization of SCF loop, SCF iteration 0
         SimpleMatcher(name = 'ScfInitialization',
                       startReStr = r"\s*Begin self-consistency loop: (?:I|Re-i)nitialization\.",
                       sections = ['section_scf_iteration'],
                       subMatchers = [
           SimpleMatcher(r"\s*Date\s*:\s*(?P<fhi_aims_scf_date_start>[-.0-9/]+)\s*,\s*Time\s*:\s*(?P<fhi_aims_scf_time_start>[-+0-9.eEdD]+)"),
+          SimpleMatcher(r"\s*-{20}-*", weak = True),
           EigenvaluesGroupSubMatcher,
           TotalEnergyScfSubMatcher,
           SimpleMatcher(r"\s*Full exact exchange energy:\s*(?P<fhi_aims_energy_hartree_fock_X_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
-          SimpleMatcher(r"\s*End scf initialization - timings\s*:\s*max\(cpu_time\)\s+wall_clock\(cpu1\)")
-                       ]),
+          SimpleMatcher(r"\s*End scf initialization - timings\s*:\s*max\(cpu_time\)\s+wall_clock\(cpu1\)"),
+          SimpleMatcher(r"\s*-{20}-*", weak = True)
+                       ]), # END ScfInitialization
+        # normal SCF iterations
         SimpleMatcher(name = 'ScfIteration',
                       startReStr = r"\s*Begin self-consistency iteration #\s*[0-9]+",
                       sections = ['section_scf_iteration'],
                       repeats = True,
                       subMatchers = [
           SimpleMatcher(r"\s*Date\s*:\s*(?P<fhi_aims_scf_date_start>[-.0-9/]+)\s*,\s*Time\s*:\s*(?P<fhi_aims_scf_time_start>[-+0-9.eEdD]+)"),
+          SimpleMatcher(r"\s*-{20}-*", weak = True),
           SimpleMatcher(r"\s*Full exact exchange energy:\s*(?P<fhi_aims_energy_hartree_fock_X_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
           EigenvaluesGroupSubMatcher.copy(), # need copy since SubMatcher already used for ScfInitialization
           TotalEnergyScfSubMatcher.copy(), # need copy since SubMatcher already used for ScfInitialization
-          SimpleMatcher(r"\s*Self-consistency convergence accuracy:"),
-          SimpleMatcher(r"\s*\|\s*Change of charge(?:/spin)? density\s*:\s*[-+0-9.eEdD]+\s+[-+0-9.eEdD]*"),
-          SimpleMatcher(r"\s*\|\s*Change of sum of eigenvalues\s*:\s*[-+0-9.eEdD]+ *eV"),
-          SimpleMatcher(r"\s*\|\s*Change of total energy\s*:\s*(?P<energy_change_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
-          SimpleMatcher(r"\s*\|\s*Change of forces\s*:\s*[-+0-9.eEdD]+ *eV/A"),
-          # After convergence eigenvalues are printed in the end instead of usually in the beginning
+          # SCF convergence info
+          SimpleMatcher(name = 'SCFConvergence',
+                        startReStr = r"\s*Self-consistency convergence accuracy:",
+                        subMatchers = [
+            SimpleMatcher(r"\s*\|\s*Change of charge(?:/spin)? density\s*:\s*[-+0-9.eEdD]+\s+[-+0-9.eEdD]*"),
+            SimpleMatcher(r"\s*\|\s*Change of sum of eigenvalues\s*:\s*[-+0-9.eEdD]+ *eV"),
+            SimpleMatcher(r"\s*\|\s*Change of total energy\s*:\s*(?P<energy_change_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
+            SimpleMatcher(r"\s*\|\s*Change of forces\s*:\s*[-+0-9.eEdD]+ *eV/A"),
+            SimpleMatcher(r"\s*\|\s*Change of analytical stress\s*:\s*[-+0-9.eEdD]+ *eV/A\*\*3")
+                        ]), # END SCFConvergence
+          # after convergence eigenvalues are printed in the end instead of usually in the beginning
           EigenvaluesGroupSubMatcher.copy(), # need copy since SubMatcher already used for ScfInitialization
           SimpleMatcher(r"\s*End self-consistency iteration #\s*[0-9]+\s*:\s*max\(cpu_time\)\s+wall_clock\(cpu1\)"),
           SimpleMatcher(r"\s*Self-consistency cycle converged\.")
-                      ]),
+                      ]), # END ScfIteration
         # possible scalar ZORA post-processing
         SimpleMatcher(name = 'ScaledZORAPostProcessing',
                       startReStr = r"\s*Post-processing: scaled ZORA corrections to eigenvalues and total energy.",
                       endReStr = r"\s*End evaluation of scaled ZORA corrections.",
                       subMatchers = [
-          EigenvaluesGroupSubMatcher.copy(), # need copy since SubMatcher already used for ScfInitialization
+          SimpleMatcher(r"\s*Date\s*:\s*[-.0-9/]+\s*,\s*Time\s*:\s*[-+0-9.eEdD]+"),
+          SimpleMatcher(r"\s*-{20}-*", weak = True),
+          # TODO fix for scalar ZORA
+          #EigenvaluesGroupSubMatcher.copy(), # need copy since SubMatcher already used for ScfInitialization
           TotalEnergyZORASubMatcher
-                      ]),
-        SimpleMatcher(r"\s*Energy and forces in a compact form:"),
-        SimpleMatcher(r"\s*\|\s*Total energy uncorrected\s*:\s*(?P<energy_total__eV>[-+0-9.eEdD]+) *eV"),
-        SimpleMatcher(r"\s*\|\s*Total energy corrected\s*:\s*(?P<energy_total_T0__eV>[-+0-9.eEdD]+) *eV"),
-        SimpleMatcher(r"\s*\|\s*Electronic free energy\s*:\s*(?P<energy_free__eV>[-+0-9.eEdD]+) *eV"),
-        SimpleMatcher(r"\s*Start decomposition of the XC Energy"),
-        SimpleMatcher(r"\s*Hartree-Fock part\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_hartree_fock_X_scaled__eV>[-+0-9.eEdD]+) *eV"),
-        SimpleMatcher(r"\s*X Energy\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_X__eV>[-+0-9.eEdD]+) *eV"),
-        SimpleMatcher(r"\s*C Energy GGA\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_C__eV>[-+0-9.eEdD]+) *eV"),
-        SimpleMatcher(r"\s*Total XC Energy\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_XC__eV>[-+0-9.eEdD]+) *eV"),
-        SimpleMatcher(r"\s*LDA X and C from self-consistent density"),
-        SimpleMatcher(r"\s*X Energy LDA\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<fhi_aims_energy_X_LDA__eV>[-+0-9.eEdD]+) *eV"),
-        SimpleMatcher(r"\s*C Energy LDA\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<fhi_aims_energy_C_LDA__eV>[-+0-9.eEdD]+) *eV"),
-        SimpleMatcher(r"\s*End decomposition of the XC Energy"),
-                    ])
-                  ])
-                ])
-              ])
+                      ]), # END ScaledZORAPostProcessing
+        # summary of energy and forces
+        SimpleMatcher(name = 'EnergyForcesSummary',
+                      startReStr = r"\s*Energy and forces in a compact form:",
+                      subMatchers = [
+          SimpleMatcher(r"\s*\|\s*Total energy uncorrected\s*:\s*(?P<energy_total__eV>[-+0-9.eEdD]+) *eV"),
+          SimpleMatcher(r"\s*\|\s*Total energy corrected\s*:\s*(?P<energy_total_T0__eV>[-+0-9.eEdD]+) *eV"),
+          SimpleMatcher(r"\s*\|\s*Electronic free energy\s*:\s*(?P<energy_free__eV>[-+0-9.eEdD]+) *eV"),
+          SimpleMatcher(r"\s*-{20}-*", weak = True)
+                      ]), # END EnergyForcesSummary
+        # decomposition of the xc energy
+        SimpleMatcher(name = 'DecompositionXCEnergy',
+                      startReStr = r"\s*Start decomposition of the XC Energy",
+                      subMatchers = [
+          SimpleMatcher(r"\s*-{20}-*", weak = True),
+          SimpleMatcher(r"\s*Hartree-Fock part\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_hartree_fock_X_scaled__eV>[-+0-9.eEdD]+) *eV"),
+          SimpleMatcher(r"\s*-{20}-*", weak = True),
+          SimpleMatcher(r"\s*X Energy\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_X__eV>[-+0-9.eEdD]+) *eV"),
+          SimpleMatcher(r"\s*C Energy GGA\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_C__eV>[-+0-9.eEdD]+) *eV"),
+          SimpleMatcher(r"\s*Total XC Energy\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_XC_functional__eV>[-+0-9.eEdD]+) *eV"),
+          SimpleMatcher(r"\s*LDA X and C from self-consistent density"),
+          SimpleMatcher(r"\s*X Energy LDA\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<fhi_aims_energy_X_LDA__eV>[-+0-9.eEdD]+) *eV"),
+          SimpleMatcher(r"\s*C Energy LDA\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<fhi_aims_energy_C_LDA__eV>[-+0-9.eEdD]+) *eV"),
+          SimpleMatcher(r"\s*-{20}-*", weak = True),
+          SimpleMatcher(r"\s*End decomposition of the XC Energy"),
+          SimpleMatcher(r"\s*-{20}-*", weak = True)
+                      ]), # END DecompositionXCEnergy
+        # geometry relaxation
+        SimpleMatcher(name = 'Relaxation',
+                      startReStr = r"\s*Geometry optimization: Attempting to predict improved coordinates\.",
+                      subMatchers = [
+          SimpleMatcher(r"\s*Removing unitary transformations \(pure translations, rotations\) from forces on atoms\."),
+          SimpleMatcher(r"\s*Maximum force component is\s*[-+0-9.eEdD]\s*eV/A\."),
+          SimpleMatcher(r"\s*Present geometry is converged\."),
+          SimpleMatcher(name = 'RelaxationStep',
+                        startReStr = r"\s*Present geometry is not yet converged\.",
+                        subMatchers = [
+            SimpleMatcher(r"\s*Relaxation step number\s*[0-9]+: Predicting new coordinates\."),
+            SimpleMatcher(r"\s*Advancing geometry using (?:trust radius method|BFGS)\.")
+                        ]) # END RelaxationStep
+                      ]), # END Relaxation
+        # MD
+        SimpleMatcher(name = 'MD',
+                startReStr = r"\s*Molecular dynamics: Attempting to update all nuclear coordinates\.",
+                      subMatchers = [
+          SimpleMatcher(r"\s*Removing unitary transformations \(pure translations, rotations\) from forces on atoms\."),
+          SimpleMatcher(r"\s*Maximum force component is\s*[-+0-9.eEdD]\s*eV/A\."),
+          SimpleMatcher(r"\s*Present geometry is converged\."),
+          SimpleMatcher(name = 'MDStep',
+                        startReStr = r"\s*Advancing structure using Born-Oppenheimer Molecular Dynamics:",
+                        subMatchers = [
+            SimpleMatcher(r"\s*Complete information for previous time-step:"),
+            SimpleMatcher(r"\s*\|\s*Time step number\s*:\s*[0-9]+"),
+            SimpleMatcher(r"\s*-{20}-*", weak = True)
+                        ]) # END MDStep
+                      ]) # END MD
+                    ]), # END SingleConfigurationCalculation
+      # parse updated geometry for relaxation
+      geometryRelaxationSubMatcher,
+      # parse updated geometry for MD
+      #geometryMDSubMatcher
+                  ]), # END SingleConfigurationCalculationWithSystemDescription
+    SimpleMatcher(r"\s*-{20}-*", weak = True),
+    SimpleMatcher(r"\s*Final output of selected total energy values:"),
+    SimpleMatcher(r"\s*The following output summarizes some interesting total energy values"),
+    SimpleMatcher(r"\s*at the end of a run \(AFTER all relaxation, molecular dynamics, etc\.\)\."),
+    SimpleMatcher(r"\s*-{20}-*", weak = True),
+    SimpleMatcher(r"\s*-{20}-*", weak = True),
+    SimpleMatcher(r"\s*Leaving FHI-aims\."),
+    SimpleMatcher(r"\s*Date\s*:\s*[-.0-9/]+\s*,\s*Time\s*:\s*[-+0-9.eEdD]+"),
+    # summary of computational steps
+    SimpleMatcher(name = 'ComputationalSteps',
+                  startReStr = r"\s*Computational steps:",
+                  subMatchers = [
+      SimpleMatcher(r"\s*\|\s*Number of self-consistency cycles\s*:\s*[0-9]+"),
+      SimpleMatcher(r"\s*\|\s*Number of relaxation steps\s*:\s*[0-9]+"),
+      SimpleMatcher(r"\s*\|\s*Number of molecular dynamics steps\s*:\s*[0-9]+"),
+      SimpleMatcher(r"\s*\|\s*Number of force evaluations\s*:\s*[0-9]+")
+                  ]), # END ComputationalSteps
+    SimpleMatcher(r"\s*Detailed time accounting\s*:\s*max\(cpu_time\)\s+wall_clock\(cpu1\)")
+                ]) # END NewRun
+              ]) # END Root
 
 # loading metadata from nomad-meta-info/meta_info/nomad_meta_info/fhi_aims.nomadmetainfo.json
 metaInfoPath = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)),"../../../../nomad-meta-info/meta_info/nomad_meta_info/fhi_aims.nomadmetainfo.json"))
@@ -611,22 +844,23 @@ parserInfo = {'name':'fhi-aims-parser', 'version': '1.0'}
 # adjust caching of metadata
 cachingLevelForMetaName = {
                            'fhi_aims_energy_hartree_fock_X_scf_iteration': CachingLevel.Cache,
-                           'fhi_aims_section_eigenvalues_list': CachingLevel.Ignore,
-                           'fhi_aims_section_eigenvalues_spin': CachingLevel.Ignore,
-                           'fhi_aims_section_eigenvalues_group': CachingLevel.Ignore,
+                           'fhi_aims_section_eigenvalues_list': CachingLevel.Cache,
+                           'fhi_aims_section_eigenvalues_spin': CachingLevel.Cache,
+                           'fhi_aims_section_eigenvalues_group': CachingLevel.Cache,
                            'fhi_aims_eigenvalue_occupation': CachingLevel.Cache,
                            'fhi_aims_eigenvalue_eigenvalue': CachingLevel.Cache,
                            'fhi_aims_eigenvalue_kpoint1': CachingLevel.Cache,
                            'fhi_aims_eigenvalue_kpoint2': CachingLevel.Cache,
                            'fhi_aims_eigenvalue_kpoint3': CachingLevel.Cache,
+                           'fhi_aims_MD_flag': CachingLevel.Cache,
                           }
 
 if __name__ == "__main__":
-    # set all controlIn metadata to Cache to capture multiple occurrences of keywords
+    # set all controlIn and controlInOut metadata to Cache to capture multiple occurrences of keywords
     # their last value is then written by the onClose routine in the FhiAimsParserContext
     # set all geometry metadata to Cache as all of them need post-processsing
     for name in metaInfoEnv.infoKinds:
-        if name.startswith('fhi_aims_controlIn_') or name.startswith('fhi_aims_geometry_'):
+        if name.startswith('fhi_aims_controlIn_') or name.startswith('fhi_aims_controlInOut_') or name.startswith('fhi_aims_geometry_'):
             cachingLevelForMetaName[name] = CachingLevel.Cache
     mainFunction(mainFileDescription, metaInfoEnv, parserInfo, superContext = FhiAimsParserContext(), cachingLevelForMetaName = cachingLevelForMetaName, onClose = onClose)
 
