@@ -10,10 +10,10 @@ object FhiAimsParser extends SimpleExternalParserGenerator(
       mainFileTypes = Seq("text/.*"),
       mainFileRe = """\s*Invoking FHI-aims \.\.\.
 \s*Version """.r,
-      cmd = Seq(DefaultPythonInterpreter.python2Exe(), "${envDir}/parsers/fhi-aims/parser/parser-fhi-aims/SimpleFhiParser.py",
+      cmd = Seq(DefaultPythonInterpreter.python2Exe(), "${envDir}/parsers/fhi-aims/parser/parser-fhi-aims/FhiAimsParser.py",
         "--uri", "${mainFileUri}", "${mainFilePath}"),
       resList = Seq(
-        "parser-fhi-aims/SimpleFhiParser.py",
+        "parser-fhi-aims/FhiAimsParser.py",
         "parser-fhi-aims/setup_paths.py",
         "nomad_meta_info/common.nomadmetainfo.json",
         "nomad_meta_info/meta_types.nomadmetainfo.json",
