@@ -132,6 +132,39 @@ class FhiAimsParserContext(object):
             backend.addArrayValues('simulation_cell', np.asarray(unit_cell))
             self.periodicCalc = True
 
+    def update_eigenvalues(self, section, addStr):
+        """update eigenvalues and occupations if they were found in the given section"""
+        # get cached fhi_aims_section_eigenvalues_group
+        sec_ev_group = section['fhi_aims_section_eigenvalues_group%s' % addStr]
+        if sec_ev_group is not None:
+            # check if only one group was found
+            if len(sec_ev_group) != 1:
+                logger.warning("Found %d instead of 1 group of eigenvalues. Used entry 0." % len(sec_ev_group))
+            # get cached fhi_aims_section_eigenvalues_group
+            sec_ev_spins = sec_ev_group[0]['fhi_aims_section_eigenvalues_spin%s' % addStr]
+            for sec_ev_spin in sec_ev_spins:
+                occs = []
+                evs = []
+                kpoints = []
+                # get cached fhi_aims_section_eigenvalues_list
+                sec_ev_lists = sec_ev_spin['fhi_aims_section_eigenvalues_list%s' % addStr]
+                # extract occupations and eigenvalues
+                for sec_ev_list in sec_ev_lists:
+                    occs.append(sec_ev_list['fhi_aims_eigenvalue_occupation%s' % addStr])
+                    evs.append(sec_ev_list['fhi_aims_eigenvalue_occupation%s' % addStr])
+                # extract kpoints
+                for i in ['1', '2', '3']:
+                    ki = sec_ev_spin['fhi_aims_eigenvalue_kpoint%s%s' % (i, addStr)]
+                    if ki is not None:
+                        kpoints.append(ki)
+                # append values for each spin channel
+                self.eigenvalues_occupation.append(occs)
+                self.eigenvalues_eigenvalues.append(evs)
+                if kpoints:
+                    # transpose list
+                    kpoints = map(lambda *x: list(x), *kpoints)
+                    self.eigenvalues_kpoints.append(kpoints) 
+
     def onClose_section_method(self, backend, gIndex, section):
         """trigger called when section_method is closed"""
         # function to write k-grid for controlIn and controlInOut
@@ -291,56 +324,34 @@ class FhiAimsParserContext(object):
         backend.addValue('single_configuration_calculation_method_ref', self.secMethodIndex)
         backend.addValue('single_configuration_calculation_system_description_ref', self.secSystemDescriptionIndex)
 
+    def onClose_fhi_aims_section_eigenvalues_ZORA(self, backend, gIndex, section):
+        """trigger called when fhi_aims_section_eigenvalues_ZORA is closed"""
+        # reset eigenvalues
+        self.eigenvalues_occupation = []
+        self.eigenvalues_eigenvalues = []
+        self.eigenvalues_kpoints = []
+        self.update_eigenvalues(section, '_ZORA')
+
     def onClose_section_scf_iteration(self, backend, gIndex, section):
         """trigger called when section_scf_iteration is closed"""
         self.scfIterNr += 1
-        # The quantitties that are tracked during the SCF cycle are set to default.
+        # The quantitties that are tracked during the SCF cycle are reset to default.
         # I.e. scalar values are allowed to be set None, and lists are set to empty.
         # This ensures that after convergence only the values associated with the last SCF iteration are written
         # and not some values that appeared in earlier SCF iterations
         #
-        # extract current value for the energy values
-        # With scalar ZORA, the correctly scaled energy values are given in a separate post-processing step, which are read there.
-        # Therefore, we do not track the energy values for scalar ZORA.
+        # keep track of full exact exchange energy
+        self.energy_hartree_fock_X = section['fhi_aims_energy_hartree_fock_X_scf_iteration']
+        # With scalar ZORA, the correctly scaled energy values and igenvalues are given in a separate post-processing step,
+        # which are read there. Therefore, we do not track the energy values for scalar ZORA.
         if not self.scalarZORA:
             for k in self.totalEnergyList:
                 self.totalEnergyList[k] = section[k + '_scf_iteration']
-        # keep track of full exact exchange energy
-        self.energy_hartree_fock_X = section['fhi_aims_energy_hartree_fock_X_scf_iteration']
-        # get eigenvalues of current SCF iteration
-        self.eigenvalues_occupation = []
-        self.eigenvalues_eigenvalues = []
-        self.eigenvalues_kpoints = []
-        # get cached fhi_aims_section_eigenvalues_group
-        sec_ev_group = section['fhi_aims_section_eigenvalues_group']
-        if sec_ev_group is not None:
-            # check if only one group was found
-            if len(sec_ev_group) != 1:
-                logger.warning("Found %d instead of 1 group of eigenvalues. Used entry 0." % len(sec_ev_group))
-            # get cached fhi_aims_section_eigenvalues_group
-            sec_ev_spins = sec_ev_group[0]['fhi_aims_section_eigenvalues_spin']
-            for sec_ev_spin in sec_ev_spins:
-                occs = []
-                evs = []
-                kpoints = []
-                # get cached fhi_aims_section_eigenvalues_list
-                sec_ev_lists = sec_ev_spin['fhi_aims_section_eigenvalues_list']
-                # extract occupatons and eigenvalues
-                for sec_ev_list in sec_ev_lists:
-                    occs.append(sec_ev_list['fhi_aims_eigenvalue_occupation'])
-                    evs.append(sec_ev_list['fhi_aims_eigenvalue_occupation'])
-                # extract kpoints
-                for i in ['1', '2', '3']:
-                    ki = sec_ev_spin['fhi_aims_eigenvalue_kpoint' + i]
-                    if ki is not None:
-                        kpoints.append(ki)
-                # append values for each spin channel
-                self.eigenvalues_occupation.append(occs)
-                self.eigenvalues_eigenvalues.append(evs)
-                if kpoints:
-                    # transpose list
-                    kpoints = map(lambda *x: list(x), *kpoints)
-                    self.eigenvalues_kpoints.append(kpoints) 
+            # reset eigenvalues
+            self.eigenvalues_occupation = []
+            self.eigenvalues_eigenvalues = []
+            self.eigenvalues_kpoints = []
+            self.update_eigenvalues(section, '')
 
 ########################################
 # submatcher for control.in
@@ -528,67 +539,70 @@ geometryMDSubMatcher = SimpleMatcher(name = 'GeometryMD',
                 ]),
               ])
 ########################################
-# submatcher for eigenvalue list
-EigenvaluesListSubMatcher =  SimpleMatcher(name = 'EigenvaluesLists',
-              startReStr = r"\s*State\s*Occupation\s*Eigenvalue *\[Ha\]\s*Eigenvalue *\[eV\]",
-              sections = ['fhi_aims_section_eigenvalues_list'],
-              subMatchers = [
-  SimpleMatcher(startReStr = r"\s*[0-9]+\s+(?P<fhi_aims_eigenvalue_occupation>[0-9.eEdD]+)\s+[-+0-9.eEdD]+\s+(?P<fhi_aims_eigenvalue_eigenvalue__eV>[-+0-9.eEdD]+)", repeats = True)
-              ])
-########################################
 # submatcher for eigenvalues
-EigenvaluesGroupSubMatcher = SimpleMatcher(name = 'EigenvaluesGroup',
+# first define function to build submatcher for normal case and scaled ZORA
+def generateEigenvaluesGroupSubMatcher(addStr):
+    # submatcher for eigenvalue list
+    EigenvaluesListSubMatcher =  SimpleMatcher(name = 'EigenvaluesLists',
+              startReStr = r"\s*State\s*Occupation\s*Eigenvalue *\[Ha\]\s*Eigenvalue *\[eV\]",
+              sections = ['fhi_aims_section_eigenvalues_list%s' % addStr],
+              subMatchers = [
+      SimpleMatcher(startReStr = r"\s*[0-9]+\s+(?P<fhi_aims_eigenvalue_occupation%s>[0-9.eEdD]+)\s+[-+0-9.eEdD]+\s+(?P<fhi_aims_eigenvalue_eigenvalue%s__eV>[-+0-9.eEdD]+)" % (2 * (addStr,)), repeats = True)
+                  ])
+    return SimpleMatcher(name = 'EigenvaluesGroup',
               startReStr = r"\s*Writing Kohn-Sham eigenvalues\.",
-              sections = ['fhi_aims_section_eigenvalues_group'],
+              sections = ['fhi_aims_section_eigenvalues_group%s' % addStr],
               subMatchers = [
   # spin-polarized
   SimpleMatcher(name = 'EigenvaluesSpin',
                 startReStr = r"\s*Spin-(?:up|down) eigenvalues:",
-                sections = ['fhi_aims_section_eigenvalues_spin'],
+                sections = ['fhi_aims_section_eigenvalues_spin%s' % addStr],
                 repeats = True,
                 subMatchers = [
     # periodic
-    SimpleMatcher(startReStr = r"\s*K-point:\s*[0-9]+\s+at\s+(?P<fhi_aims_eigenvalue_kpoint1>[-+0-9.eEdD]+)\s+(?P<fhi_aims_eigenvalue_kpoint2>[-+0-9.eEdD]+)\s+(?P<fhi_aims_eigenvalue_kpoint3>[-+0-9.eEdD]+)\s+\(in units of recip\. lattice\)",
+    SimpleMatcher(startReStr = r"\s*K-point:\s*[0-9]+\s+at\s+(?P<fhi_aims_eigenvalue_kpoint1%s>[-+0-9.eEdD]+)\s+(?P<fhi_aims_eigenvalue_kpoint2%s>[-+0-9.eEdD]+)\s+(?P<fhi_aims_eigenvalue_kpoint3%s>[-+0-9.eEdD]+)\s+\(in units of recip\. lattice\)" % (3 * (addStr,)),
                   repeats = True,
                   subMatchers = [
       SimpleMatcher(startReStr = r"\s*State\s*Occupation\s*Eigenvalue *\[Ha\]\s*Eigenvalue *\[eV\]",
                     forwardMatch = True,
                     subMatchers = [
-        EigenvaluesListSubMatcher
+        EigenvaluesListSubMatcher.copy()
                     ])
                   ]),
     # non-periodic
     SimpleMatcher(startReStr = r"\s*State\s+Occupation\s+Eigenvalue *\[Ha\]\s+Eigenvalue *\[eV\]",
                   forwardMatch = True,
                   subMatchers = [
-      EigenvaluesListSubMatcher.copy() # need copy since SubMatcher already used above
+      EigenvaluesListSubMatcher.copy()
                   ])
                 ]), # END EigenvaluesSpin
   # non-spin-polarized, periodic
   SimpleMatcher(name = 'EigenvaluesNoSpinPeriodic',
                 startReStr = r"\s*K-point:\s*[0-9]+\s+at\s+.*\s+\(in units of recip\. lattice\)",
-                sections = ['fhi_aims_section_eigenvalues_spin'],
+                sections = ['fhi_aims_section_eigenvalues_spin%s' % addStr],
                 forwardMatch = True,
                 subMatchers = [
-    SimpleMatcher(startReStr = r"\s*K-point:\s*[0-9]+\s+at\s+(?P<fhi_aims_eigenvalue_kpoint1>[-+0-9.eEdD]+)\s+(?P<fhi_aims_eigenvalue_kpoint2>[-+0-9.eEdD]+)\s+(?P<fhi_aims_eigenvalue_kpoint3>[-+0-9.eEdD]+)\s+\(in units of recip\. lattice\)",
+    SimpleMatcher(startReStr = r"\s*K-point:\s*[0-9]+\s+at\s+(?P<fhi_aims_eigenvalue_kpoint1%s>[-+0-9.eEdD]+)\s+(?P<fhi_aims_eigenvalue_kpoint2%s>[-+0-9.eEdD]+)\s+(?P<fhi_aims_eigenvalue_kpoint3%s>[-+0-9.eEdD]+)\s+\(in units of recip\. lattice\)" % (3 * (addStr,)),
                   repeats = True,
                   subMatchers = [
       SimpleMatcher(startReStr = r"\s*State\s*Occupation\s*Eigenvalue *\[Ha\]\s*Eigenvalue *\[eV\]",
                     forwardMatch = True,
                     subMatchers = [
-        EigenvaluesListSubMatcher.copy() # need copy since SubMatcher already used above
+        EigenvaluesListSubMatcher.copy()
                     ])
                   ]),
                 ]), # END EigenvaluesNoSpinPeriodic
   # non-spin-polarized, non-periodic
   SimpleMatcher(name = 'EigenvaluesNoSpinNonPeriodic',
                 startReStr = r"\s*State\s+Occupation\s+Eigenvalue *\[Ha\]\s+Eigenvalue *\[eV\]",
-                sections = ['fhi_aims_section_eigenvalues_spin'],
+                sections = ['fhi_aims_section_eigenvalues_spin%s' % addStr],
                 forwardMatch = True,
                 subMatchers = [
-    EigenvaluesListSubMatcher.copy() # need copy since SubMatcher already used above
+    EigenvaluesListSubMatcher.copy()
                 ]), # END EigenvaluesNoSpinNonPeriodic
               ])
+EigenvaluesGroupSubMatcher = generateEigenvaluesGroupSubMatcher('')
+EigenvaluesGroupSubMatcherZORA = generateEigenvaluesGroupSubMatcher('_ZORA')
 ########################################
 # submatcher for total energy components during SCF interation
 TotalEnergyScfSubMatcher = SimpleMatcher(name = 'TotalEnergyScf',
@@ -748,8 +762,14 @@ mainFileDescription = SimpleMatcher(name = 'Root',
                       subMatchers = [
           SimpleMatcher(r"\s*Date\s*:\s*[-.0-9/]+\s*,\s*Time\s*:\s*[-+0-9.eEdD]+"),
           SimpleMatcher(r"\s*-{20}-*", weak = True),
-          # TODO fix for scalar ZORA
-          #EigenvaluesGroupSubMatcher.copy(), # need copy since SubMatcher already used for ScfInitialization
+          # parse eigenvalues
+          SimpleMatcher(name = 'EigenvaluesListsZORA',
+                        startReStr = r"\s*Writing Kohn-Sham eigenvalues\.",
+                        forwardMatch = True,
+                        sections = ['fhi_aims_section_eigenvalues_ZORA'],
+                        subMatchers = [
+            EigenvaluesGroupSubMatcherZORA
+                        ]), # END EigenvaluesListsZORA
           TotalEnergyZORASubMatcher
                       ]), # END ScaledZORAPostProcessing
         # summary of energy and forces
@@ -844,14 +864,6 @@ parserInfo = {'name':'fhi-aims-parser', 'version': '1.0'}
 # adjust caching of metadata
 cachingLevelForMetaName = {
                            'fhi_aims_energy_hartree_fock_X_scf_iteration': CachingLevel.Cache,
-                           'fhi_aims_section_eigenvalues_list': CachingLevel.Cache,
-                           'fhi_aims_section_eigenvalues_spin': CachingLevel.Cache,
-                           'fhi_aims_section_eigenvalues_group': CachingLevel.Cache,
-                           'fhi_aims_eigenvalue_occupation': CachingLevel.Cache,
-                           'fhi_aims_eigenvalue_eigenvalue': CachingLevel.Cache,
-                           'fhi_aims_eigenvalue_kpoint1': CachingLevel.Cache,
-                           'fhi_aims_eigenvalue_kpoint2': CachingLevel.Cache,
-                           'fhi_aims_eigenvalue_kpoint3': CachingLevel.Cache,
                            'fhi_aims_MD_flag': CachingLevel.Cache,
                           }
 
@@ -859,8 +871,14 @@ if __name__ == "__main__":
     # set all controlIn and controlInOut metadata to Cache to capture multiple occurrences of keywords
     # their last value is then written by the onClose routine in the FhiAimsParserContext
     # set all geometry metadata to Cache as all of them need post-processsing
+    # set all eigenvalue related metadata to Cache
     for name in metaInfoEnv.infoKinds:
-        if name.startswith('fhi_aims_controlIn_') or name.startswith('fhi_aims_controlInOut_') or name.startswith('fhi_aims_geometry_'):
+        if (  name.startswith('fhi_aims_controlIn_')
+            or name.startswith('fhi_aims_controlInOut_')
+            or name.startswith('fhi_aims_geometry_')
+            or name.startswith('fhi_aims_eigenvalue_')
+            or name.startswith('fhi_aims_section_eigenvalues_')
+           ):
             cachingLevelForMetaName[name] = CachingLevel.Cache
     mainFunction(mainFileDescription, metaInfoEnv, parserInfo, superContext = FhiAimsParserContext(), cachingLevelForMetaName = cachingLevelForMetaName, onClose = onClose)
 
