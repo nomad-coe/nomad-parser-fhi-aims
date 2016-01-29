@@ -22,14 +22,12 @@ class FhiAimsParserContext(object):
         self.scalarZORA = False
         self.periodicCalc = False
         self.MD = False
-        self.xc = None
-        self.energy_hartree_fock_X = None
         # start with -1 since zeroth iteration is the initialization
         self.scfIterNr = -1
         self.eigenvalues_occupation = []
         self.eigenvalues_eigenvalues = []
         self.eigenvalues_kpoints = []
-        # dictonary of energy values, which are tracked between scf iterations and printed after convergence
+        # dictionary of energy values, which are tracked between SCF iterations and written after convergence
         self.totalEnergyList = {
                                 'energy_sum_eigenvalues': None,
                                 'energy_XC_potential': None,
@@ -42,7 +40,7 @@ class FhiAimsParserContext(object):
                                 'energy_total_T0_per_atom': None,
                                 'energy_free_per_atom': None,
                                }
-        # dictonary for conversion of xc functional name in aims to metadata format
+        # dictionary for conversion of xc functional name in aims to metadata format
         # TODO hybrid GGA and mGGA functionals and vdW functionals
         self.xcDict = {
                        'Perdew-Wang parametrisation of Ceperley-Alder LDA': 'LDA_C_PW_LDA_X',
@@ -63,77 +61,27 @@ class FhiAimsParserContext(object):
                        'TPSSloc gradient-corrected functionals': 'MGGA_C_TPSSLOC_MGGA_X_TPSS',
                        'Hartree-Fock': 'HF_X',
                       }
-        # dictonary for conversion of relativistic treatment in aims to metadata format
+        # dictionary for conversion of relativistic treatment in aims to metadata format
         self.relativisticDict = {
                                  'Non-relativistic': '',
                                  'ZORA': 'scalar_relativistic',
                                  'on-site free-atom approximation to ZORA': 'scalar_relativistic_atomic_ZORA',
                                 }
 
-    def startedParsing(self, name, parser):
+    def startedParsing(self, fInName, parser):
+        """Function is called when the parsing starts.
+
+        Get compiled parser.
+        Later one can compile a parser for parsing an external file.
+        """
         self.parser = parser
 
-    def onClose_section_run(self, backend, gIndex, section):
-        """trigger called when section_run is closed"""
-        # write the keywords from control.in and the aims output from the parsed control.in, which belong to settings_run
-        # ATTENTION
-        # backend.superBackend is used here instead of only the backend to write the JSON values,
-        # since this allows to bybass the caching setting which was used to collect the values for processing.
-        # However, this also bypasses the checking of validity of the metadata name by the backend.
-        # The scala part will check the validity nevertheless.
-        #
-        # write the last occurrence of a keyword, i.e. [-1], since aims uses the last occurrence of a keyword
-        # convert keyword values which are strings to lowercase for consistency
-        for k,v in section.simpleValues.items():
-            if k.startswith('fhi_aims_controlIn_') or k.startswith('fhi_aims_controlInOut_'):
-                if k.startswith('fhi_aims_controlIn_') and isinstance(v[-1], str):
-                    value = v[-1].lower()
-                else:
-                    value = v[-1]
-                backend.superBackend.addValue(k, value)
-        # reset all variables after parsing a run
-        self.secMethodIndex = None
-        self.secSystemDescriptionIndex = None
-        self.scalarZORA = False
-        self.periodicCalc = False
-        self.MD = False
-        self.xc = None
-        self.energy_hartree_fock_X = None
-        # start with -1 since zeroth iteration is the initialization
-        self.scfIterNr = -1
-        self.eigenvalues_occupation = []
-        self.eigenvalues_eigenvalues = []
-        self.eigenvalues_kpoints = []
-
-    def write_system_description(self, backend, gIndex, section):
-        """writes atomic positions, atom labels and lattice vectors"""
-        # write atomic positions
-        atom_pos = []
-        for i in ['x', 'y', 'z']:
-            api = section['fhi_aims_geometry_atom_position_' + i]
-            if api is not None:
-                atom_pos.append(api)
-        if atom_pos is not None:
-            # Need to transpose array since its shape is given by [number_of_atoms,3] in the metadata
-            backend.addArrayValues('atom_position', np.transpose(np.asarray(atom_pos)))
-        # write atom labels
-        atom_labels = section['fhi_aims_geometry_atom_label']
-        if atom_labels is not None:
-            backend.addArrayValues('atom_label', np.asarray(atom_labels))
-        # write unit cell if present and set flag self.periodicCalc
-        unit_cell = []
-        for i in ['x', 'y', 'z']:
-            uci = section['fhi_aims_geometry_lattice_vector_' + i]
-            if uci is not None:
-                unit_cell.append(uci)
-        if unit_cell:
-            # From metadata: The first index is x,y,z and the second index the lattice vector.
-            # => unit_cell has already the right format
-            backend.addArrayValues('simulation_cell', np.asarray(unit_cell))
-            self.periodicCalc = True
-
     def update_eigenvalues(self, section, addStr):
-        """update eigenvalues and occupations if they were found in the given section"""
+        """Update eigenvalues and occupations if they were found in the given section.
+
+        addStr allows to use this function for the eigenvalues of scalar ZORA
+        by extending the metadata with addStr.
+        """
         # get cached fhi_aims_section_eigenvalues_group
         sec_ev_group = section['fhi_aims_section_eigenvalues_group%s' % addStr]
         if sec_ev_group is not None:
@@ -150,8 +98,12 @@ class FhiAimsParserContext(object):
                 sec_ev_lists = sec_ev_spin['fhi_aims_section_eigenvalues_list%s' % addStr]
                 # extract occupations and eigenvalues
                 for sec_ev_list in sec_ev_lists:
-                    occs.append(sec_ev_list['fhi_aims_eigenvalue_occupation%s' % addStr])
-                    evs.append(sec_ev_list['fhi_aims_eigenvalue_occupation%s' % addStr])
+                    occ = sec_ev_list['fhi_aims_eigenvalue_occupation%s' % addStr]
+                    if occ is not None:
+                        occs.append(occ)
+                    ev = sec_ev_list['fhi_aims_eigenvalue_occupation%s' % addStr]
+                    if ev is not None:
+                        evs.append(ev)
                 # extract kpoints
                 for i in ['1', '2', '3']:
                     ki = sec_ev_spin['fhi_aims_eigenvalue_kpoint%s%s' % (i, addStr)]
@@ -165,10 +117,56 @@ class FhiAimsParserContext(object):
                     kpoints = map(lambda *x: list(x), *kpoints)
                     self.eigenvalues_kpoints.append(kpoints) 
 
+    def onClose_section_run(self, backend, gIndex, section):
+        """Trigger called when section_run is closed.
+
+        Write the keywords from control.in and the aims output from the parsed control.in, which belong to settings_run.
+        Write the last occurrence of a keyword/setting, i.e. [-1], since aims uses the last occurrence of a keyword.
+        Variables are reset to ensure clean start for new run.
+
+        ATTENTION
+        backend.superBackend is used here instead of only the backend to write the JSON values,
+        since this allows to bybass the caching setting which was used to collect the values for processing.
+        However, this also bypasses the checking of validity of the metadata name by the backend.
+        The scala part will check the validity nevertheless.
+        """
+        # write settings
+        for k,v in section.simpleValues.items():
+            if k.startswith('fhi_aims_controlIn_') or k.startswith('fhi_aims_controlInOut_'):
+                # convert control.in keyword values which are strings to lowercase for consistency
+                if k.startswith('fhi_aims_controlIn_') and isinstance(v[-1], str):
+                    value = v[-1].lower()
+                else:
+                    value = v[-1]
+                backend.superBackend.addValue(k, value)
+        # reset all variables
+        self.secMethodIndex = None
+        self.secSystemDescriptionIndex = None
+        self.scalarZORA = False
+        self.periodicCalc = False
+        self.MD = False
+        self.scfIterNr = -1
+        self.eigenvalues_occupation = []
+        self.eigenvalues_eigenvalues = []
+        self.eigenvalues_kpoints = []
+
     def onClose_section_method(self, backend, gIndex, section):
-        """trigger called when section_method is closed"""
-        # function to write k-grid for controlIn and controlInOut
+        """Trigger called when section_method is closed.
+
+        Write the keywords from control.in and the aims output from the parsed control.in, which belong to section_method.
+        Write the last occurrence of a keyword/setting, i.e. [-1], since aims uses the last occurrence of a keyword.
+        Detect MD and scalar ZORA here.
+        Write metadata for XC-functional and relativity_method using the dictionaries xcDict and relativisticDict.
+
+        ATTENTION
+        backend.superBackend is used here instead of only the backend to write the JSON values,
+        since this allows to bybass the caching setting which was used to collect the values for processing.
+        However, this also bypasses the checking of validity of the metadata name by the backend.
+        The scala part will check the validity nevertheless.
+        """
         def write_k_grid(metaName, valuesDict):
+            """Function to write k-grid for controlIn and controlInOut.
+            """
             k_grid = []
             for i in ['1', '2', '3']:
                 ki = valuesDict.get(metaName + i)
@@ -178,17 +176,11 @@ class FhiAimsParserContext(object):
                 backend.superBackend.addArrayValues(metaName + '_grid', np.asarray(k_grid))
         # keep track of the latest method section
         self.secMethodIndex = gIndex
-        # write the keywords from control.in and the aims output from the parsed control.in which belong to section_method
-        # ATTENTION
-        # backend.superBackend is used here instead of only the backend to write the JSON values,
-        # since this allows to bybass the caching setting which was used to collect the values for processing.
-        # However, this also bypasses the checking of validity of the metadata name by the backend.
-        # The scala part will check the validity nevertheless.
-        #
         # list of excluded metadata
-        # k_grid is written with k1 so that k2 and k2 are not needed
-        # fhi_aims_controlIn_relativistic_threshold is written with fhi_aims_controlIn_relativistic
-        # the xc setting have to handeled separatly since having more than one gives undifined behavior
+        # k_grid is written with k1 so that k2 and k2 are not needed.
+        # fhi_aims_controlIn_relativistic_threshold is written with fhi_aims_controlIn_relativistic.
+        # The xc setting have to be handeled separatly since having more than one gives undefined behavior.
+        # hse_omega is only written if HSE was used and converted according to the given unit.
         exclude_list = ['fhi_aims_controlIn_k2',
                         'fhi_aims_controlIn_k3',
                         'fhi_aims_controlInOut_k2',
@@ -199,8 +191,7 @@ class FhiAimsParserContext(object):
                         'fhi_aims_controlIn_hse_omega',
                         'fhi_aims_controlInOut_hse_omega',
                        ]
-        # write the last occurrence of a keyword, i.e. [-1], since aims uses the last occurrence of a keyword
-        # convert keyword values which are strings to lowercase for consistency
+        # write settings
         for k,v in section.simpleValues.items():
             if k.startswith('fhi_aims_controlIn_') or k.startswith('fhi_aims_controlInOut_'):
                 if k in exclude_list:
@@ -227,6 +218,7 @@ class FhiAimsParserContext(object):
                             backend.superBackend.addValue(k, v[-1])
                 # default writeout
                 else:
+                    # convert keyword values which are strings to lowercase for consistency
                     if k.startswith('fhi_aims_controlIn_') and isinstance(v[-1], str):
                         value = v[-1].lower()
                     else:
@@ -246,43 +238,77 @@ class FhiAimsParserContext(object):
             if relativistic is not None:
                 backend.addValue('relativity_method', relativistic)
             else:
-                logger.warning("The relativistic setting '%s' could not be converted to the required string for the metadata. Please add it to the dictionary relativisticDict." % InOut_relativistic[-1])
+                logger.warning("The relativistic setting '%s' could not be converted to the required string for the metadata 'relativity_method'. Please add it to the dictionary relativisticDict." % InOut_relativistic[-1])
         # handling xc functional
         In_xc = section['fhi_aims_controlIn_xc']
         if In_xc is not None:
             # check if only one xc keyword was found in control.in
             if len(In_xc) > 1:
-                logger.warning("Found %d settings for the xc functional in control.in. This leads to an undefined behavior und no metadata can be written for fhi_aims_controlIn_xc." % len(In_xc))
+                logger.warning("Found %d settings for the xc functional in control.in: %s. This leads to an undefined behavior und no metadata can be written for fhi_aims_controlIn_xc." % (len(In_xc), In_xc))
             else:
                 backend.superBackend.addValue('fhi_aims_controlIn_xc', In_xc[-1])
+                # hse_omega is only written for HSE06
                 In_hse_omega = section['fhi_aims_controlIn_hse_omega']
-                if In_hse_omega is not None:
+                if In_hse_omega is not None and re.match('hse06', In_xc[-1], re.IGNORECASE):
                     backend.superBackend.addValue('fhi_aims_controlIn_hse_omega', In_hse_omega[-1])
         InOut_xc = section['fhi_aims_controlInOut_xc']
         if InOut_xc is not None:
             # check if only one xc keyword was found in the aims output from the parsed control.in
             if len(InOut_xc) > 1:
-                logger.error("Found %d settings for the xc functional in the aims output from the parsed control.in. This leads to an undefined behavior und no metadata can be written for fhi_aims_controlInOut_xc and XC_functional." % len(InOut_xc))
+                logger.error("Found %d settings for the xc functional in the aims output from the parsed control.in: %s. This leads to an undefined behavior und no metadata can be written for fhi_aims_controlInOut_xc and XC_functional." % (len(InOut_xc), InOut_xc))
             else:
                 backend.superBackend.addValue('fhi_aims_controlInOut_xc', InOut_xc[-1])
+                # hse_omega is only written for HSE06
                 InOut_hse_omega = section['fhi_aims_controlInOut_hse_omega']
-                if InOut_hse_omega is not None:
+                if InOut_hse_omega is not None and InOut_xc[-1] == 'HSE-functional':
                     backend.superBackend.addValue('fhi_aims_controlInOut_hse_omega', InOut_hse_omega[-1])
                 # convert xc functional to metadata string
                 xc = self.xcDict.get(InOut_xc[-1])
                 if xc is not None:
                     backend.addValue('XC_functional', xc)
                 else:
-                    logger.error("The xc functional '%s' could not be converted to the required string for the metadata. Please add it to the dictionary xcDict." % InOut_xc[-1])
+                    logger.error("The xc functional '%s' could not be converted to the required string for the metadata 'XC_functional'. Please add it to the dictionary xcDict." % InOut_xc[-1])
 
     def onClose_section_system_description(self, backend, gIndex, section):
-        """trigger called when section_system_description is closed"""
+        """Trigger called when section_system_description is closed.
+
+        Writes atomic positions, atom labels and lattice vectors.
+        """
         # keep track of the latest system description section
         self.secSystemDescriptionIndex = gIndex
-        self.write_system_description(backend, gIndex, section)
+        # write atomic positions
+        atom_pos = []
+        for i in ['x', 'y', 'z']:
+            api = section['fhi_aims_geometry_atom_position_' + i]
+            if api is not None:
+                atom_pos.append(api)
+        if atom_pos is not None:
+            # need to transpose array since its shape is given by [number_of_atoms,3] in the metadata
+            backend.addArrayValues('atom_position', np.transpose(np.asarray(atom_pos)))
+        # write atom labels
+        atom_labels = section['fhi_aims_geometry_atom_label']
+        if atom_labels is not None:
+            backend.addArrayValues('atom_label', np.asarray(atom_labels))
+        # write unit cell if present and set flag self.periodicCalc
+        unit_cell = []
+        for i in ['x', 'y', 'z']:
+            uci = section['fhi_aims_geometry_lattice_vector_' + i]
+            if uci is not None:
+                unit_cell.append(uci)
+        if unit_cell:
+            # from metadata: "The first index is x,y,z and the second index the lattice vector."
+            # => unit_cell has already the right format
+            backend.addArrayValues('simulation_cell', np.asarray(unit_cell))
+            self.periodicCalc = True
 
     def onClose_section_single_configuration_calculation(self, backend, gIndex, section):
-        """trigger called when section_single_configuration_calculation is closed"""
+        """Trigger called when section_single_configuration_calculation is closed.
+
+        Write number of SCF iterations.
+        Write eigenvalues.
+        Write converged energy values (not for scalar ZORA as these values are extracted separatly).
+        Write reference to section_method and section_system_description
+        """
         # write number of SCF iterations
         backend.addValue('scf_dft_number_of_iterations', self.scfIterNr)
         # start with -1 since zeroth iteration is the initialization
@@ -312,10 +338,8 @@ class FhiAimsParserContext(object):
             else:
                 logger.warning("Found %d spin channels for eigenvalue occupation but %d for eigenvalues in single configuration calculation %d." % (len(occ), len(ev), gIndex))
         # write converged energy values
-        if self.energy_hartree_fock_X is not None:
-            backend.addValue('energy_hartree_fock_X', self.energy_hartree_fock_X)
-        # with scalar ZORA, the correctly scaled energy values are given in a separate post-processing step, which are read there
-        # therefore, we don't write the energy values for scalar ZORA
+        # With scalar ZORA, the correctly scaled energy values are given in a separate post-processing step, which are read there.
+        # Therefore, we do not write the energy values for scalar ZORA.
         if not self.scalarZORA:
             for k,v in self.totalEnergyList.items():
                 if v is not None:
@@ -325,7 +349,10 @@ class FhiAimsParserContext(object):
         backend.addValue('single_configuration_calculation_system_description_ref', self.secSystemDescriptionIndex)
 
     def onClose_fhi_aims_section_eigenvalues_ZORA(self, backend, gIndex, section):
-        """trigger called when fhi_aims_section_eigenvalues_ZORA is closed"""
+        """Trigger called when fhi_aims_section_eigenvalues_ZORA is closed.
+
+        Eigenvalues are extracted.
+        """
         # reset eigenvalues
         self.eigenvalues_occupation = []
         self.eigenvalues_eigenvalues = []
@@ -333,16 +360,21 @@ class FhiAimsParserContext(object):
         self.update_eigenvalues(section, '_ZORA')
 
     def onClose_section_scf_iteration(self, backend, gIndex, section):
-        """trigger called when section_scf_iteration is closed"""
+        """Trigger called when section_scf_iteration is closed.
+
+        Count number of SCF iterations.
+        Energy values are tracked (not for scalar ZORA as these values are extracted separatly).
+        Eigenvalues are tracked (not for scalar ZORA, see onClose_fhi_aims_section_eigenvalues_ZORA).
+
+        The quantitties that are tracked during the SCF cycle are reset to default.
+        I.e. scalar values are allowed to be set None, and lists are set to empty.
+        This ensures that after convergence only the values associated with the last SCF iteration are written
+        and not some values that appeared in earlier SCF iterations.
+        """
+        # count number of SCF iterations
         self.scfIterNr += 1
-        # The quantitties that are tracked during the SCF cycle are reset to default.
-        # I.e. scalar values are allowed to be set None, and lists are set to empty.
-        # This ensures that after convergence only the values associated with the last SCF iteration are written
-        # and not some values that appeared in earlier SCF iterations
-        #
-        # keep track of full exact exchange energy
-        self.energy_hartree_fock_X = section['fhi_aims_energy_hartree_fock_X_scf_iteration']
-        # With scalar ZORA, the correctly scaled energy values and igenvalues are given in a separate post-processing step,
+        # keep track of energies
+        # With scalar ZORA, the correctly scaled energy values and eigenvalues are given in a separate post-processing step,
         # which are read there. Therefore, we do not track the energy values for scalar ZORA.
         if not self.scalarZORA:
             for k in self.totalEnergyList:
@@ -435,6 +467,7 @@ controlInOutSubMatcher = SimpleMatcher(name = 'ControlInOut',
     SimpleMatcher(r"\s*Scalar relativistic treatment of kinetic energy: (?P<fhi_aims_controlInOut_relativistic>[-a-zA-Z\s]+)\.", repeats = True),
     SimpleMatcher(r"\s*(?P<fhi_aims_controlInOut_relativistic>Non-relativistic) treatment of kinetic energy\.", repeats = True),
     SimpleMatcher(r"\s*Threshold value for ZORA:\s*(?P<fhi_aims_controlInOut_relativistic_threshold>[-+0-9.eEdD]+)", repeats = True),
+    # need several regualar expressions to capture all possible output messages of the xc functional
     SimpleMatcher(r"\s*XC: Using (?P<fhi_aims_controlInOut_xc>[-_a-zA-Z0-9\s()]+)(?:\.| NOTE)", repeats = True),
     SimpleMatcher(r"\s*XC: Using (?P<fhi_aims_controlInOut_xc>HSE-functional) with OMEGA =\s*(?P<fhi_aims_controlInOut_hse_omega>[-+0-9.eEdD]+)\s*<units>\.", repeats = True),
     SimpleMatcher(r"\s*XC: Using (?P<fhi_aims_controlInOut_xc>Hybrid M11 gradient-corrected functionals) with OMEGA =\s*[-+0-9.eEdD]+", repeats = True),
@@ -540,7 +573,7 @@ geometryMDSubMatcher = SimpleMatcher(name = 'GeometryMD',
               ])
 ########################################
 # submatcher for eigenvalues
-# first define function to build submatcher for normal case and scaled ZORA
+# first define function to build submatcher for normal case and scalar ZORA
 def generateEigenvaluesGroupSubMatcher(addStr):
     # submatcher for eigenvalue list
     EigenvaluesListSubMatcher =  SimpleMatcher(name = 'EigenvaluesLists',
@@ -725,7 +758,7 @@ mainFileDescription = SimpleMatcher(name = 'Root',
           SimpleMatcher(r"\s*-{20}-*", weak = True),
           EigenvaluesGroupSubMatcher,
           TotalEnergyScfSubMatcher,
-          SimpleMatcher(r"\s*Full exact exchange energy:\s*(?P<fhi_aims_energy_hartree_fock_X_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
+          SimpleMatcher(r"\s*Full exact exchange energy:\s*[-+0-9.eEdD]+ *eV"),
           SimpleMatcher(r"\s*End scf initialization - timings\s*:\s*max\(cpu_time\)\s+wall_clock\(cpu1\)"),
           SimpleMatcher(r"\s*-{20}-*", weak = True)
                        ]), # END ScfInitialization
@@ -737,7 +770,7 @@ mainFileDescription = SimpleMatcher(name = 'Root',
                       subMatchers = [
           SimpleMatcher(r"\s*Date\s*:\s*(?P<fhi_aims_scf_date_start>[-.0-9/]+)\s*,\s*Time\s*:\s*(?P<fhi_aims_scf_time_start>[-+0-9.eEdD]+)"),
           SimpleMatcher(r"\s*-{20}-*", weak = True),
-          SimpleMatcher(r"\s*Full exact exchange energy:\s*(?P<fhi_aims_energy_hartree_fock_X_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
+          SimpleMatcher(r"\s*Full exact exchange energy:\s*[-+0-9.eEdD]+ *eV"),
           EigenvaluesGroupSubMatcher.copy(), # need copy since SubMatcher already used for ScfInitialization
           TotalEnergyScfSubMatcher.copy(), # need copy since SubMatcher already used for ScfInitialization
           # SCF convergence info
@@ -863,15 +896,14 @@ onClose = {}
 parserInfo = {'name':'fhi-aims-parser', 'version': '1.0'}
 # adjust caching of metadata
 cachingLevelForMetaName = {
-                           'fhi_aims_energy_hartree_fock_X_scf_iteration': CachingLevel.Cache,
                            'fhi_aims_MD_flag': CachingLevel.Cache,
                           }
 
 if __name__ == "__main__":
-    # set all controlIn and controlInOut metadata to Cache to capture multiple occurrences of keywords
-    # their last value is then written by the onClose routine in the FhiAimsParserContext
-    # set all geometry metadata to Cache as all of them need post-processsing
-    # set all eigenvalue related metadata to Cache
+    # Set all controlIn and controlInOut metadata to Cache to capture multiple occurrences of keywords and
+    # their last value is then written by the onClose routine in the FhiAimsParserContext.
+    # Set all geometry metadata to Cache as all of them need post-processsing.
+    # Set all eigenvalue related metadata to Cache.
     for name in metaInfoEnv.infoKinds:
         if (  name.startswith('fhi_aims_controlIn_')
             or name.startswith('fhi_aims_controlInOut_')
