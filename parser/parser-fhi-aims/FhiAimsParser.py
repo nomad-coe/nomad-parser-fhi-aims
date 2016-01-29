@@ -24,6 +24,8 @@ class FhiAimsParserContext(object):
         self.MD = False
         # start with -1 since zeroth iteration is the initialization
         self.scfIterNr = -1
+        self.scfConvergence = False
+        self.geoConvergence = None
         self.eigenvalues_occupation = []
         self.eigenvalues_eigenvalues = []
         self.eigenvalues_kpoints = []
@@ -120,6 +122,7 @@ class FhiAimsParserContext(object):
     def onClose_section_run(self, backend, gIndex, section):
         """Trigger called when section_run is closed.
 
+        Write convergence of geometry optimization.
         Write the keywords from control.in and the aims output from the parsed control.in, which belong to settings_run.
         Write the last occurrence of a keyword/setting, i.e. [-1], since aims uses the last occurrence of a keyword.
         Variables are reset to ensure clean start for new run.
@@ -130,6 +133,9 @@ class FhiAimsParserContext(object):
         However, this also bypasses the checking of validity of the metadata name by the backend.
         The scala part will check the validity nevertheless.
         """
+        # write for geometry optimization convergence
+        if self.geoConvergence is not None:
+            backend.addValue('geometry_optimization_converged', self.geoConvergence)
         # write settings
         for k,v in section.simpleValues.items():
             if k.startswith('fhi_aims_controlIn_') or k.startswith('fhi_aims_controlInOut_'):
@@ -146,6 +152,8 @@ class FhiAimsParserContext(object):
         self.periodicCalc = False
         self.MD = False
         self.scfIterNr = -1
+        self.scfConvergence = False
+        self.geoConvergence = None
         self.eigenvalues_occupation = []
         self.eigenvalues_eigenvalues = []
         self.eigenvalues_kpoints = []
@@ -304,13 +312,23 @@ class FhiAimsParserContext(object):
     def onClose_section_single_configuration_calculation(self, backend, gIndex, section):
         """Trigger called when section_single_configuration_calculation is closed.
 
-        Write number of SCF iterations.
+        Write number of SCF iterations and convergence.
+        Check for convergence of geometry optimization.
         Write eigenvalues.
         Write converged energy values (not for scalar ZORA as these values are extracted separatly).
         Write reference to section_method and section_system_description
         """
         # write number of SCF iterations
         backend.addValue('scf_dft_number_of_iterations', self.scfIterNr)
+        # write SCF convergence and reset
+        backend.addValue('single_configuration_calculation_converged', self.scfConvergence)
+        self.scfConvergence = False
+        # check for geometry optimization convergence
+        if section['fhi_aims_geometry_optimization_converged'] is not None:
+            if section['fhi_aims_geometry_optimization_converged'][-1] == 'is converged':
+                self.geoConvergence = True
+            else:
+                self.geoConvergence = False
         # start with -1 since zeroth iteration is the initialization
         self.scfIterNr = -1
         # write eigenvalues if found
@@ -362,7 +380,7 @@ class FhiAimsParserContext(object):
     def onClose_section_scf_iteration(self, backend, gIndex, section):
         """Trigger called when section_scf_iteration is closed.
 
-        Count number of SCF iterations.
+        Count number of SCF iterations and check for convergence.
         Energy values are tracked (not for scalar ZORA as these values are extracted separatly).
         Eigenvalues are tracked (not for scalar ZORA, see onClose_fhi_aims_section_eigenvalues_ZORA).
 
@@ -373,6 +391,9 @@ class FhiAimsParserContext(object):
         """
         # count number of SCF iterations
         self.scfIterNr += 1
+        # check for SCF convergence
+        if section['fhi_aims_single_configuration_calculation_converged'] is not None:
+            self.scfConvergence = True
         # keep track of energies
         # With scalar ZORA, the correctly scaled energy values and eigenvalues are given in a separate post-processing step,
         # which are read there. Therefore, we do not track the energy values for scalar ZORA.
@@ -785,8 +806,8 @@ mainFileDescription = SimpleMatcher(name = 'Root',
                         ]), # END SCFConvergence
           # after convergence eigenvalues are printed in the end instead of usually in the beginning
           EigenvaluesGroupSubMatcher.copy(), # need copy since SubMatcher already used for ScfInitialization
-          SimpleMatcher(r"\s*End self-consistency iteration #\s*[0-9]+\s*:\s*max\(cpu_time\)\s+wall_clock\(cpu1\)"),
-          SimpleMatcher(r"\s*Self-consistency cycle converged\.")
+          SimpleMatcher(r"\s*(?P<fhi_aims_single_configuration_calculation_converged>Self-consistency cycle converged)\."),
+          SimpleMatcher(r"\s*End self-consistency iteration #\s*[0-9]+\s*:\s*max\(cpu_time\)\s+wall_clock\(cpu1\)")
                       ]), # END ScfIteration
         # possible scalar ZORA post-processing
         SimpleMatcher(name = 'ScaledZORAPostProcessing',
@@ -831,15 +852,19 @@ mainFileDescription = SimpleMatcher(name = 'Root',
           SimpleMatcher(r"\s*End decomposition of the XC Energy"),
           SimpleMatcher(r"\s*-{20}-*", weak = True)
                       ]), # END DecompositionXCEnergy
+        # detect if caclualtion was not converged
+        SimpleMatcher(r"\s*\*\s*WARNING! SELF-CONSISTENCY CYCLE DID NOT CONVERGE"),
+        SimpleMatcher(r"\s*\*\s*USING YOUR PRESELECTED ACCURACY CRITERIA\."),
+        SimpleMatcher(r"\s*\*\s*DO NOT RELY ON ANY FINAL DATA WITHOUT FURTHER CHECKS\."),
         # geometry relaxation
         SimpleMatcher(name = 'Relaxation',
                       startReStr = r"\s*Geometry optimization: Attempting to predict improved coordinates\.",
                       subMatchers = [
           SimpleMatcher(r"\s*Removing unitary transformations \(pure translations, rotations\) from forces on atoms\."),
           SimpleMatcher(r"\s*Maximum force component is\s*[-+0-9.eEdD]\s*eV/A\."),
-          SimpleMatcher(r"\s*Present geometry is converged\."),
+          SimpleMatcher(r"\s*Present geometry (?P<fhi_aims_geometry_optimization_converged>is converged)\."),
           SimpleMatcher(name = 'RelaxationStep',
-                        startReStr = r"\s*Present geometry is not yet converged\.",
+                        startReStr = r"\s*Present geometry (?P<fhi_aims_geometry_optimization_converged>is not yet converged)\.",
                         subMatchers = [
             SimpleMatcher(r"\s*Relaxation step number\s*[0-9]+: Predicting new coordinates\."),
             SimpleMatcher(r"\s*Advancing geometry using (?:trust radius method|BFGS)\.")
@@ -897,6 +922,8 @@ parserInfo = {'name':'fhi-aims-parser', 'version': '1.0'}
 # adjust caching of metadata
 cachingLevelForMetaName = {
                            'fhi_aims_MD_flag': CachingLevel.Cache,
+                           'fhi_aims_geometry_optimization_converged': CachingLevel.Cache,
+                           'fhi_aims_single_configuration_calculation_converged': CachingLevel.Cache,
                           }
 
 if __name__ == "__main__":
