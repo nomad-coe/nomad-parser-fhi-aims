@@ -1,9 +1,10 @@
 import setup_paths
 import numpy as np
 import nomadcore.ActivateLogging
-from nomadcore.simple_parser import SimpleMatcher, mainFunction
-from nomadcore.local_meta_info import loadJsonFile, InfoKindEl
 from nomadcore.caching_backend import CachingLevel
+from nomadcore.local_meta_info import loadJsonFile, InfoKindEl
+from nomadcore.simple_parser import SimpleMatcher, mainFunction
+from nomadcore.unit_conversion.unit_conversion import convert_unit
 import re, os, sys, json, logging
 
 ############################################################
@@ -16,6 +17,15 @@ import re, os, sys, json, logging
 logger = logging.getLogger("nomad.FhiAimsParser") 
 
 class FhiAimsParserContext(object):
+    """Context for parsing FHI-aims main file.
+
+    This class keeps tracks of several aims settings to adjust the parsing to them.
+    The onClose_ functions allow processing and writing of cached values after a section is closed.
+    They take the follwing arguments:
+        backend: Class that takes care of wrting and caching of metadata.
+        gIndex: Index of the section that is closed.
+        section: The cached values and sections that were found in the section that is closed.
+    """
     def __init__(self):
         self.secMethodIndex = None
         self.secSystemDescriptionIndex = None
@@ -75,6 +85,10 @@ class FhiAimsParserContext(object):
 
         Get compiled parser.
         Later one can compile a parser for parsing an external file.
+
+        Args:
+            fInName: The file name on which the current parser is running.
+            parser: The compiled parser. Is an object of the class SimpleParser in simple_parser.py.
         """
         self.parser = parser
 
@@ -83,6 +97,10 @@ class FhiAimsParserContext(object):
 
         addStr allows to use this function for the eigenvalues of scalar ZORA
         by extending the metadata with addStr.
+
+        Args:
+            section: Contains the cached sections and values.
+            addStr: String that is appended to the metadata names.
         """
         # get cached fhi_aims_section_eigenvalues_group
         sec_ev_group = section['fhi_aims_section_eigenvalues_group%s' % addStr]
@@ -174,6 +192,10 @@ class FhiAimsParserContext(object):
         """
         def write_k_grid(metaName, valuesDict):
             """Function to write k-grid for controlIn and controlInOut.
+
+            Args:
+                metaName: Corresponding metadata name for k.
+                valuesDict: Dictionary that contains the cached values of a section.
             """
             k_grid = []
             for i in ['1', '2', '3']:
@@ -182,13 +204,71 @@ class FhiAimsParserContext(object):
                     k_grid.append(ki[-1])
             if k_grid:
                 backend.superBackend.addArrayValues(metaName + '_grid', np.asarray(k_grid))
+
+        def write_xc_functional(metaNameStart, valuesDict):
+            """Function to write xc settings for controlIn and controlInOut.
+
+            The omega of the HSE-functional is converted to the unit given in the metadata.
+            The xc functional from controlInOut is converted to the string required for the metadata XC_functional.
+
+            Args:
+                metaNameStart: Base name of metdata for xc. Must be fhi_aims_controlIn or fhi_aims_controlInOut
+                valuesDict: Dictionary that contains the cached values of a section.
+            """
+            if metaNameStart == 'fhi_aims_controlIn':
+                location = 'control.in'
+                functional = 'hse06'
+                xcWrite = False
+            elif metaNameStart == 'fhi_aims_controlInOut':
+                location = 'aims output from the parsed control.in'
+                functional = 'HSE-functional'
+                xcWrite = True
+            else:
+                logger.error("Unknown metaName %s in function write_xc_functional. Please correct." % metaNameStart)
+                return
+            # get cached values for xc functional
+            xc = valuesDict.get(metaNameStart + '_xc')
+            if xc is not None:
+                # check if only one xc keyword was found in control.in
+                if len(xc) > 1:
+                    logger.warning("Found %d settings for the xc functional in %s: %s. This leads to an undefined behavior und no metadata can be written for %s_xc." % (len(xc), location, xc, metaNameStart))
+                else:
+                    backend.superBackend.addValue(metaNameStart + '_xc', xc[-1])
+                    # convert xc functional to metadata XC_functional
+                    if xcWrite:
+                        xcMetaName = 'XC_functional'
+                        xcString = self.xcDict.get(xc[-1])
+                        if xcString is not None:
+                            backend.addValue(xcMetaName, xcString)
+                        else:
+                            logger.error("The xc functional '%s' could not be converted to the required string for the metadata '%s'. Please add it to the dictionary xcDict." % (xc[-1], xcMetaName))
+                    # hse_omega is only written for HSE06
+                    hse_omega = valuesDict.get(metaNameStart + '_hse_omega')
+                    if hse_omega is not None and xc[-1] == functional:
+                        # get unit from metadata
+                        unit = self.parser.parserBuilder.metaInfoEnv.infoKinds[metaNameStart + '_hse_omega'].units
+                        # try unit conversion and write hse_omega
+                        hse_unit = valuesDict.get(metaNameStart + '_hse_unit')
+                        if hse_unit is not None:
+                            value = None
+                            if hse_unit[-1] in ['a', 'A']:
+                                value = convert_unit(hse_omega[-1], 'angstrom**-1', unit)
+                            elif hse_unit[-1] in ['b', 'B']:
+                                value = convert_unit(hse_omega[-1], 'bohr**-1', unit)
+                            if value is not None:
+                                backend.superBackend.addValue(metaNameStart + '_hse_omega', value)
+                            else:
+                                logger.warning("Unknown hse_unit %s in %s. Cannot write %s" % (hse_unit[-1], location, metaNameStart + '_hse_omega'))
+                        else:
+                            logger.warning("No value found for %s. Cannot write %s" % (metaNameStart + '_hse_unit', metaNameStart + '_hse_omega'))
+
         # keep track of the latest method section
         self.secMethodIndex = gIndex
         # list of excluded metadata
         # k_grid is written with k1 so that k2 and k2 are not needed.
         # fhi_aims_controlIn_relativistic_threshold is written with fhi_aims_controlIn_relativistic.
         # The xc setting have to be handeled separatly since having more than one gives undefined behavior.
-        # hse_omega is only written if HSE was used and converted according to the given unit.
+        # hse_omega is only written if HSE was used and converted according to hse_unit which is not written since not needed.
         exclude_list = ['fhi_aims_controlIn_k2',
                         'fhi_aims_controlIn_k3',
                         'fhi_aims_controlInOut_k2',
@@ -198,6 +278,8 @@ class FhiAimsParserContext(object):
                         'fhi_aims_controlInOut_xc',
                         'fhi_aims_controlIn_hse_omega',
                         'fhi_aims_controlInOut_hse_omega',
+                        'fhi_aims_controlIn_hse_unit',
+                        'fhi_aims_controlInOut_hse_unit',
                        ]
         # write settings
         for k,v in section.simpleValues.items():
@@ -226,7 +308,7 @@ class FhiAimsParserContext(object):
                             backend.superBackend.addValue(k, v[-1])
                 # default writeout
                 else:
-                    # convert keyword values which are strings to lowercase for consistency
+                    # convert keyword values of control.in which are strings to lowercase for consistency
                     if k.startswith('fhi_aims_controlIn_') and isinstance(v[-1], str):
                         value = v[-1].lower()
                     else:
@@ -247,35 +329,9 @@ class FhiAimsParserContext(object):
                 backend.addValue('relativity_method', relativistic)
             else:
                 logger.warning("The relativistic setting '%s' could not be converted to the required string for the metadata 'relativity_method'. Please add it to the dictionary relativisticDict." % InOut_relativistic[-1])
-        # handling xc functional
-        In_xc = section['fhi_aims_controlIn_xc']
-        if In_xc is not None:
-            # check if only one xc keyword was found in control.in
-            if len(In_xc) > 1:
-                logger.warning("Found %d settings for the xc functional in control.in: %s. This leads to an undefined behavior und no metadata can be written for fhi_aims_controlIn_xc." % (len(In_xc), In_xc))
-            else:
-                backend.superBackend.addValue('fhi_aims_controlIn_xc', In_xc[-1])
-                # hse_omega is only written for HSE06
-                In_hse_omega = section['fhi_aims_controlIn_hse_omega']
-                if In_hse_omega is not None and re.match('hse06', In_xc[-1], re.IGNORECASE):
-                    backend.superBackend.addValue('fhi_aims_controlIn_hse_omega', In_hse_omega[-1])
-        InOut_xc = section['fhi_aims_controlInOut_xc']
-        if InOut_xc is not None:
-            # check if only one xc keyword was found in the aims output from the parsed control.in
-            if len(InOut_xc) > 1:
-                logger.error("Found %d settings for the xc functional in the aims output from the parsed control.in: %s. This leads to an undefined behavior und no metadata can be written for fhi_aims_controlInOut_xc and XC_functional." % (len(InOut_xc), InOut_xc))
-            else:
-                backend.superBackend.addValue('fhi_aims_controlInOut_xc', InOut_xc[-1])
-                # hse_omega is only written for HSE06
-                InOut_hse_omega = section['fhi_aims_controlInOut_hse_omega']
-                if InOut_hse_omega is not None and InOut_xc[-1] == 'HSE-functional':
-                    backend.superBackend.addValue('fhi_aims_controlInOut_hse_omega', InOut_hse_omega[-1])
-                # convert xc functional to metadata string
-                xc = self.xcDict.get(InOut_xc[-1])
-                if xc is not None:
-                    backend.addValue('XC_functional', xc)
-                else:
-                    logger.error("The xc functional '%s' could not be converted to the required string for the metadata 'XC_functional'. Please add it to the dictionary xcDict." % InOut_xc[-1])
+        # handling of xc functional
+        write_xc_functional('fhi_aims_controlIn', section.simpleValues)
+        write_xc_functional('fhi_aims_controlInOut', section.simpleValues)
 
     def onClose_section_system_description(self, backend, gIndex, section):
         """Trigger called when section_system_description is closed.
@@ -483,6 +539,8 @@ controlInOutSubMatcher = SimpleMatcher(name = 'ControlInOut',
     # Repating occurrences of the same keywords are captured.
     # List the matchers in alphabetical order according to metadata name.
     #
+    # only the first character is important for aims
+    SimpleMatcher(r"\s*hse_unit: Unit for the HSE06 hybrid functional screening parameter set to (?P<fhi_aims_controlInOut_hse_unit>[a-zA-Z])[a-zA-Z]*\^\(-1\)\.", repeats = True),
     # metadata fhi_aims_MD_flag is just used to detect already in the methods section if a MD run was perfomed
     SimpleMatcher(r"\s*(?P<fhi_aims_MD_flag>Molecular dynamics time step) =\s*(?P<fhi_aims_controlInOut_MD_time_step__ps>[0-9.]+) *ps", repeats = True),
     SimpleMatcher(r"\s*Scalar relativistic treatment of kinetic energy: (?P<fhi_aims_controlInOut_relativistic>[-a-zA-Z\s]+)\.", repeats = True),
@@ -595,7 +653,15 @@ geometryMDSubMatcher = SimpleMatcher(name = 'GeometryMD',
 ########################################
 # submatcher for eigenvalues
 # first define function to build submatcher for normal case and scalar ZORA
-def generateEigenvaluesGroupSubMatcher(addStr):
+def build_eigenvaluesGroupSubMatcher(addStr):
+    """Builds the SimpleMatcher to parse the normal and the scalar ZORA eigenvalues in aims.
+
+    Args:
+        addStr: String that is appended to the metadata names.
+
+    Returns:
+       SimpleMatcher that parses eigenvalues with metadata ccording to addStr. 
+    """
     # submatcher for eigenvalue list
     EigenvaluesListSubMatcher =  SimpleMatcher(name = 'EigenvaluesLists',
               startReStr = r"\s*State\s*Occupation\s*Eigenvalue *\[Ha\]\s*Eigenvalue *\[eV\]",
@@ -655,8 +721,8 @@ def generateEigenvaluesGroupSubMatcher(addStr):
     EigenvaluesListSubMatcher.copy()
                 ]), # END EigenvaluesNoSpinNonPeriodic
               ])
-EigenvaluesGroupSubMatcher = generateEigenvaluesGroupSubMatcher('')
-EigenvaluesGroupSubMatcherZORA = generateEigenvaluesGroupSubMatcher('_ZORA')
+EigenvaluesGroupSubMatcher = build_eigenvaluesGroupSubMatcher('')
+EigenvaluesGroupSubMatcherZORA = build_eigenvaluesGroupSubMatcher('_ZORA')
 ########################################
 # submatcher for total energy components during SCF interation
 TotalEnergyScfSubMatcher = SimpleMatcher(name = 'TotalEnergyScf',
