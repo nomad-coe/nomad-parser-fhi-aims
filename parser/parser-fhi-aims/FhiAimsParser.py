@@ -3,7 +3,8 @@ import numpy as np
 import nomadcore.ActivateLogging
 from nomadcore.caching_backend import CachingLevel
 from nomadcore.local_meta_info import loadJsonFile, InfoKindEl
-from nomadcore.simple_parser import SimpleMatcher, mainFunction
+from nomadcore.simple_parser import mainFunction
+from nomadcore.simple_parser import SimpleMatcher as SM
 from nomadcore.unit_conversion.unit_conversion import convert_unit
 import json, logging, os, re, sys
 
@@ -467,201 +468,203 @@ def build_FhiAimsMainFileSimpleMatcher():
 
     First, several subMatchers are defined, which are then used to piece together
     the final SimpleMatcher.
+    SimpleMatchers are called with 'SM (' as this string has length 4,
+    which allows nice formating of nested SimpleMatchers in python.
 
     Returns:
        SimpleMatcher that parses main file of FHI-aims. 
     """
     ########################################
     # submatcher for control.in
-    controlInSubMatcher = SimpleMatcher(name = 'ControlIn',
-                  startReStr = r"\s*The contents of control\.in will be repeated verbatim below",
-                  endReStr = r"\s*Completed first pass over input file control\.in \.",
-                  subMatchers = [
-      SimpleMatcher(r"\s*unless switched off by setting 'verbatim_writeout \.false\.' \."),
-      SimpleMatcher(r"\s*in the first line of control\.in \."),
-      SimpleMatcher(name = 'ControlInKeywords',
-                    startReStr = r"\s*-{20}-*",
-                    weak = True,
-                    subFlags = SimpleMatcher.SubFlags.Unordered,
-                    subMatchers = [
-        # Now follows the list to match the keywords from the control.in.
-        # Explicitly add ^ to ensure that the keyword is not within a comment.
-        # The search is done unordered since the keywords do not appear in a specific order.
-        # Repating occurrences of the same keywords are captured.
-        # Closing the section fhi_aims_section_controlIn will write the last captured value
-        # since aims uses the last occurrence of a keyword.
-        # List the matchers in alphabetical order according to keyword name.
-        #
-        SimpleMatcher(r"^\s*MD_time_step\s+(?P<fhi_aims_controlIn_MD_time_step__ps>[-+0-9.eEdD]+)", repeats = True),
-        # need to distinguish different cases
-        SimpleMatcher(r"^\s*occupation_type\s+",
-                      forwardMatch = True,
-                      repeats = True,
-                      subMatchers = [
-          SimpleMatcher(r"^\s*occupation_type\s+(?P<fhi_aims_controlIn_occupation_type>[-_a-zA-Z]+)\s+(?P<fhi_aims_controlIn_occupation_width>[-+0-9.eEdD]+)\s+(?P<fhi_aims_controlIn_occupation_order>[0-9]+)"),
-          SimpleMatcher(r"^\s*occupation_type\s+(?P<fhi_aims_controlIn_occupation_type>[-_a-zA-Z]+)\s+(?P<fhi_aims_controlIn_occupation_width>[-+0-9.eEdD]+)")
-                                  ]),
-        SimpleMatcher(r"^\s*override_relativity\s+\.?(?P<fhi_aims_controlIn_override_relativity>[-_a-zA-Z]+)\.?", repeats = True),
-        SimpleMatcher(r"^\s*charge\s+(?P<fhi_aims_controlIn_charge>[-+0-9.eEdD]+)", repeats = True),
-        # only the first character is important for aims
-        SimpleMatcher(r"^\s*hse_unit\s+(?P<fhi_aims_controlIn_hse_unit>[a-zA-Z])[-_a-zA-Z0-9]+", repeats = True),
-        # need to distinguish different cases
-        SimpleMatcher(r"^\s*relativistic\s+",
-                      forwardMatch = True,
-                      repeats = True,
-                      subMatchers = [
-          SimpleMatcher(r"^\s*relativistic\s+(?P<fhi_aims_controlIn_relativistic>[-_a-zA-Z]+\s+[-_a-zA-Z]+)\s+(?P<fhi_aims_controlIn_relativistic_threshold>[-+0-9.eEdD]+)"),
-          SimpleMatcher(r"^\s*relativistic\s+(?P<fhi_aims_controlIn_relativistic>[-_a-zA-Z]+)")
-                                  ]),
-        SimpleMatcher(r"^\s*sc_accuracy_rho\s+(?P<fhi_aims_controlIn_sc_accuracy_rho>[-+0-9.eEdD]+)", repeats = True),
-        SimpleMatcher(r"^\s*sc_accuracy_eev\s+(?P<fhi_aims_controlIn_sc_accuracy_eev>[-+0-9.eEdD]+)", repeats = True),
-        SimpleMatcher(r"^\s*sc_accuracy_etot\s+(?P<fhi_aims_controlIn_sc_accuracy_etot>[-+0-9.eEdD]+)", repeats = True),
-        SimpleMatcher(r"^\s*sc_accuracy_forces\s+(?P<fhi_aims_controlIn_sc_accuracy_forces>[-+0-9.eEdD]+)", repeats = True),
-        SimpleMatcher(r"^\s*sc_accuracy_stress\s+(?P<fhi_aims_controlIn_sc_accuracy_stress>[-+0-9.eEdD]+)", repeats = True),
-        SimpleMatcher(r"^\s*sc_iter_limit\s+(?P<fhi_aims_controlIn_sc_iter_limit>[0-9]+)", repeats = True),
-        SimpleMatcher(r"^\s*k_grid\s+(?P<fhi_aims_controlIn_k1>[0-9]+)\s+(?P<fhi_aims_controlIn_k2>[0-9]+)\s+(?P<fhi_aims_controlIn_k3>[0-9]+)", repeats = True),
-        SimpleMatcher(r"^\s*spin\s+(?P<fhi_aims_controlIn_spin>[-_a-zA-Z]+)", repeats = True),
-        # need to distinguish two cases: just the name of the xc functional or name plus number (e.g. for HSE functional)
-        SimpleMatcher(r"^\s*xc\s+",
-                      forwardMatch = True,
-                      repeats = True,
-                      subMatchers = [
-          SimpleMatcher(r"^\s*xc\s+(?P<fhi_aims_controlIn_xc>[-_a-zA-Z0-9]+)\s+(?P<fhi_aims_controlIn_hse_omega>[-+0-9.eEdD]+)"),
-          SimpleMatcher(r"^\s*xc\s+(?P<fhi_aims_controlIn_xc>[-_a-zA-Z0-9]+)")
-                      ]),
-        SimpleMatcher(r"^\s*verbatim_writeout\s+[.a-zA-Z]+")
-                    ]), # END ControlInKeywords
-      SimpleMatcher(r"\s*-{20}-*", weak = True)
-                  ])
+    controlInSubMatcher = SM (name = 'ControlIn',
+        startReStr = r"\s*The contents of control\.in will be repeated verbatim below",
+        endReStr = r"\s*Completed first pass over input file control\.in \.",
+        subMatchers = [
+        SM (r"\s*unless switched off by setting 'verbatim_writeout \.false\.' \."),
+        SM (r"\s*in the first line of control\.in \."),
+        SM (name = 'ControlInKeywords',
+            startReStr = r"\s*-{20}-*",
+            weak = True,
+            subFlags = SM.SubFlags.Unordered,
+            subMatchers = [
+            # Now follows the list to match the keywords from the control.in.
+            # Explicitly add ^ to ensure that the keyword is not within a comment.
+            # The search is done unordered since the keywords do not appear in a specific order.
+            # Repating occurrences of the same keywords are captured.
+            # Closing the section fhi_aims_section_controlIn will write the last captured value
+            # since aims uses the last occurrence of a keyword.
+            # List the matchers in alphabetical order according to keyword name.
+            #
+            SM (r"^\s*MD_time_step\s+(?P<fhi_aims_controlIn_MD_time_step__ps>[-+0-9.eEdD]+)", repeats = True),
+            # need to distinguish different cases
+            SM (r"^\s*occupation_type\s+",
+                forwardMatch = True,
+                repeats = True,
+                subMatchers = [
+                SM (r"^\s*occupation_type\s+(?P<fhi_aims_controlIn_occupation_type>[-_a-zA-Z]+)\s+(?P<fhi_aims_controlIn_occupation_width>[-+0-9.eEdD]+)\s+(?P<fhi_aims_controlIn_occupation_order>[0-9]+)"),
+                SM (r"^\s*occupation_type\s+(?P<fhi_aims_controlIn_occupation_type>[-_a-zA-Z]+)\s+(?P<fhi_aims_controlIn_occupation_width>[-+0-9.eEdD]+)")
+                ]),
+            SM (r"^\s*override_relativity\s+\.?(?P<fhi_aims_controlIn_override_relativity>[-_a-zA-Z]+)\.?", repeats = True),
+            SM (r"^\s*charge\s+(?P<fhi_aims_controlIn_charge>[-+0-9.eEdD]+)", repeats = True),
+            # only the first character is important for aims
+            SM (r"^\s*hse_unit\s+(?P<fhi_aims_controlIn_hse_unit>[a-zA-Z])[-_a-zA-Z0-9]+", repeats = True),
+            # need to distinguish different cases
+            SM (r"^\s*relativistic\s+",
+                forwardMatch = True,
+                repeats = True,
+                subMatchers = [
+                SM (r"^\s*relativistic\s+(?P<fhi_aims_controlIn_relativistic>[-_a-zA-Z]+\s+[-_a-zA-Z]+)\s+(?P<fhi_aims_controlIn_relativistic_threshold>[-+0-9.eEdD]+)"),
+                SM (r"^\s*relativistic\s+(?P<fhi_aims_controlIn_relativistic>[-_a-zA-Z]+)")
+                ]),
+            SM (r"^\s*sc_accuracy_rho\s+(?P<fhi_aims_controlIn_sc_accuracy_rho>[-+0-9.eEdD]+)", repeats = True),
+            SM (r"^\s*sc_accuracy_eev\s+(?P<fhi_aims_controlIn_sc_accuracy_eev>[-+0-9.eEdD]+)", repeats = True),
+            SM (r"^\s*sc_accuracy_etot\s+(?P<fhi_aims_controlIn_sc_accuracy_etot>[-+0-9.eEdD]+)", repeats = True),
+            SM (r"^\s*sc_accuracy_forces\s+(?P<fhi_aims_controlIn_sc_accuracy_forces>[-+0-9.eEdD]+)", repeats = True),
+            SM (r"^\s*sc_accuracy_stress\s+(?P<fhi_aims_controlIn_sc_accuracy_stress>[-+0-9.eEdD]+)", repeats = True),
+            SM (r"^\s*sc_iter_limit\s+(?P<fhi_aims_controlIn_sc_iter_limit>[0-9]+)", repeats = True),
+            SM (r"^\s*k_grid\s+(?P<fhi_aims_controlIn_k1>[0-9]+)\s+(?P<fhi_aims_controlIn_k2>[0-9]+)\s+(?P<fhi_aims_controlIn_k3>[0-9]+)", repeats = True),
+            SM (r"^\s*spin\s+(?P<fhi_aims_controlIn_spin>[-_a-zA-Z]+)", repeats = True),
+            # need to distinguish two cases: just the name of the xc functional or name plus number (e.g. for HSE functional)
+            SM (r"^\s*xc\s+",
+                forwardMatch = True,
+                repeats = True,
+                subMatchers = [
+                SM (r"^\s*xc\s+(?P<fhi_aims_controlIn_xc>[-_a-zA-Z0-9]+)\s+(?P<fhi_aims_controlIn_hse_omega>[-+0-9.eEdD]+)"),
+                SM (r"^\s*xc\s+(?P<fhi_aims_controlIn_xc>[-_a-zA-Z0-9]+)")
+                ]),
+            SM (r"^\s*verbatim_writeout\s+[.a-zA-Z]+")
+            ]), # END ControlInKeywords
+        SM (r"\s*-{20}-*", weak = True)
+        ])
     ########################################
     # submatcher for aims output from the parsed control.in
-    controlInOutSubMatcher = SimpleMatcher(name = 'ControlInOut',
-                  startReStr = r"\s*Reading file control\.in\.",
-                  subMatchers = [
-      SimpleMatcher(name = 'ControlInOutLines',
-                    startReStr = r"\s*-{20}-*",
-                    weak = True,
-                    subFlags = SimpleMatcher.SubFlags.Unordered,
-                    subMatchers = [
-        # Now follows the list to match the aims output from the parsed control.in.
-        # The search is done unordered since the output is not in a specific order.
-        # Repating occurrences of the same keywords are captured.
-        # List the matchers in alphabetical order according to metadata name.
-        #
-        # only the first character is important for aims
-        SimpleMatcher(r"\s*hse_unit: Unit for the HSE06 hybrid functional screening parameter set to (?P<fhi_aims_controlInOut_hse_unit>[a-zA-Z])[a-zA-Z]*\^\(-1\)\.", repeats = True),
-        # metadata fhi_aims_MD_flag is just used to detect already in the methods section if a MD run was perfomed
-        SimpleMatcher(r"\s*(?P<fhi_aims_MD_flag>Molecular dynamics time step) =\s*(?P<fhi_aims_controlInOut_MD_time_step__ps>[0-9.]+) *ps", repeats = True),
-        SimpleMatcher(r"\s*Scalar relativistic treatment of kinetic energy: (?P<fhi_aims_controlInOut_relativistic>[-a-zA-Z\s]+)\.", repeats = True),
-        SimpleMatcher(r"\s*(?P<fhi_aims_controlInOut_relativistic>Non-relativistic) treatment of kinetic energy\.", repeats = True),
-        SimpleMatcher(r"\s*Threshold value for ZORA:\s*(?P<fhi_aims_controlInOut_relativistic_threshold>[-+0-9.eEdD]+)", repeats = True),
-        # need several regualar expressions to capture all possible output messages of the xc functional
-        SimpleMatcher(r"\s*XC: Using (?P<fhi_aims_controlInOut_xc>[-_a-zA-Z0-9\s()]+)(?:\.| NOTE)", repeats = True),
-        SimpleMatcher(r"\s*XC: Using (?P<fhi_aims_controlInOut_xc>HSE-functional) with OMEGA =\s*(?P<fhi_aims_controlInOut_hse_omega>[-+0-9.eEdD]+)\s*<units>\.", repeats = True),
-        SimpleMatcher(r"\s*XC: Using (?P<fhi_aims_controlInOut_xc>Hybrid M11 gradient-corrected functionals) with OMEGA =\s*[-+0-9.eEdD]+", repeats = True),
-        SimpleMatcher(r"\s*XC:\s*(?P<fhi_aims_controlInOut_xc>HSE) with OMEGA_PBE =\s*[-+0-9.eEdD]+", repeats = True),
-        SimpleMatcher(r"\s*XC: Running (?P<fhi_aims_controlInOut_xc>[-_a-zA-Z0-9\s()]+) \.\.\.", repeats = True),
-        SimpleMatcher(r"\s*(?P<fhi_aims_controlInOut_xc>Hartree-Fock) calculation starts \.\.\.\.\.\.", repeats = True),
-                    ]), # END ControlInOutLines
-      SimpleMatcher(r"\s*-{20}-*", weak = True)
-                  ])
+    controlInOutSubMatcher = SM (name = 'ControlInOut',
+        startReStr = r"\s*Reading file control\.in\.",
+        subMatchers = [
+        SM (name = 'ControlInOutLines',
+            startReStr = r"\s*-{20}-*",
+            weak = True,
+            subFlags = SM.SubFlags.Unordered,
+            subMatchers = [
+            # Now follows the list to match the aims output from the parsed control.in.
+            # The search is done unordered since the output is not in a specific order.
+            # Repating occurrences of the same keywords are captured.
+            # List the matchers in alphabetical order according to metadata name.
+            #
+            # only the first character is important for aims
+            SM (r"\s*hse_unit: Unit for the HSE06 hybrid functional screening parameter set to (?P<fhi_aims_controlInOut_hse_unit>[a-zA-Z])[a-zA-Z]*\^\(-1\)\.", repeats = True),
+            # metadata fhi_aims_MD_flag is just used to detect already in the methods section if a MD run was perfomed
+            SM (r"\s*(?P<fhi_aims_MD_flag>Molecular dynamics time step) =\s*(?P<fhi_aims_controlInOut_MD_time_step__ps>[0-9.]+) *ps", repeats = True),
+            SM (r"\s*Scalar relativistic treatment of kinetic energy: (?P<fhi_aims_controlInOut_relativistic>[-a-zA-Z\s]+)\.", repeats = True),
+            SM (r"\s*(?P<fhi_aims_controlInOut_relativistic>Non-relativistic) treatment of kinetic energy\.", repeats = True),
+            SM (r"\s*Threshold value for ZORA:\s*(?P<fhi_aims_controlInOut_relativistic_threshold>[-+0-9.eEdD]+)", repeats = True),
+            # need several regualar expressions to capture all possible output messages of the xc functional
+            SM (r"\s*XC: Using (?P<fhi_aims_controlInOut_xc>[-_a-zA-Z0-9\s()]+)(?:\.| NOTE)", repeats = True),
+            SM (r"\s*XC: Using (?P<fhi_aims_controlInOut_xc>HSE-functional) with OMEGA =\s*(?P<fhi_aims_controlInOut_hse_omega>[-+0-9.eEdD]+)\s*<units>\.", repeats = True),
+            SM (r"\s*XC: Using (?P<fhi_aims_controlInOut_xc>Hybrid M11 gradient-corrected functionals) with OMEGA =\s*[-+0-9.eEdD]+", repeats = True),
+            SM (r"\s*XC:\s*(?P<fhi_aims_controlInOut_xc>HSE) with OMEGA_PBE =\s*[-+0-9.eEdD]+", repeats = True),
+            SM (r"\s*XC: Running (?P<fhi_aims_controlInOut_xc>[-_a-zA-Z0-9\s()]+) \.\.\.", repeats = True),
+            SM (r"\s*(?P<fhi_aims_controlInOut_xc>Hartree-Fock) calculation starts \.\.\.\.\.\.", repeats = True),
+            ]), # END ControlInOutLines
+        SM (r"\s*-{20}-*", weak = True)
+        ])
     ########################################
     # subMatcher for geometry.in
-    geometryInSubMatcher = SimpleMatcher(name = 'GeometryIn',
-                  startReStr = r"\s*Parsing geometry\.in \(first pass over file, find array dimensions only\)\.",
-                  endReStr = r"\s*Completed first pass over input file geometry\.in \.",
-                  subMatchers = [
-      SimpleMatcher(r"\s*The contents of geometry\.in will be repeated verbatim below"),
-      SimpleMatcher(r"\s*unless switched off by setting 'verbatim_writeout \.false\.' \."),
-      SimpleMatcher(r"\s*in the first line of geometry\.in \."),
-      SimpleMatcher(name = 'GeometryInKeywords',
-                    startReStr = r"\s*-{20}-*",
-                    weak = True,
-                    subFlags = SimpleMatcher.SubFlags.Unordered,
-                    subMatchers = [
-        # Explicitly add ^ to ensure that the keyword is not within a comment.
-        # The search is done unordered since the keywords do not appear in a specific order.
-        SimpleMatcher(startReStr = r"^\s*(?:atom|atom_frac)\s+[-+0-9.]+\s+[-+0-9.]+\s+[-+0-9.]+\s+[a-zA-Z]+",
-                      repeats = True,
-                      subFlags = SimpleMatcher.SubFlags.Unordered,
-                      subMatchers = [
-          SimpleMatcher(r"^\s*constrain_relaxation\s+(?:x|y|z|\.true\.|\.false\.)", repeats = True),
-          SimpleMatcher(r"^\s*initial_charge\s+[-+0.9.eEdD]", repeats = True),
-          SimpleMatcher(r"^\s*initial_moment\s+[-+0.9.eEdD]", repeats = True),
-          SimpleMatcher(r"^\s*velocity\s+[-+0.9.eEdD]\s+[-+0.9.eEdD]\s+[-+0.9.eEdD]", repeats = True)
-                      ]),
-        SimpleMatcher(r"^\s*hessian_block\s+[0-9]+\s+[0-9]+" + 9 * r"\s+[-+0-9.eEdD]+", repeats = True),
-        SimpleMatcher(r"^\s*hessian_block_lv\s+[0-9]+\s+[0-9]+" + 9 * r"\s+[-+0-9.eEdD]+", repeats = True),
-        SimpleMatcher(r"^\s*hessian_block_lv_atom\s+[0-9]+\s+[0-9]+" + 9 * r"\s+[-+0-9.eEdD]+", repeats = True),
-        SimpleMatcher(startReStr = r"^\s*lattice_vector\s+[-+0-9.]+\s+[-+0-9.]+\s+[-+0-9.]+",
-                      repeats = True,
-                      subMatchers = [
-          SimpleMatcher(r"^\s*constrain_relaxation\s+(?:x|y|z|\.true\.|\.false\.)", repeats = True)
-                      ]),
-        SimpleMatcher(r"^\s*trust_radius\s+[-+0-9.eEdD]+", repeats = True),
-        SimpleMatcher(r"^\s*verbatim_writeout\s+[.a-zA-Z]+")
-                    ]), # END GeometryInKeywords
-      SimpleMatcher(r"\s*-{20}-*", weak = True)
-                  ])
+    geometryInSubMatcher = SM (name = 'GeometryIn',
+        startReStr = r"\s*Parsing geometry\.in \(first pass over file, find array dimensions only\)\.",
+        endReStr = r"\s*Completed first pass over input file geometry\.in \.",
+        subMatchers = [
+        SM (r"\s*The contents of geometry\.in will be repeated verbatim below"),
+        SM (r"\s*unless switched off by setting 'verbatim_writeout \.false\.' \."),
+        SM (r"\s*in the first line of geometry\.in \."),
+        SM (name = 'GeometryInKeywords',
+            startReStr = r"\s*-{20}-*",
+            weak = True,
+            subFlags = SM.SubFlags.Unordered,
+            subMatchers = [
+            # Explicitly add ^ to ensure that the keyword is not within a comment.
+            # The search is done unordered since the keywords do not appear in a specific order.
+            SM (startReStr = r"^\s*(?:atom|atom_frac)\s+[-+0-9.]+\s+[-+0-9.]+\s+[-+0-9.]+\s+[a-zA-Z]+",
+                repeats = True,
+                subFlags = SM.SubFlags.Unordered,
+                subMatchers = [
+                SM (r"^\s*constrain_relaxation\s+(?:x|y|z|\.true\.|\.false\.)", repeats = True),
+                SM (r"^\s*initial_charge\s+[-+0.9.eEdD]", repeats = True),
+                SM (r"^\s*initial_moment\s+[-+0.9.eEdD]", repeats = True),
+                SM (r"^\s*velocity\s+[-+0.9.eEdD]\s+[-+0.9.eEdD]\s+[-+0.9.eEdD]", repeats = True)
+                ]),
+            SM (r"^\s*hessian_block\s+[0-9]+\s+[0-9]+" + 9 * r"\s+[-+0-9.eEdD]+", repeats = True),
+            SM (r"^\s*hessian_block_lv\s+[0-9]+\s+[0-9]+" + 9 * r"\s+[-+0-9.eEdD]+", repeats = True),
+            SM (r"^\s*hessian_block_lv_atom\s+[0-9]+\s+[0-9]+" + 9 * r"\s+[-+0-9.eEdD]+", repeats = True),
+            SM (startReStr = r"^\s*lattice_vector\s+[-+0-9.]+\s+[-+0-9.]+\s+[-+0-9.]+",
+                repeats = True,
+                subMatchers = [
+                SM (r"^\s*constrain_relaxation\s+(?:x|y|z|\.true\.|\.false\.)", repeats = True)
+                ]),
+            SM (r"^\s*trust_radius\s+[-+0-9.eEdD]+", repeats = True),
+            SM (r"^\s*verbatim_writeout\s+[.a-zA-Z]+")
+            ]), # END GeometryInKeywords
+        SM (r"\s*-{20}-*", weak = True)
+        ])
     ########################################
     # subMatcher for geometry
     # the verbatim writeout of the geometry.in is not considered for getting the structure data
     # using the geometry output of aims has the advantage that it has a clearer structure
-    geometrySubMatcher = SimpleMatcher(name = 'Geometry',
-                  startReStr = r"\s*Reading geometry description geometry\.in\.",
-                  sections = ['section_system_description'],
-                  subMatchers = [
-      SimpleMatcher(r"\s*-{20}-*", weak = True),
-      SimpleMatcher(r"\s*The structure contains\s*[0-9]+\s*atoms,\s*and a total of\s*[0-9.]\s*electrons\."),
-      SimpleMatcher(r"\s*Input geometry:"),
-      SimpleMatcher(r"\s*\|\s*No unit cell requested\."),
-      SimpleMatcher(startReStr = r"\s*\|\s*Unit cell:",
-                    subMatchers = [
-        SimpleMatcher(r"\s*\|\s*(?P<fhi_aims_geometry_lattice_vector_x__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_lattice_vector_y__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_lattice_vector_z__angstrom>[-+0-9.]+)", repeats = True)
-                    ]),
-      SimpleMatcher(startReStr = r"\s*\|\s*Atomic structure:",
-                    subMatchers = [
-        SimpleMatcher(r"\s*\|\s*Atom\s*x \[A\]\s*y \[A\]\s*z \[A\]"),
-        SimpleMatcher(r"\s*\|\s*[0-9]+:\s*Species\s+(?P<fhi_aims_geometry_atom_label>[a-zA-Z]+)\s+(?P<fhi_aims_geometry_atom_position_x__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_atom_position_y__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_atom_position_z__angstrom>[-+0-9.]+)", repeats = True)
-                    ])
-                  ])
+    geometrySubMatcher = SM (name = 'Geometry',
+        startReStr = r"\s*Reading geometry description geometry\.in\.",
+        sections = ['section_system_description'],
+        subMatchers = [
+        SM (r"\s*-{20}-*", weak = True),
+        SM (r"\s*The structure contains\s*[0-9]+\s*atoms,\s*and a total of\s*[0-9.]\s*electrons\."),
+        SM (r"\s*Input geometry:"),
+        SM (r"\s*\|\s*No unit cell requested\."),
+        SM (startReStr = r"\s*\|\s*Unit cell:",
+            subMatchers = [
+            SM (r"\s*\|\s*(?P<fhi_aims_geometry_lattice_vector_x__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_lattice_vector_y__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_lattice_vector_z__angstrom>[-+0-9.]+)", repeats = True)
+            ]),
+        SM (startReStr = r"\s*\|\s*Atomic structure:",
+            subMatchers = [
+            SM (r"\s*\|\s*Atom\s*x \[A\]\s*y \[A\]\s*z \[A\]"),
+            SM (r"\s*\|\s*[0-9]+:\s*Species\s+(?P<fhi_aims_geometry_atom_label>[a-zA-Z]+)\s+(?P<fhi_aims_geometry_atom_position_x__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_atom_position_y__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_atom_position_z__angstrom>[-+0-9.]+)", repeats = True)
+            ])
+        ])
     ########################################
     # subMatcher for geometry after relaxation step
-    geometryRelaxationSubMatcher = SimpleMatcher(name = 'GeometryRelaxation',
-                  startReStr = r"\s*Updated atomic structure:",
-                  sections = ['section_system_description'],
-                  subMatchers = [
-      SimpleMatcher(r"\s*x \[A\]\s*y \[A\]\s*z \[A\]"),
-      SimpleMatcher(startReStr = r"\s*lattice_vector\s*[-+0-9.]+\s+[-+0-9.]+\s+[-+0-9.]+",
-                    forwardMatch = True,
-                    subMatchers = [
-        SimpleMatcher(r"\s*lattice_vector\s+(?P<fhi_aims_geometry_lattice_vector_x__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_lattice_vector_y__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_lattice_vector_z__angstrom>[-+0-9.]+)", repeats = True)
-                    ]),
-      SimpleMatcher(r"\s*atom\s+(?P<fhi_aims_geometry_atom_position_x__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_atom_position_y__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_atom_position_z__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_atom_label>[a-zA-Z]+)", repeats = True),
-      SimpleMatcher(startReStr = r"\s*Fractional coordinates:",
-                    subMatchers = [
-        SimpleMatcher("\s*L1\s*L2\s*L3"),
-        SimpleMatcher(r"\s*atom_frac\s+[-+0-9.]+\s+[-+0-9.]+\s+[-+0-9.]+\s+[a-zA-Z]+", repeats = True),
-      SimpleMatcher(r'\s*Writing the current geometry to file "geometry\.in\.next_step"\.'),
-      SimpleMatcher(r"\s*-{20}-*", weak = True)
-                    ])
-                  ])
+    geometryRelaxationSubMatcher = SM (name = 'GeometryRelaxation',
+        startReStr = r"\s*Updated atomic structure:",
+        sections = ['section_system_description'],
+        subMatchers = [
+        SM (r"\s*x \[A\]\s*y \[A\]\s*z \[A\]"),
+        SM (startReStr = r"\s*lattice_vector\s*[-+0-9.]+\s+[-+0-9.]+\s+[-+0-9.]+",
+            forwardMatch = True,
+            subMatchers = [
+            SM (r"\s*lattice_vector\s+(?P<fhi_aims_geometry_lattice_vector_x__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_lattice_vector_y__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_lattice_vector_z__angstrom>[-+0-9.]+)", repeats = True)
+            ]),
+        SM (r"\s*atom\s+(?P<fhi_aims_geometry_atom_position_x__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_atom_position_y__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_atom_position_z__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_atom_label>[a-zA-Z]+)", repeats = True),
+        SM (startReStr = r"\s*Fractional coordinates:",
+            subMatchers = [
+            SM ("\s*L1\s*L2\s*L3"),
+            SM (r"\s*atom_frac\s+[-+0-9.]+\s+[-+0-9.]+\s+[-+0-9.]+\s+[a-zA-Z]+", repeats = True),
+            SM (r'\s*Writing the current geometry to file "geometry\.in\.next_step"\.'),
+            SM (r"\s*-{20}-*", weak = True)
+            ])
+        ])
     ########################################
     # subMatcher for geometry after MD step
-    geometryMDSubMatcher = SimpleMatcher(name = 'GeometryMD',
-                  startReStr = r"\s*Atomic structure \(and velocities\) as used in the preceding time step:",
-                  sections = ['section_system_description'],
-                  subMatchers = [
-      SimpleMatcher(r"\s*x \[A\]\s*y \[A\]\s*z \[A\]\s*Atom"),
-      SimpleMatcher(startReStr = r"\s*atom\s+(?P<fhi_aims_geometry_atom_position_x__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_atom_position_y__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_atom_position_z__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_atom_label>[a-zA-Z]+)",
-                    repeats = True,
-                    subMatchers = [
-        SimpleMatcher(r"^\s*velocity\s+[-+0.9.eEdD]\s+[-+0.9.eEdD]\s+[-+0.9.eEdD]")
-                    ]),
-                  ])
+    geometryMDSubMatcher = SM (name = 'GeometryMD',
+        startReStr = r"\s*Atomic structure \(and velocities\) as used in the preceding time step:",
+        sections = ['section_system_description'],
+        subMatchers = [
+        SM (r"\s*x \[A\]\s*y \[A\]\s*z \[A\]\s*Atom"),
+        SM (startReStr = r"\s*atom\s+(?P<fhi_aims_geometry_atom_position_x__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_atom_position_y__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_atom_position_z__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_atom_label>[a-zA-Z]+)",
+            repeats = True,
+            subMatchers = [
+            SM (r"^\s*velocity\s+[-+0.9.eEdD]\s+[-+0.9.eEdD]\s+[-+0.9.eEdD]")
+            ])
+        ])
     ########################################
     # submatcher for eigenvalues
-    # first define function to build submatcher for normal case and scalar ZORA
+    # first define function to build subMatcher for normal case and scalar ZORA
     def build_eigenvaluesGroupSubMatcher(addStr):
         """Builds the SimpleMatcher to parse the normal and the scalar ZORA eigenvalues in aims.
     
@@ -672,319 +675,323 @@ def build_FhiAimsMainFileSimpleMatcher():
            SimpleMatcher that parses eigenvalues with metadata ccording to addStr. 
         """
         # submatcher for eigenvalue list
-        EigenvaluesListSubMatcher =  SimpleMatcher(name = 'EigenvaluesLists',
-                  startReStr = r"\s*State\s*Occupation\s*Eigenvalue *\[Ha\]\s*Eigenvalue *\[eV\]",
-                  sections = ['fhi_aims_section_eigenvalues_list%s' % addStr],
-                  subMatchers = [
-          SimpleMatcher(startReStr = r"\s*[0-9]+\s+(?P<fhi_aims_eigenvalue_occupation%s>[0-9.eEdD]+)\s+[-+0-9.eEdD]+\s+(?P<fhi_aims_eigenvalue_eigenvalue%s__eV>[-+0-9.eEdD]+)" % (2 * (addStr,)), repeats = True)
-                      ])
-        return SimpleMatcher(name = 'EigenvaluesGroup',
-                  startReStr = r"\s*Writing Kohn-Sham eigenvalues\.",
-                  sections = ['fhi_aims_section_eigenvalues_group%s' % addStr],
-                  subMatchers = [
-      # spin-polarized
-      SimpleMatcher(name = 'EigenvaluesSpin',
-                    startReStr = r"\s*Spin-(?:up|down) eigenvalues:",
-                    sections = ['fhi_aims_section_eigenvalues_spin%s' % addStr],
+        EigenvaluesListSubMatcher =  SM (name = 'EigenvaluesLists',
+            startReStr = r"\s*State\s*Occupation\s*Eigenvalue *\[Ha\]\s*Eigenvalue *\[eV\]",
+            sections = ['fhi_aims_section_eigenvalues_list%s' % addStr],
+            subMatchers = [
+            SM (startReStr = r"\s*[0-9]+\s+(?P<fhi_aims_eigenvalue_occupation%s>[0-9.eEdD]+)\s+[-+0-9.eEdD]+\s+(?P<fhi_aims_eigenvalue_eigenvalue%s__eV>[-+0-9.eEdD]+)" % (2 * (addStr,)), repeats = True)
+            ])
+        return SM (name = 'EigenvaluesGroup',
+            startReStr = r"\s*Writing Kohn-Sham eigenvalues\.",
+            sections = ['fhi_aims_section_eigenvalues_group%s' % addStr],
+            subMatchers = [
+            # spin-polarized
+            SM (name = 'EigenvaluesSpin',
+                startReStr = r"\s*Spin-(?:up|down) eigenvalues:",
+                sections = ['fhi_aims_section_eigenvalues_spin%s' % addStr],
+                repeats = True,
+                subMatchers = [
+                # periodic
+                SM (startReStr = r"\s*K-point:\s*[0-9]+\s+at\s+(?P<fhi_aims_eigenvalue_kpoint1%s>[-+0-9.eEdD]+)\s+(?P<fhi_aims_eigenvalue_kpoint2%s>[-+0-9.eEdD]+)\s+(?P<fhi_aims_eigenvalue_kpoint3%s>[-+0-9.eEdD]+)\s+\(in units of recip\. lattice\)" % (3 * (addStr,)),
                     repeats = True,
                     subMatchers = [
-        # periodic
-        SimpleMatcher(startReStr = r"\s*K-point:\s*[0-9]+\s+at\s+(?P<fhi_aims_eigenvalue_kpoint1%s>[-+0-9.eEdD]+)\s+(?P<fhi_aims_eigenvalue_kpoint2%s>[-+0-9.eEdD]+)\s+(?P<fhi_aims_eigenvalue_kpoint3%s>[-+0-9.eEdD]+)\s+\(in units of recip\. lattice\)" % (3 * (addStr,)),
-                      repeats = True,
-                      subMatchers = [
-          SimpleMatcher(startReStr = r"\s*State\s*Occupation\s*Eigenvalue *\[Ha\]\s*Eigenvalue *\[eV\]",
+                    SM (startReStr = r"\s*State\s*Occupation\s*Eigenvalue *\[Ha\]\s*Eigenvalue *\[eV\]",
                         forwardMatch = True,
                         subMatchers = [
-            EigenvaluesListSubMatcher.copy()
+                        EigenvaluesListSubMatcher.copy()
                         ])
-                      ]),
-        # non-periodic
-        SimpleMatcher(startReStr = r"\s*State\s+Occupation\s+Eigenvalue *\[Ha\]\s+Eigenvalue *\[eV\]",
-                      forwardMatch = True,
-                      subMatchers = [
-          EigenvaluesListSubMatcher.copy()
-                      ])
-                    ]), # END EigenvaluesSpin
-      # non-spin-polarized, periodic
-      SimpleMatcher(name = 'EigenvaluesNoSpinPeriodic',
-                    startReStr = r"\s*K-point:\s*[0-9]+\s+at\s+.*\s+\(in units of recip\. lattice\)",
-                    sections = ['fhi_aims_section_eigenvalues_spin%s' % addStr],
+                    ]),
+                # non-periodic
+                SM (startReStr = r"\s*State\s+Occupation\s+Eigenvalue *\[Ha\]\s+Eigenvalue *\[eV\]",
                     forwardMatch = True,
                     subMatchers = [
-        SimpleMatcher(startReStr = r"\s*K-point:\s*[0-9]+\s+at\s+(?P<fhi_aims_eigenvalue_kpoint1%s>[-+0-9.eEdD]+)\s+(?P<fhi_aims_eigenvalue_kpoint2%s>[-+0-9.eEdD]+)\s+(?P<fhi_aims_eigenvalue_kpoint3%s>[-+0-9.eEdD]+)\s+\(in units of recip\. lattice\)" % (3 * (addStr,)),
-                      repeats = True,
-                      subMatchers = [
-          SimpleMatcher(startReStr = r"\s*State\s*Occupation\s*Eigenvalue *\[Ha\]\s*Eigenvalue *\[eV\]",
+                    EigenvaluesListSubMatcher.copy()
+                    ])
+                ]), # END EigenvaluesSpin
+            # non-spin-polarized, periodic
+            SM (name = 'EigenvaluesNoSpinPeriodic',
+                startReStr = r"\s*K-point:\s*[0-9]+\s+at\s+.*\s+\(in units of recip\. lattice\)",
+                sections = ['fhi_aims_section_eigenvalues_spin%s' % addStr],
+                forwardMatch = True,
+                subMatchers = [
+                SM (startReStr = r"\s*K-point:\s*[0-9]+\s+at\s+(?P<fhi_aims_eigenvalue_kpoint1%s>[-+0-9.eEdD]+)\s+(?P<fhi_aims_eigenvalue_kpoint2%s>[-+0-9.eEdD]+)\s+(?P<fhi_aims_eigenvalue_kpoint3%s>[-+0-9.eEdD]+)\s+\(in units of recip\. lattice\)" % (3 * (addStr,)),
+                    repeats = True,
+                    subMatchers = [
+                    SM (startReStr = r"\s*State\s*Occupation\s*Eigenvalue *\[Ha\]\s*Eigenvalue *\[eV\]",
                         forwardMatch = True,
                         subMatchers = [
-            EigenvaluesListSubMatcher.copy()
+                        EigenvaluesListSubMatcher.copy()
                         ])
-                      ]),
-                    ]), # END EigenvaluesNoSpinPeriodic
-      # non-spin-polarized, non-periodic
-      SimpleMatcher(name = 'EigenvaluesNoSpinNonPeriodic',
-                    startReStr = r"\s*State\s+Occupation\s+Eigenvalue *\[Ha\]\s+Eigenvalue *\[eV\]",
-                    sections = ['fhi_aims_section_eigenvalues_spin%s' % addStr],
-                    forwardMatch = True,
-                    subMatchers = [
-        EigenvaluesListSubMatcher.copy()
-                    ]), # END EigenvaluesNoSpinNonPeriodic
-                  ])
+                    ]),
+                ]), # END EigenvaluesNoSpinPeriodic
+            # non-spin-polarized, non-periodic
+            SM (name = 'EigenvaluesNoSpinNonPeriodic',
+                startReStr = r"\s*State\s+Occupation\s+Eigenvalue *\[Ha\]\s+Eigenvalue *\[eV\]",
+                sections = ['fhi_aims_section_eigenvalues_spin%s' % addStr],
+                forwardMatch = True,
+                subMatchers = [
+                EigenvaluesListSubMatcher.copy()
+                ]), # END EigenvaluesNoSpinNonPeriodic
+            ])
+    # now construct the two subMatchers
     EigenvaluesGroupSubMatcher = build_eigenvaluesGroupSubMatcher('')
     EigenvaluesGroupSubMatcherZORA = build_eigenvaluesGroupSubMatcher('_ZORA')
     ########################################
     # submatcher for total energy components during SCF interation
-    TotalEnergyScfSubMatcher = SimpleMatcher(name = 'TotalEnergyScf',
-                  startReStr = r"\s*Total energy components:",
-                  subMatchers = [
-      SimpleMatcher(r"\s*\|\s*Sum of eigenvalues\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_sum_eigenvalues_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
-      SimpleMatcher(r"\s*\|\s*XC energy correction\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_XC_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
-      SimpleMatcher(r"\s*\|\s*XC potential correction\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_XC_potential_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
-      SimpleMatcher(r"\s*\|\s*Free-atom electrostatic energy\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<fhi_aims_energy_electrostatic_free_atom_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
-      SimpleMatcher(r"\s*\|\s*Hartree energy correction\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_correction_hartree_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
-      SimpleMatcher(r"\s*\|\s*Entropy correction\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_correction_entropy_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
-      SimpleMatcher(r"\s*\|\s*-{20}-*", weak = True),
-      SimpleMatcher(r"\s*\|\s*Total energy\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_total_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
-      SimpleMatcher(r"\s*\|\s*Total energy, T -> 0\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_total_T0_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
-      SimpleMatcher(r"\s*\|\s*Electronic free energy\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_free_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
-      SimpleMatcher(r"\s*Derived energy quantities:"),
-      SimpleMatcher(r"\s*\|\s*Kinetic energy\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<electronic_kinetic_energy_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
-      SimpleMatcher(r"\s*\|\s*Electrostatic energy\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_electrostatic_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
-      SimpleMatcher(r"\s*\|\s*Energy correction for multipole"),
-      SimpleMatcher(r"\s*\|\s*error in Hartree potential\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_hartree_error_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
-      SimpleMatcher(r"\s*\|\s*Sum of eigenvalues per atom\s*:\s*(?P<energy_sum_eigenvalues_per_atom_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
-      SimpleMatcher(r"\s*\|\s*Total energy \(T->0\) per atom\s*:\s*(?P<energy_total_T0_per_atom_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
-      SimpleMatcher(r"\s*\|\s*Electronic free energy per atom\s*:\s*(?P<energy_free_per_atom_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
-                  ])
+    TotalEnergyScfSubMatcher = SM (name = 'TotalEnergyScf',
+        startReStr = r"\s*Total energy components:",
+        subMatchers = [
+        SM (r"\s*\|\s*Sum of eigenvalues\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_sum_eigenvalues_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
+        SM (r"\s*\|\s*XC energy correction\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_XC_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
+        SM (r"\s*\|\s*XC potential correction\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_XC_potential_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
+        SM (r"\s*\|\s*Free-atom electrostatic energy\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<fhi_aims_energy_electrostatic_free_atom_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
+        SM (r"\s*\|\s*Hartree energy correction\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_correction_hartree_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
+        SM (r"\s*\|\s*Entropy correction\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_correction_entropy_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
+        SM (r"\s*\|\s*-{20}-*", weak = True),
+        SM (r"\s*\|\s*Total energy\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_total_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
+        SM (r"\s*\|\s*Total energy, T -> 0\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_total_T0_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
+        SM (r"\s*\|\s*Electronic free energy\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_free_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
+        SM (r"\s*Derived energy quantities:"),
+        SM (r"\s*\|\s*Kinetic energy\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<electronic_kinetic_energy_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
+        SM (r"\s*\|\s*Electrostatic energy\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_electrostatic_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
+        SM (r"\s*\|\s*Energy correction for multipole"),
+        SM (r"\s*\|\s*error in Hartree potential\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_hartree_error_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
+        SM (r"\s*\|\s*Sum of eigenvalues per atom\s*:\s*(?P<energy_sum_eigenvalues_per_atom_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
+        SM (r"\s*\|\s*Total energy \(T->0\) per atom\s*:\s*(?P<energy_total_T0_per_atom_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
+        SM (r"\s*\|\s*Electronic free energy per atom\s*:\s*(?P<energy_free_per_atom_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
+        ])
     ########################################
     # submatcher for total energy components in scalar ZORA post-processing
-    TotalEnergyZORASubMatcher = SimpleMatcher(name = 'TotalEnergyZORA',
-                  startReStr = r"\s*Total energy components:",
-                  subMatchers = [
-      SimpleMatcher(r"\s*\|\s*Sum of eigenvalues\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_sum_eigenvalues__eV>[-+0-9.eEdD]+) *eV"),
-      SimpleMatcher(r"\s*\|\s*XC energy correction\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_XC_functional__eV>[-+0-9.eEdD]+) *eV"),
-      SimpleMatcher(r"\s*\|\s*XC potential correction\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_XC_potential__eV>[-+0-9.eEdD]+) *eV"),
-      SimpleMatcher(r"\s*\|\s*Free-atom electrostatic energy\s*:\s*[-+0-9.eEdD]+ *Ha\s+[-+0-9.eEdD]+ *eV"),
-      SimpleMatcher(r"\s*\|\s*Hartree energy correction\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_correction_hartree__eV>[-+0-9.eEdD]+) *eV"),
-      SimpleMatcher(r"\s*\|\s*Entropy correction\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_correction_entropy__eV>[-+0-9.eEdD]+) *eV"),
-      SimpleMatcher(r"\s*\|\s*-{20}-*", weak = True),
-      SimpleMatcher(r"\s*\|\s*Total energy\s*:\s*[-+0-9.eEdD]+ *Ha\s+[-+0-9.eEdD]+ *eV"),
-      SimpleMatcher(r"\s*\|\s*Total energy, T -> 0\s*:\s*[-+0-9.eEdD]+ *Ha\s+[-+0-9.eEdD]+ *eV"),
-      SimpleMatcher(r"\s*\|\s*Electronic free energy\s*:\s*[-+0-9.eEdD]+ *Ha\s+[-+0-9.eEdD]+ *eV"),
-      SimpleMatcher(r"\s*Derived energy quantities:"),
-      SimpleMatcher(r"\s*\|\s*Kinetic energy\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<electronic_kinetic_energy__eV>[-+0-9.eEdD]+) *eV"),
-      SimpleMatcher(r"\s*\|\s*Electrostatic energy\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_electrostatic__eV>[-+0-9.eEdD]+) *eV"),
-      SimpleMatcher(r"\s*\|\s*Energy correction for multipole"),
-      SimpleMatcher(r"\s*\|\s*error in Hartree potential\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_hartree_error__eV>[-+0-9.eEdD]+) *eV"),
-      SimpleMatcher(r"\s*\|\s*Sum of eigenvalues per atom\s*:\s*(?P<energy_sum_eigenvalues_per_atom__eV>[-+0-9.eEdD]+) *eV"),
-      SimpleMatcher(r"\s*\|\s*Total energy \(T->0\) per atom\s*:\s*(?P<energy_total_T0_per_atom__eV>[-+0-9.eEdD]+) *eV"),
-      SimpleMatcher(r"\s*\|\s*Electronic free energy per atom\s*:\s*(?P<energy_free_per_atom__eV>[-+0-9.eEdD]+) *eV"),
-                  ])
+    TotalEnergyZORASubMatcher = SM (name = 'TotalEnergyZORA',
+        startReStr = r"\s*Total energy components:",
+        subMatchers = [
+        SM (r"\s*\|\s*Sum of eigenvalues\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_sum_eigenvalues__eV>[-+0-9.eEdD]+) *eV"),
+        SM (r"\s*\|\s*XC energy correction\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_XC_functional__eV>[-+0-9.eEdD]+) *eV"),
+        SM (r"\s*\|\s*XC potential correction\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_XC_potential__eV>[-+0-9.eEdD]+) *eV"),
+        SM (r"\s*\|\s*Free-atom electrostatic energy\s*:\s*[-+0-9.eEdD]+ *Ha\s+[-+0-9.eEdD]+ *eV"),
+        SM (r"\s*\|\s*Hartree energy correction\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_correction_hartree__eV>[-+0-9.eEdD]+) *eV"),
+        SM (r"\s*\|\s*Entropy correction\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_correction_entropy__eV>[-+0-9.eEdD]+) *eV"),
+        SM (r"\s*\|\s*-{20}-*", weak = True),
+        SM (r"\s*\|\s*Total energy\s*:\s*[-+0-9.eEdD]+ *Ha\s+[-+0-9.eEdD]+ *eV"),
+        SM (r"\s*\|\s*Total energy, T -> 0\s*:\s*[-+0-9.eEdD]+ *Ha\s+[-+0-9.eEdD]+ *eV"),
+        SM (r"\s*\|\s*Electronic free energy\s*:\s*[-+0-9.eEdD]+ *Ha\s+[-+0-9.eEdD]+ *eV"),
+        SM (r"\s*Derived energy quantities:"),
+        SM (r"\s*\|\s*Kinetic energy\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<electronic_kinetic_energy__eV>[-+0-9.eEdD]+) *eV"),
+        SM (r"\s*\|\s*Electrostatic energy\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_electrostatic__eV>[-+0-9.eEdD]+) *eV"),
+        SM (r"\s*\|\s*Energy correction for multipole"),
+        SM (r"\s*\|\s*error in Hartree potential\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_hartree_error__eV>[-+0-9.eEdD]+) *eV"),
+        SM (r"\s*\|\s*Sum of eigenvalues per atom\s*:\s*(?P<energy_sum_eigenvalues_per_atom__eV>[-+0-9.eEdD]+) *eV"),
+        SM (r"\s*\|\s*Total energy \(T->0\) per atom\s*:\s*(?P<energy_total_T0_per_atom__eV>[-+0-9.eEdD]+) *eV"),
+        SM (r"\s*\|\s*Electronic free energy per atom\s*:\s*(?P<energy_free_per_atom__eV>[-+0-9.eEdD]+) *eV"),
+        ])
     ########################################
     # return main Parser
-    return SimpleMatcher(name = 'Root',
-                  weak = True,
-                  startReStr = "",
-                  subMatchers = [
-      SimpleMatcher(name = 'NewRun',
-                    startReStr = r"\s*Invoking FHI-aims \.\.\.",
-                    endReStr = r"\s*Have a nice day\.",
-                    repeats = True,
-                    required = True,
-                    forwardMatch = True,
-                    sections   = ['section_run'],
+    return SM (name = 'Root',
+        weak = True,
+        startReStr = "",
+        subMatchers = [
+        SM (name = 'NewRun',
+            startReStr = r"\s*Invoking FHI-aims \.\.\.",
+            endReStr = r"\s*Have a nice day\.",
+            repeats = True,
+            required = True,
+            forwardMatch = True,
+            sections   = ['section_run'],
+            subMatchers = [
+            # header specifing version, compilation info, task assignment
+            SM (name = 'ProgramHeader',
+                startReStr = r"\s*Invoking FHI-aims \.\.\.",
+                subMatchers = [
+                SM (r"\s*Version\s*(?P<program_version>[0-9a-zA-Z_.]+)"),
+                SM (r"\s*Compiled on\s*(?P<fhi_aims_program_compilation_date>[0-9/]+)\s*at\s*(?P<fhi_aims_program_compilation_time>[0-9:]+)\s*on host\s*(?P<program_compilation_host>[-a-zA-Z0-9._]+)"),
+                SM (r"\s*Date\s*:\s*(?P<fhi_aims_program_execution_date>[-.0-9/]+)\s*,\s*Time\s*:\s*(?P<fhi_aims_program_execution_time>[-+0-9.eEdD]+)"),
+                SM (r"\s*-{20}-*", weak = True),
+                SM (r"\s*Time zero on CPU 1\s*:\s*(?P<time_run_cpu1_start>[-+0-9.eEdD]+) *s?\."),
+                SM (r"\s*Internal wall clock time zero\s*:\s*(?P<time_run_wall_start>[-+0-9.eEdD]+) *s\."),
+                SM (name = "nParallelTasks",
+                    startReStr = r"\s*Using\s*(?P<fhi_aims_number_of_tasks>[0-9]+)\s*parallel tasks\.",
+                    sections = ["fhi_aims_section_parallel_tasks"],
                     subMatchers = [
-        # header specifing version, compilation info, task assignment
-        SimpleMatcher(name = 'ProgramHeader',
-                      startReStr = r"\s*Invoking FHI-aims \.\.\.",
-                      subMatchers = [
-          SimpleMatcher(r"\s*Version\s*(?P<program_version>[0-9a-zA-Z_.]+)"),
-          SimpleMatcher(r"\s*Compiled on\s*(?P<fhi_aims_program_compilation_date>[0-9/]+)\s*at\s*(?P<fhi_aims_program_compilation_time>[0-9:]+)\s*on host\s*(?P<program_compilation_host>[-a-zA-Z0-9._]+)"),
-          SimpleMatcher(r"\s*Date\s*:\s*(?P<fhi_aims_program_execution_date>[-.0-9/]+)\s*,\s*Time\s*:\s*(?P<fhi_aims_program_execution_time>[-+0-9.eEdD]+)"),
-          SimpleMatcher(r"\s*-{20}-*", weak = True),
-          SimpleMatcher(r"\s*Time zero on CPU 1\s*:\s*(?P<time_run_cpu1_start>[-+0-9.eEdD]+) *s?\."),
-          SimpleMatcher(r"\s*Internal wall clock time zero\s*:\s*(?P<time_run_wall_start>[-+0-9.eEdD]+) *s\."),
-          SimpleMatcher(name = "nParallelTasks",
-                        startReStr = r"\s*Using\s*(?P<fhi_aims_number_of_tasks>[0-9]+)\s*parallel tasks\.",
-                        sections = ["fhi_aims_section_parallel_tasks"],
-                        subMatchers = [
-            SimpleMatcher(name = 'ParallelTasksAssignement',
-                          startReStr = r"\s*Task\s*(?P<fhi_aims_parallel_task_nr>[0-9]+)\s*on host\s+(?P<fhi_aims_parallel_task_host>[-a-zA-Z0-9._]+)\s+reporting\.",
-                          repeats = True,
-                          sections = ["fhi_aims_section_parallel_task_assignement"])
-                        ]), # END nParallelTasks
-          SimpleMatcher(r"\s*Performing system and environment tests:"),
-                      ]), # END ProgramHeader
-        SimpleMatcher(r"\s*Obtaining array dimensions for all initial allocations:"),
-        # parse control and geometry
-        SimpleMatcher(name = 'SectionMethod',
-                      startReStr = r"\s*Parsing control\.in \(first pass over file, find array dimensions only\)\.",
-                      sections = ["section_method"],
-                      subMatchers = [
-          # parse verbatim writeout of control.in
-          controlInSubMatcher,
-          # parse verbatim writeout of geometry.in
-          geometryInSubMatcher,
-          # parse settings writeout of aims
-          controlInOutSubMatcher,
-          # parse geometry writeout of aims
-          geometrySubMatcher
-                      ]), # END SectionMethod
-        SimpleMatcher(r"\s*Preparing all fixed parts of the calculation\."),
-        # this SimpleMatcher groups a single configuration calculation together with output after SCF convergence from Relaxation and MD
-        SimpleMatcher(name = 'SingleConfigurationCalculationWithSystemDescription',
-                      startReStr = r"\s*Begin self-consistency loop: (?:I|Re-i)nitialization\.",
-                      repeats = True,
-                      forwardMatch = True,
-                      subMatchers = [
-          # the actual section for a single configuration calculation starts here
-          SimpleMatcher(name = 'SingleConfigurationCalculation',
-                        startReStr = r"\s*Begin self-consistency loop: (?:I|Re-i)nitialization\.",
+                    SM (name = 'ParallelTasksAssignement',
+                        startReStr = r"\s*Task\s*(?P<fhi_aims_parallel_task_nr>[0-9]+)\s*on host\s+(?P<fhi_aims_parallel_task_host>[-a-zA-Z0-9._]+)\s+reporting\.",
                         repeats = True,
-                        forwardMatch = True,
-                        sections = ['section_single_configuration_calculation'],
+                        sections = ["fhi_aims_section_parallel_task_assignement"])
+                    ]), # END nParallelTasks
+                SM (r"\s*Performing system and environment tests:"),
+                ]), # END ProgramHeader
+            SM (r"\s*Obtaining array dimensions for all initial allocations:"),
+            # parse control and geometry
+            SM (name = 'SectionMethod',
+                startReStr = r"\s*Parsing control\.in \(first pass over file, find array dimensions only\)\.",
+                sections = ["section_method"],
+                subMatchers = [
+                # parse verbatim writeout of control.in
+                controlInSubMatcher,
+                # parse verbatim writeout of geometry.in
+                geometryInSubMatcher,
+                # parse settings writeout of aims
+                controlInOutSubMatcher,
+                # parse geometry writeout of aims
+                geometrySubMatcher
+                ]), # END SectionMethod
+            SM (r"\s*Preparing all fixed parts of the calculation\."),
+            # this SimpleMatcher groups a single configuration calculation together with output after SCF convergence from Relaxation and MD
+            SM (name = 'SingleConfigurationCalculationWithSystemDescription',
+                startReStr = r"\s*Begin self-consistency loop: (?:I|Re-i)nitialization\.",
+                repeats = True,
+                forwardMatch = True,
+                subMatchers = [
+                # the actual section for a single configuration calculation starts here
+                SM (name = 'SingleConfigurationCalculation',
+                    startReStr = r"\s*Begin self-consistency loop: (?:I|Re-i)nitialization\.",
+                    repeats = True,
+                    forwardMatch = True,
+                    sections = ['section_single_configuration_calculation'],
+                    subMatchers = [
+                    # initialization of SCF loop, SCF iteration 0
+                    SM (name = 'ScfInitialization',
+                        startReStr = r"\s*Begin self-consistency loop: (?:I|Re-i)nitialization\.",
+                        sections = ['section_scf_iteration'],
                         subMatchers = [
-            # initialization of SCF loop, SCF iteration 0
-            SimpleMatcher(name = 'ScfInitialization',
-                          startReStr = r"\s*Begin self-consistency loop: (?:I|Re-i)nitialization\.",
-                          sections = ['section_scf_iteration'],
-                          subMatchers = [
-              SimpleMatcher(r"\s*Date\s*:\s*(?P<fhi_aims_scf_date_start>[-.0-9/]+)\s*,\s*Time\s*:\s*(?P<fhi_aims_scf_time_start>[-+0-9.eEdD]+)"),
-              SimpleMatcher(r"\s*-{20}-*", weak = True),
-              EigenvaluesGroupSubMatcher,
-              TotalEnergyScfSubMatcher,
-              SimpleMatcher(r"\s*Full exact exchange energy:\s*[-+0-9.eEdD]+ *eV"),
-              SimpleMatcher(r"\s*End scf initialization - timings\s*:\s*max\(cpu_time\)\s+wall_clock\(cpu1\)"),
-              SimpleMatcher(r"\s*-{20}-*", weak = True)
-                           ]), # END ScfInitialization
-            # normal SCF iterations
-            SimpleMatcher(name = 'ScfIteration',
-                          startReStr = r"\s*Begin self-consistency iteration #\s*[0-9]+",
-                          sections = ['section_scf_iteration'],
-                          repeats = True,
-                          subMatchers = [
-              SimpleMatcher(r"\s*Date\s*:\s*(?P<fhi_aims_scf_date_start>[-.0-9/]+)\s*,\s*Time\s*:\s*(?P<fhi_aims_scf_time_start>[-+0-9.eEdD]+)"),
-              SimpleMatcher(r"\s*-{20}-*", weak = True),
-              SimpleMatcher(r"\s*Full exact exchange energy:\s*[-+0-9.eEdD]+ *eV"),
-              EigenvaluesGroupSubMatcher.copy(), # need copy since SubMatcher already used for ScfInitialization
-              TotalEnergyScfSubMatcher.copy(), # need copy since SubMatcher already used for ScfInitialization
-              # SCF convergence info
-              SimpleMatcher(name = 'SCFConvergence',
+                        SM (r"\s*Date\s*:\s*(?P<fhi_aims_scf_date_start>[-.0-9/]+)\s*,\s*Time\s*:\s*(?P<fhi_aims_scf_time_start>[-+0-9.eEdD]+)"),
+                        SM (r"\s*-{20}-*", weak = True),
+                        EigenvaluesGroupSubMatcher,
+                        TotalEnergyScfSubMatcher,
+                        SM (r"\s*Full exact exchange energy:\s*[-+0-9.eEdD]+ *eV"),
+                        SM (r"\s*End scf initialization - timings\s*:\s*max\(cpu_time\)\s+wall_clock\(cpu1\)"),
+                        SM (r"\s*-{20}-*", weak = True)
+                        ]), # END ScfInitialization
+                    # normal SCF iterations
+                    SM (name = 'ScfIteration',
+                        startReStr = r"\s*Begin self-consistency iteration #\s*[0-9]+",
+                        sections = ['section_scf_iteration'],
+                        repeats = True,
+                        subMatchers = [
+                        SM (r"\s*Date\s*:\s*(?P<fhi_aims_scf_date_start>[-.0-9/]+)\s*,\s*Time\s*:\s*(?P<fhi_aims_scf_time_start>[-+0-9.eEdD]+)"),
+                        SM (r"\s*-{20}-*", weak = True),
+                        SM (r"\s*Full exact exchange energy:\s*[-+0-9.eEdD]+ *eV"),
+                        EigenvaluesGroupSubMatcher.copy(), # need copy since SubMatcher already used for ScfInitialization
+                        TotalEnergyScfSubMatcher.copy(), # need copy since SubMatcher already used for ScfInitialization
+                        # SCF convergence info
+                        SM (name = 'SCFConvergence',
                             startReStr = r"\s*Self-consistency convergence accuracy:",
                             subMatchers = [
-                SimpleMatcher(r"\s*\|\s*Change of charge(?:/spin)? density\s*:\s*[-+0-9.eEdD]+\s+[-+0-9.eEdD]*"),
-                SimpleMatcher(r"\s*\|\s*Change of sum of eigenvalues\s*:\s*[-+0-9.eEdD]+ *eV"),
-                SimpleMatcher(r"\s*\|\s*Change of total energy\s*:\s*(?P<energy_change_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
-                SimpleMatcher(r"\s*\|\s*Change of forces\s*:\s*[-+0-9.eEdD]+ *eV/A"),
-                SimpleMatcher(r"\s*\|\s*Change of analytical stress\s*:\s*[-+0-9.eEdD]+ *eV/A\*\*3")
+                            SM (r"\s*\|\s*Change of charge(?:/spin)? density\s*:\s*[-+0-9.eEdD]+\s+[-+0-9.eEdD]*"),
+                            SM (r"\s*\|\s*Change of sum of eigenvalues\s*:\s*[-+0-9.eEdD]+ *eV"),
+                            SM (r"\s*\|\s*Change of total energy\s*:\s*(?P<energy_change_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
+                            SM (r"\s*\|\s*Change of forces\s*:\s*[-+0-9.eEdD]+ *eV/A"),
+                            SM (r"\s*\|\s*Change of analytical stress\s*:\s*[-+0-9.eEdD]+ *eV/A\*\*3")
                             ]), # END SCFConvergence
-              # after convergence eigenvalues are printed in the end instead of usually in the beginning
-              EigenvaluesGroupSubMatcher.copy(), # need copy since SubMatcher already used for ScfInitialization
-              SimpleMatcher(r"\s*(?P<fhi_aims_single_configuration_calculation_converged>Self-consistency cycle converged)\."),
-              SimpleMatcher(r"\s*End self-consistency iteration #\s*[0-9]+\s*:\s*max\(cpu_time\)\s+wall_clock\(cpu1\)")
-                          ]), # END ScfIteration
-            # possible scalar ZORA post-processing
-            SimpleMatcher(name = 'ScaledZORAPostProcessing',
-                          startReStr = r"\s*Post-processing: scaled ZORA corrections to eigenvalues and total energy.",
-                          endReStr = r"\s*End evaluation of scaled ZORA corrections.",
-                          subMatchers = [
-              SimpleMatcher(r"\s*Date\s*:\s*[-.0-9/]+\s*,\s*Time\s*:\s*[-+0-9.eEdD]+"),
-              SimpleMatcher(r"\s*-{20}-*", weak = True),
-              # parse eigenvalues
-              SimpleMatcher(name = 'EigenvaluesListsZORA',
+                        # after convergence eigenvalues are printed in the end instead of usually in the beginning
+                        EigenvaluesGroupSubMatcher.copy(), # need copy since SubMatcher already used for ScfInitialization
+                        SM (r"\s*(?P<fhi_aims_single_configuration_calculation_converged>Self-consistency cycle converged)\."),
+                        SM (r"\s*End self-consistency iteration #\s*[0-9]+\s*:\s*max\(cpu_time\)\s+wall_clock\(cpu1\)")
+                        ]), # END ScfIteration
+                    # possible scalar ZORA post-processing
+                    SM (name = 'ScaledZORAPostProcessing',
+                        startReStr = r"\s*Post-processing: scaled ZORA corrections to eigenvalues and total energy.",
+                        endReStr = r"\s*End evaluation of scaled ZORA corrections.",
+                        subMatchers = [
+                        SM (r"\s*Date\s*:\s*[-.0-9/]+\s*,\s*Time\s*:\s*[-+0-9.eEdD]+"),
+                        SM (r"\s*-{20}-*", weak = True),
+                        # parse eigenvalues
+                        SM (name = 'EigenvaluesListsZORA',
                             startReStr = r"\s*Writing Kohn-Sham eigenvalues\.",
                             forwardMatch = True,
                             sections = ['fhi_aims_section_eigenvalues_ZORA'],
                             subMatchers = [
-                EigenvaluesGroupSubMatcherZORA
+                            EigenvaluesGroupSubMatcherZORA
                             ]), # END EigenvaluesListsZORA
-              TotalEnergyZORASubMatcher
-                          ]), # END ScaledZORAPostProcessing
-            # summary of energy and forces
-            SimpleMatcher(name = 'EnergyForcesSummary',
-                          startReStr = r"\s*Energy and forces in a compact form:",
-                          subMatchers = [
-              SimpleMatcher(r"\s*\|\s*Total energy uncorrected\s*:\s*(?P<energy_total__eV>[-+0-9.eEdD]+) *eV"),
-              SimpleMatcher(r"\s*\|\s*Total energy corrected\s*:\s*(?P<energy_total_T0__eV>[-+0-9.eEdD]+) *eV"),
-              SimpleMatcher(r"\s*\|\s*Electronic free energy\s*:\s*(?P<energy_free__eV>[-+0-9.eEdD]+) *eV"),
-              SimpleMatcher(r"\s*-{20}-*", weak = True)
-                          ]), # END EnergyForcesSummary
-            # decomposition of the xc energy
-            SimpleMatcher(name = 'DecompositionXCEnergy',
-                          startReStr = r"\s*Start decomposition of the XC Energy",
-                          subMatchers = [
-              SimpleMatcher(r"\s*-{20}-*", weak = True),
-              SimpleMatcher(r"\s*Hartree-Fock part\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_hartree_fock_X_scaled__eV>[-+0-9.eEdD]+) *eV"),
-              SimpleMatcher(r"\s*-{20}-*", weak = True),
-              SimpleMatcher(r"\s*X Energy\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_X__eV>[-+0-9.eEdD]+) *eV"),
-              SimpleMatcher(r"\s*C Energy GGA\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_C__eV>[-+0-9.eEdD]+) *eV"),
-              SimpleMatcher(r"\s*Total XC Energy\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_XC_functional__eV>[-+0-9.eEdD]+) *eV"),
-              SimpleMatcher(r"\s*LDA X and C from self-consistent density"),
-              SimpleMatcher(r"\s*X Energy LDA\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<fhi_aims_energy_X_LDA__eV>[-+0-9.eEdD]+) *eV"),
-              SimpleMatcher(r"\s*C Energy LDA\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<fhi_aims_energy_C_LDA__eV>[-+0-9.eEdD]+) *eV"),
-              SimpleMatcher(r"\s*-{20}-*", weak = True),
-              SimpleMatcher(r"\s*End decomposition of the XC Energy"),
-              SimpleMatcher(r"\s*-{20}-*", weak = True)
-                          ]), # END DecompositionXCEnergy
-            # detect if caclualtion was not converged
-            SimpleMatcher(r"\s*\*\s*WARNING! SELF-CONSISTENCY CYCLE DID NOT CONVERGE"),
-            SimpleMatcher(r"\s*\*\s*USING YOUR PRESELECTED ACCURACY CRITERIA\."),
-            SimpleMatcher(r"\s*\*\s*DO NOT RELY ON ANY FINAL DATA WITHOUT FURTHER CHECKS\."),
-            # geometry relaxation
-            SimpleMatcher(name = 'Relaxation',
-                          startReStr = r"\s*Geometry optimization: Attempting to predict improved coordinates\.",
-                          subMatchers = [
-              SimpleMatcher(r"\s*Removing unitary transformations \(pure translations, rotations\) from forces on atoms\."),
-              SimpleMatcher(r"\s*Maximum force component is\s*[-+0-9.eEdD]\s*eV/A\."),
-              SimpleMatcher(r"\s*Present geometry (?P<fhi_aims_geometry_optimization_converged>is converged)\."),
-              SimpleMatcher(name = 'RelaxationStep',
+                        TotalEnergyZORASubMatcher
+                        ]), # END ScaledZORAPostProcessing
+                    # summary of energy and forces
+                    SM (name = 'EnergyForcesSummary',
+                        startReStr = r"\s*Energy and forces in a compact form:",
+                        subMatchers = [
+                        SM (r"\s*\|\s*Total energy uncorrected\s*:\s*(?P<energy_total__eV>[-+0-9.eEdD]+) *eV"),
+                        SM (r"\s*\|\s*Total energy corrected\s*:\s*(?P<energy_total_T0__eV>[-+0-9.eEdD]+) *eV"),
+                        SM (r"\s*\|\s*Electronic free energy\s*:\s*(?P<energy_free__eV>[-+0-9.eEdD]+) *eV"),
+                        SM (r"\s*-{20}-*", weak = True)
+                        ]), # END EnergyForcesSummary
+                    # decomposition of the xc energy
+                    SM (name = 'DecompositionXCEnergy',
+                        startReStr = r"\s*Start decomposition of the XC Energy",
+                        subMatchers = [
+                        SM (r"\s*-{20}-*", weak = True),
+                        SM (r"\s*Hartree-Fock part\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_hartree_fock_X_scaled__eV>[-+0-9.eEdD]+) *eV"),
+                        SM (r"\s*-{20}-*", weak = True),
+                        SM (r"\s*X Energy\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_X__eV>[-+0-9.eEdD]+) *eV"),
+                        SM (r"\s*C Energy GGA\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_C__eV>[-+0-9.eEdD]+) *eV"),
+                        SM (r"\s*Total XC Energy\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_XC_functional__eV>[-+0-9.eEdD]+) *eV"),
+                        SM (r"\s*LDA X and C from self-consistent density"),
+                        SM (r"\s*X Energy LDA\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<fhi_aims_energy_X_LDA__eV>[-+0-9.eEdD]+) *eV"),
+                        SM (r"\s*C Energy LDA\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<fhi_aims_energy_C_LDA__eV>[-+0-9.eEdD]+) *eV"),
+                        SM (r"\s*-{20}-*", weak = True),
+                        SM (r"\s*End decomposition of the XC Energy"),
+                        SM (r"\s*-{20}-*", weak = True)
+                        ]), # END DecompositionXCEnergy
+                    # caclualtion was not converged
+                    SM (name = 'ScfNotConverged',
+                        startReStr = r"\s*\*\s*WARNING! SELF-CONSISTENCY CYCLE DID NOT CONVERGE",
+                        subMatchers = [
+                        SM (r"\s*\*\s*USING YOUR PRESELECTED ACCURACY CRITERIA\."),
+                        SM (r"\s*\*\s*DO NOT RELY ON ANY FINAL DATA WITHOUT FURTHER CHECKS\.")
+                        ]),
+                    # geometry relaxation
+                    SM (name = 'Relaxation',
+                        startReStr = r"\s*Geometry optimization: Attempting to predict improved coordinates\.",
+                        subMatchers = [
+                        SM (r"\s*Removing unitary transformations \(pure translations, rotations\) from forces on atoms\."),
+                        SM (r"\s*Maximum force component is\s*[-+0-9.eEdD]\s*eV/A\."),
+                        SM (r"\s*Present geometry (?P<fhi_aims_geometry_optimization_converged>is converged)\."),
+                        SM (name = 'RelaxationStep',
                             startReStr = r"\s*Present geometry (?P<fhi_aims_geometry_optimization_converged>is not yet converged)\.",
                             subMatchers = [
-                SimpleMatcher(r"\s*Relaxation step number\s*[0-9]+: Predicting new coordinates\."),
-                SimpleMatcher(r"\s*Advancing geometry using (?:trust radius method|BFGS)\.")
+                            SM (r"\s*Relaxation step number\s*[0-9]+: Predicting new coordinates\."),
+                            SM (r"\s*Advancing geometry using (?:trust radius method|BFGS)\.")
                             ]) # END RelaxationStep
-                          ]), # END Relaxation
-            # MD
-            SimpleMatcher(name = 'MD',
-                    startReStr = r"\s*Molecular dynamics: Attempting to update all nuclear coordinates\.",
-                          subMatchers = [
-              SimpleMatcher(r"\s*Removing unitary transformations \(pure translations, rotations\) from forces on atoms\."),
-              SimpleMatcher(r"\s*Maximum force component is\s*[-+0-9.eEdD]\s*eV/A\."),
-              SimpleMatcher(r"\s*Present geometry is converged\."),
-              SimpleMatcher(name = 'MDStep',
+                        ]), # END Relaxation
+                    # MD
+                    SM (name = 'MD',
+                        startReStr = r"\s*Molecular dynamics: Attempting to update all nuclear coordinates\.",
+                        subMatchers = [
+                        SM (r"\s*Removing unitary transformations \(pure translations, rotations\) from forces on atoms\."),
+                        SM (r"\s*Maximum force component is\s*[-+0-9.eEdD]\s*eV/A\."),
+                        SM (r"\s*Present geometry is converged\."),
+                        SM (name = 'MDStep',
                             startReStr = r"\s*Advancing structure using Born-Oppenheimer Molecular Dynamics:",
                             subMatchers = [
-                SimpleMatcher(r"\s*Complete information for previous time-step:"),
-                SimpleMatcher(r"\s*\|\s*Time step number\s*:\s*[0-9]+"),
-                SimpleMatcher(r"\s*-{20}-*", weak = True)
+                            SM (r"\s*Complete information for previous time-step:"),
+                            SM (r"\s*\|\s*Time step number\s*:\s*[0-9]+"),
+                            SM (r"\s*-{20}-*", weak = True)
                             ]) # END MDStep
-                          ]) # END MD
-                        ]), # END SingleConfigurationCalculation
-          # parse updated geometry for relaxation
-          geometryRelaxationSubMatcher,
-          # parse updated geometry for MD
-          #geometryMDSubMatcher
-                      ]), # END SingleConfigurationCalculationWithSystemDescription
-        SimpleMatcher(r"\s*-{20}-*", weak = True),
-        SimpleMatcher(r"\s*Final output of selected total energy values:"),
-        SimpleMatcher(r"\s*The following output summarizes some interesting total energy values"),
-        SimpleMatcher(r"\s*at the end of a run \(AFTER all relaxation, molecular dynamics, etc\.\)\."),
-        SimpleMatcher(r"\s*-{20}-*", weak = True),
-        SimpleMatcher(r"\s*-{20}-*", weak = True),
-        SimpleMatcher(r"\s*Leaving FHI-aims\."),
-        SimpleMatcher(r"\s*Date\s*:\s*[-.0-9/]+\s*,\s*Time\s*:\s*[-+0-9.eEdD]+"),
-        # summary of computational steps
-        SimpleMatcher(name = 'ComputationalSteps',
-                      startReStr = r"\s*Computational steps:",
-                      subMatchers = [
-          SimpleMatcher(r"\s*\|\s*Number of self-consistency cycles\s*:\s*[0-9]+"),
-          SimpleMatcher(r"\s*\|\s*Number of relaxation steps\s*:\s*[0-9]+"),
-          SimpleMatcher(r"\s*\|\s*Number of molecular dynamics steps\s*:\s*[0-9]+"),
-          SimpleMatcher(r"\s*\|\s*Number of force evaluations\s*:\s*[0-9]+")
-                      ]), # END ComputationalSteps
-        SimpleMatcher(r"\s*Detailed time accounting\s*:\s*max\(cpu_time\)\s+wall_clock\(cpu1\)")
-                    ]) # END NewRun
-                  ]) # END Root
+                        ]) # END MD
+                    ]), # END SingleConfigurationCalculation
+                # parse updated geometry for relaxation
+                geometryRelaxationSubMatcher,
+                # parse updated geometry for MD
+                #geometryMDSubMatcher
+                ]), # END SingleConfigurationCalculationWithSystemDescription
+            SM (r"\s*-{20}-*", weak = True),
+            SM (r"\s*Final output of selected total energy values:"),
+            SM (r"\s*The following output summarizes some interesting total energy values"),
+            SM (r"\s*at the end of a run \(AFTER all relaxation, molecular dynamics, etc\.\)\."),
+            SM (r"\s*-{20}-*", weak = True),
+            SM (r"\s*-{20}-*", weak = True),
+            SM (r"\s*Leaving FHI-aims\."),
+            SM (r"\s*Date\s*:\s*[-.0-9/]+\s*,\s*Time\s*:\s*[-+0-9.eEdD]+"),
+            # summary of computational steps
+            SM (name = 'ComputationalSteps',
+                startReStr = r"\s*Computational steps:",
+                subMatchers = [
+                SM (r"\s*\|\s*Number of self-consistency cycles\s*:\s*[0-9]+"),
+                SM (r"\s*\|\s*Number of relaxation steps\s*:\s*[0-9]+"),
+                SM (r"\s*\|\s*Number of molecular dynamics steps\s*:\s*[0-9]+"),
+                SM (r"\s*\|\s*Number of force evaluations\s*:\s*[0-9]+")
+                ]), # END ComputationalSteps
+            SM (r"\s*Detailed time accounting\s*:\s*max\(cpu_time\)\s+wall_clock\(cpu1\)")
+            ]) # END NewRun
+        ]) # END Root
     
 def get_metaInfo(filePath):
     """Loads metadata.
