@@ -30,20 +30,7 @@ class FhiAimsParserContext(object):
         section: The cached values and sections that were found in the section that is closed.
     """
     def __init__(self):
-        self.secMethodIndex = None
-        self.secSystemDescriptionIndex = None
-        self.scalarZORA = False
-        self.periodicCalc = False
-        self.MD = False
-        # start with -1 since zeroth iteration is the initialization
-        self.scfIterNr = -1
-        self.scfConvergence = False
-        self.geoConvergence = None
-        self.parsedControlInFile = False
-        self.ControlInSuperContext = None
-        self.eigenvalues_occupation = []
-        self.eigenvalues_eigenvalues = []
-        self.eigenvalues_kpoints = []
+        self.initialize_values()
         # dictionary of energy values, which are tracked between SCF iterations and written after convergence
         self.totalEnergyList = {
                                 'energy_sum_eigenvalues': None,
@@ -63,6 +50,27 @@ class FhiAimsParserContext(object):
                                  'ZORA': 'scalar_relativistic',
                                  'on-site free-atom approximation to ZORA': 'scalar_relativistic_atomic_ZORA',
                                 }
+
+    def initialize_values(self):
+        """Initializes the values of certain variables.
+
+        This allows a consistent setting and resetting of the variables,
+        when the class is created and when a section_run closes.
+        """
+        self.secMethodIndex = None
+        self.secSystemDescriptionIndex = None
+        self.scalarZORA = False
+        self.periodicCalc = False
+        self.MD = False
+        # start with -1 since zeroth iteration is the initialization
+        self.scfIterNr = -1
+        self.scfConvergence = False
+        self.geoConvergence = None
+        self.parsedControlInFile = False
+        self.ControlInSuperContext = None
+        self.eigenvalues_occupation = []
+        self.eigenvalues_eigenvalues = []
+        self.eigenvalues_kpoints = []
 
     def startedParsing(self, fInName, parser):
         """Function is called when the parsing starts.
@@ -164,18 +172,7 @@ class FhiAimsParserContext(object):
             if k.startswith('fhi_aims_controlInOut_'):
                 backend.superBackend.addValue(k, v[-1])
         # reset all variables
-        self.secMethodIndex = None
-        self.secSystemDescriptionIndex = None
-        self.scalarZORA = False
-        self.periodicCalc = False
-        self.MD = False
-        self.scfIterNr = -1
-        self.scfConvergence = False
-        self.geoConvergence = None
-        self.parseControlInFile = False
-        self.eigenvalues_occupation = []
-        self.eigenvalues_eigenvalues = []
-        self.eigenvalues_kpoints = []
+        self.initialize_values()
 
     def onClose_section_method(self, backend, gIndex, section):
         """Trigger called when section_method is closed.
