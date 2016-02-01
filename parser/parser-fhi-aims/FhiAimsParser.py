@@ -2,13 +2,15 @@ import setup_paths
 import numpy as np
 import nomadcore.ActivateLogging
 from nomadcore.caching_backend import CachingLevel
-from nomadcore.local_meta_info import loadJsonFile, InfoKindEl
+from nomadcore.local_meta_info import loadJsonFile#, InfoKindEl
 from nomadcore.simple_parser import mainFunction
 from nomadcore.simple_parser import SimpleMatcher as SM
-from nomadcore.unit_conversion.unit_conversion import convert_unit
-import json, logging, os, re, sys
+from FhiAimsCommon import write_k_grid, write_xc_functional
+import logging, os, re, sys
 
 ############################################################
+# This is the parser for the main file of FHI-aims.
+#
 # REMARKS
 # 
 # Energies are parsed in eV to get consistent values 
@@ -53,27 +55,6 @@ class FhiAimsParserContext(object):
                                 'energy_total_T0_per_atom': None,
                                 'energy_free_per_atom': None,
                                }
-        # dictionary for conversion of xc functional name in aims to metadata format
-        # TODO hybrid GGA and mGGA functionals and vdW functionals
-        self.xcDict = {
-                       'Perdew-Wang parametrisation of Ceperley-Alder LDA': 'LDA_C_PW_LDA_X',
-                       'Perdew-Zunger parametrisation of Ceperley-Alder LDA': 'LDA_C_PZ_LDA_X',
-                       'VWN-LDA parametrisation of VWN5 form': 'LDA_C_VWN_LDA_X',
-                       'VWN-LDA parametrisation of VWN-RPA form': 'LDA_C_VWN_RPA_LDA_X',
-                       'AM05 gradient-corrected functionals': 'GGA_C_AM05_GGA_X_AM05',
-                       'BLYP functional': 'GGA_C_LYP_GGA_X_B88',
-                       'PBE gradient-corrected functionals': 'GGA_C_PBE_GGA_X_PBE',
-                       'PBEint gradient-corrected functional': 'GGA_C_PBEINT_GGA_X_PBEINT',
-                       'PBEsol gradient-corrected functionals': 'GGA_C_PBE_SOL_GGA_X_PBE_SOL',
-                       'RPBE gradient-corrected functionals': 'GGA_C_PBE_GGA_X_RPBE',
-                       'revPBE gradient-corrected functionals': 'GGA_C_PBE_GGA_X_PBE_R',
-                       'PW91 gradient-corrected functionals': 'GGA_C_PW91_GGA_X_PW91',
-                       'M06-L gradient-corrected functionals': 'MGGA_C_M06_L_MGGA_X_M06_L',
-                       'M11-L gradient-corrected functionals': 'MGGA_C_M11_L_MGGA_X_M11_L',
-                       'TPSS gradient-corrected functionals': 'MGGA_C_TPSS_MGGA_X_TPSS',
-                       'TPSSloc gradient-corrected functionals': 'MGGA_C_TPSSLOC_MGGA_X_TPSS',
-                       'Hartree-Fock': 'HF_X',
-                      }
         # dictionary for conversion of relativistic treatment in aims to metadata format
         self.relativisticDict = {
                                  'Non-relativistic': '',
@@ -191,78 +172,6 @@ class FhiAimsParserContext(object):
         However, this also bypasses the checking of validity of the metadata name by the backend.
         The scala part will check the validity nevertheless.
         """
-        def write_k_grid(metaName, valuesDict):
-            """Function to write k-grid for controlIn and controlInOut.
-
-            Args:
-                metaName: Corresponding metadata name for k.
-                valuesDict: Dictionary that contains the cached values of a section.
-            """
-            k_grid = []
-            for i in ['1', '2', '3']:
-                ki = valuesDict.get(metaName + i)
-                if ki is not None:
-                    k_grid.append(ki[-1])
-            if k_grid:
-                backend.superBackend.addArrayValues(metaName + '_grid', np.asarray(k_grid))
-
-        def write_xc_functional(metaNameStart, valuesDict):
-            """Function to write xc settings for controlIn and controlInOut.
-
-            The omega of the HSE-functional is converted to the unit given in the metadata.
-            The xc functional from controlInOut is converted to the string required for the metadata XC_functional.
-
-            Args:
-                metaNameStart: Base name of metdata for xc. Must be fhi_aims_controlIn or fhi_aims_controlInOut.
-                valuesDict: Dictionary that contains the cached values of a section.
-            """
-            if metaNameStart == 'fhi_aims_controlIn':
-                location = 'control.in'
-                functional = 'hse06'
-                xcWrite = False
-            elif metaNameStart == 'fhi_aims_controlInOut':
-                location = 'aims output from the parsed control.in'
-                functional = 'HSE-functional'
-                xcWrite = True
-            else:
-                logger.error("Unknown metaName %s in function write_xc_functional. Please correct." % metaNameStart)
-                return
-            # get cached values for xc functional
-            xc = valuesDict.get(metaNameStart + '_xc')
-            if xc is not None:
-                # check if only one xc keyword was found in control.in
-                if len(xc) > 1:
-                    logger.warning("Found %d settings for the xc functional in %s: %s. This leads to an undefined behavior und no metadata can be written for %s_xc." % (len(xc), location, xc, metaNameStart))
-                else:
-                    backend.superBackend.addValue(metaNameStart + '_xc', xc[-1])
-                    # convert xc functional to metadata XC_functional
-                    if xcWrite:
-                        xcMetaName = 'XC_functional'
-                        xcString = self.xcDict.get(xc[-1])
-                        if xcString is not None:
-                            backend.addValue(xcMetaName, xcString)
-                        else:
-                            logger.error("The xc functional '%s' could not be converted to the required string for the metadata '%s'. Please add it to the dictionary xcDict." % (xc[-1], xcMetaName))
-                    # hse_omega is only written for HSE06
-                    hse_omega = valuesDict.get(metaNameStart + '_hse_omega')
-                    if hse_omega is not None and xc[-1] == functional:
-                        # get unit from metadata
-                        unit = self.parser.parserBuilder.metaInfoEnv.infoKinds[metaNameStart + '_hse_omega'].units
-                        # try unit conversion and write hse_omega
-                        hse_unit = valuesDict.get(metaNameStart + '_hse_unit')
-                        if hse_unit is not None:
-                            value = None
-                            if hse_unit[-1] in ['a', 'A']:
-                                value = convert_unit(hse_omega[-1], 'angstrom**-1', unit)
-                            elif hse_unit[-1] in ['b', 'B']:
-                                value = convert_unit(hse_omega[-1], 'bohr**-1', unit)
-                            if value is not None:
-                                backend.superBackend.addValue(metaNameStart + '_hse_omega', value)
-                            else:
-                                logger.warning("Unknown hse_unit %s in %s. Cannot write %s" % (hse_unit[-1], location, metaNameStart + '_hse_omega'))
-                        else:
-                            logger.warning("No value found for %s. Cannot write %s" % (metaNameStart + '_hse_unit', metaNameStart + '_hse_omega'))
-
         # keep track of the latest method section
         self.secMethodIndex = gIndex
         # list of excluded metadata
@@ -289,9 +198,9 @@ class FhiAimsParserContext(object):
                     continue
                 # write k_krid
                 elif k == 'fhi_aims_controlIn_k1':
-                    write_k_grid('fhi_aims_controlIn_k', section.simpleValues)
+                    write_k_grid(backend, 'fhi_aims_controlIn_k', section.simpleValues)
                 elif k == 'fhi_aims_controlInOut_k1':
-                    write_k_grid('fhi_aims_controlInOut_k', section.simpleValues)
+                    write_k_grid(backend, 'fhi_aims_controlInOut_k', section.simpleValues)
                 elif k == 'fhi_aims_controlIn_relativistic':
                     # check for scalar ZORA setting and convert to one common name
                     if re.match(r"\s*zora\s+scalar", v[-1], re.IGNORECASE):
@@ -331,8 +240,9 @@ class FhiAimsParserContext(object):
             else:
                 logger.warning("The relativistic setting '%s' could not be converted to the required string for the metadata 'relativity_method'. Please add it to the dictionary relativisticDict." % InOut_relativistic[-1])
         # handling of xc functional
-        write_xc_functional('fhi_aims_controlIn', section.simpleValues)
-        write_xc_functional('fhi_aims_controlInOut', section.simpleValues)
+        metaInfoEnv = self.parser.parserBuilder.metaInfoEnv
+        write_xc_functional(backend = backend, metaInfoEnv = metaInfoEnv, metaNameStart = 'fhi_aims_controlIn', valuesDict = section.simpleValues, location = 'verbatim writeout of control.in', logger = logger)
+        write_xc_functional(backend = backend, metaInfoEnv = metaInfoEnv, metaNameStart = 'fhi_aims_controlInOut', valuesDict = section.simpleValues, location = 'aims output from the parsed control.in', logger = logger)
 
     def onClose_section_system_description(self, backend, gIndex, section):
         """Trigger called when section_system_description is closed.
@@ -491,11 +401,13 @@ def build_FhiAimsMainFileSimpleMatcher():
             # Explicitly add ^ to ensure that the keyword is not within a comment.
             # The search is done unordered since the keywords do not appear in a specific order.
             # Repating occurrences of the same keywords are captured.
-            # Closing the section fhi_aims_section_controlIn will write the last captured value
-            # since aims uses the last occurrence of a keyword.
             # List the matchers in alphabetical order according to keyword name.
             #
+            SM (r"^\s*charge\s+(?P<fhi_aims_controlIn_charge>[-+0-9.eEdD]+)", repeats = True),
+            # only the first character is important for aims
+            SM (r"^\s*hse_unit\s+(?P<fhi_aims_controlIn_hse_unit>[a-zA-Z])[-_a-zA-Z0-9]+", repeats = True),
             SM (r"^\s*MD_time_step\s+(?P<fhi_aims_controlIn_MD_time_step__ps>[-+0-9.eEdD]+)", repeats = True),
+            SM (r"^\s*k_grid\s+(?P<fhi_aims_controlIn_k1>[0-9]+)\s+(?P<fhi_aims_controlIn_k2>[0-9]+)\s+(?P<fhi_aims_controlIn_k3>[0-9]+)", repeats = True),
             # need to distinguish different cases
             SM (r"^\s*occupation_type\s+",
                 forwardMatch = True,
@@ -505,9 +417,6 @@ def build_FhiAimsMainFileSimpleMatcher():
                 SM (r"^\s*occupation_type\s+(?P<fhi_aims_controlIn_occupation_type>[-_a-zA-Z]+)\s+(?P<fhi_aims_controlIn_occupation_width>[-+0-9.eEdD]+)")
                 ]),
             SM (r"^\s*override_relativity\s+\.?(?P<fhi_aims_controlIn_override_relativity>[-_a-zA-Z]+)\.?", repeats = True),
-            SM (r"^\s*charge\s+(?P<fhi_aims_controlIn_charge>[-+0-9.eEdD]+)", repeats = True),
-            # only the first character is important for aims
-            SM (r"^\s*hse_unit\s+(?P<fhi_aims_controlIn_hse_unit>[a-zA-Z])[-_a-zA-Z0-9]+", repeats = True),
             # need to distinguish different cases
             SM (r"^\s*relativistic\s+",
                 forwardMatch = True,
@@ -522,8 +431,8 @@ def build_FhiAimsMainFileSimpleMatcher():
             SM (r"^\s*sc_accuracy_forces\s+(?P<fhi_aims_controlIn_sc_accuracy_forces>[-+0-9.eEdD]+)", repeats = True),
             SM (r"^\s*sc_accuracy_stress\s+(?P<fhi_aims_controlIn_sc_accuracy_stress>[-+0-9.eEdD]+)", repeats = True),
             SM (r"^\s*sc_iter_limit\s+(?P<fhi_aims_controlIn_sc_iter_limit>[0-9]+)", repeats = True),
-            SM (r"^\s*k_grid\s+(?P<fhi_aims_controlIn_k1>[0-9]+)\s+(?P<fhi_aims_controlIn_k2>[0-9]+)\s+(?P<fhi_aims_controlIn_k3>[0-9]+)", repeats = True),
             SM (r"^\s*spin\s+(?P<fhi_aims_controlIn_spin>[-_a-zA-Z]+)", repeats = True),
+            SM (r"^\s*verbatim_writeout\s+[.a-zA-Z]+", repeats = True),
             # need to distinguish two cases: just the name of the xc functional or name plus number (e.g. for HSE functional)
             SM (r"^\s*xc\s+",
                 forwardMatch = True,
@@ -532,7 +441,6 @@ def build_FhiAimsMainFileSimpleMatcher():
                 SM (r"^\s*xc\s+(?P<fhi_aims_controlIn_xc>[-_a-zA-Z0-9]+)\s+(?P<fhi_aims_controlIn_hse_omega>[-+0-9.eEdD]+)"),
                 SM (r"^\s*xc\s+(?P<fhi_aims_controlIn_xc>[-_a-zA-Z0-9]+)")
                 ]),
-            SM (r"^\s*verbatim_writeout\s+[.a-zA-Z]+")
             ]), # END ControlInKeywords
         SM (r"\s*-{20}-*", weak = True)
         ])
@@ -553,6 +461,7 @@ def build_FhiAimsMainFileSimpleMatcher():
             #
             # only the first character is important for aims
             SM (r"\s*hse_unit: Unit for the HSE06 hybrid functional screening parameter set to (?P<fhi_aims_controlInOut_hse_unit>[a-zA-Z])[a-zA-Z]*\^\(-1\)\.", repeats = True),
+            SM (r"^\s*Found k-point grid:\s+(?P<fhi_aims_controlInOut_k1>[0-9]+)\s+(?P<fhi_aims_controlInOut_k2>[0-9]+)\s+(?P<fhi_aims_controlInOut_k3>[0-9]+)", repeats = True),
             # metadata fhi_aims_MD_flag is just used to detect already in the methods section if a MD run was perfomed
             SM (r"\s*(?P<fhi_aims_MD_flag>Molecular dynamics time step) =\s*(?P<fhi_aims_controlInOut_MD_time_step__ps>[0-9.]+) *ps", repeats = True),
             SM (r"\s*Scalar relativistic treatment of kinetic energy: (?P<fhi_aims_controlInOut_relativistic>[-a-zA-Z\s]+)\.", repeats = True),
