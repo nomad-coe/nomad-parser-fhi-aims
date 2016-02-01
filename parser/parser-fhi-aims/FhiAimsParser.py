@@ -2,10 +2,9 @@ import setup_paths
 import numpy as np
 import nomadcore.ActivateLogging
 from nomadcore.caching_backend import CachingLevel
-from nomadcore.local_meta_info import loadJsonFile#, InfoKindEl
 from nomadcore.simple_parser import mainFunction
 from nomadcore.simple_parser import SimpleMatcher as SM
-from FhiAimsCommon import write_k_grid, write_xc_functional
+from FhiAimsCommon import get_metaInfo, write_k_grid, write_xc_functional
 import logging, os, re, sys
 
 ############################################################
@@ -581,7 +580,7 @@ def build_FhiAimsMainFileSimpleMatcher():
             addStr: String that is appended to the metadata names.
     
         Returns:
-           SimpleMatcher that parses eigenvalues with metadata ccording to addStr. 
+            SimpleMatcher that parses eigenvalues with metadata ccording to addStr. 
         """
         # submatcher for eigenvalue list
         EigenvaluesListSubMatcher =  SM (name = 'EigenvaluesLists',
@@ -675,7 +674,7 @@ def build_FhiAimsMainFileSimpleMatcher():
         startReStr = r"\s*Total energy components:",
         subMatchers = [
         SM (r"\s*\|\s*Sum of eigenvalues\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_sum_eigenvalues__eV>[-+0-9.eEdD]+) *eV"),
-        SM (r"\s*\|\s*XC energy correction\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_XC_functional__eV>[-+0-9.eEdD]+) *eV"),
+        SM (r"\s*\|\s*XC energy correction\s*:\s*[-+0-9.eEdD]+ *Ha\s+[-+0-9.eEdD]+ *eV"),
         SM (r"\s*\|\s*XC potential correction\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_XC_potential__eV>[-+0-9.eEdD]+) *eV"),
         SM (r"\s*\|\s*Free-atom electrostatic energy\s*:\s*[-+0-9.eEdD]+ *Ha\s+[-+0-9.eEdD]+ *eV"),
         SM (r"\s*\|\s*Hartree energy correction\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_correction_hartree__eV>[-+0-9.eEdD]+) *eV"),
@@ -696,8 +695,8 @@ def build_FhiAimsMainFileSimpleMatcher():
     ########################################
     # return main Parser
     return SM (name = 'Root',
-        weak = True,
         startReStr = "",
+        weak = True,
         subMatchers = [
         SM (name = 'NewRun',
             startReStr = r"\s*Invoking FHI-aims \.\.\.",
@@ -705,7 +704,7 @@ def build_FhiAimsMainFileSimpleMatcher():
             repeats = True,
             required = True,
             forwardMatch = True,
-            sections   = ['section_run'],
+            sections = ['section_run'],
             subMatchers = [
             # header specifing version, compilation info, task assignment
             SM (name = 'ProgramHeader',
@@ -901,27 +900,15 @@ def build_FhiAimsMainFileSimpleMatcher():
             SM (r"\s*Detailed time accounting\s*:\s*max\(cpu_time\)\s+wall_clock\(cpu1\)")
             ]) # END NewRun
         ]) # END Root
-    
-def get_metaInfo(filePath):
-    """Loads metadata.
-
-    Args:
-        filePath: Location of metadata.
-
-    Returns:
-       metadata which is an object of the class InfoKindEnv in nomadcore.local_meta_info.py.
-    """
-    metaInfoEnv, warnings = loadJsonFile(filePath = filePath, dependencyLoader = None, extraArgsHandling = InfoKindEl.ADD_EXTRA_ARGS, uri = None)
-    return metaInfoEnv
 
 def get_cachingLevelForMetaName(metaInfoEnv):
     """Sets the caching level for the metadata.
 
     Args:
-       metaInfoEnv: metadata which is an object of the class InfoKindEnv in nomadcore.local_meta_info.py.
+        metaInfoEnv: metadata which is an object of the class InfoKindEnv in nomadcore.local_meta_info.py.
 
     Returns:
-       Dictionary with metaname as key and caching level as value. 
+        Dictionary with metaname as key and caching level as value. 
     """
     # manually adjust caching of metadata
     cachingLevelForMetaName = {
@@ -946,7 +933,7 @@ def get_cachingLevelForMetaName(metaInfoEnv):
 def main():
     """Main function.
 
-    Set up everything for the parsing of the FHI-aims main file.
+    Set up everything for the parsing of the FHI-aims main file and run the parsing.
     """
     # get main file description
     FhiAimsMainFileSimpleMatcher = build_FhiAimsMainFileSimpleMatcher()
