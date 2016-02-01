@@ -211,7 +211,7 @@ class FhiAimsParserContext(object):
                 logger = logger)
         # otherwise parse control.in file
         else:
-            logger.warning("Found no verbatim writeout of control.in. I will try to parse control.in directly.")
+            logger.warning("Found no verbatim writeout of control.in. I will try to parse the control.in file directly.")
             fName = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(self.fName)),"control.in"))
             try:
                 with open(fName) as fIn:

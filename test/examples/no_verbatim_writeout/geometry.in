@@ -1,0 +1,4 @@
+verbatim_writeout .false.
+atom  0.8 0.6 0.0 H
+atom -0.8 0.6 0.0 H
+atom  0.0 0.0 0.0 O

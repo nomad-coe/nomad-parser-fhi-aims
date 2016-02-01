@@ -20,3 +20,7 @@ Total energy calculation of N atom with hse06 and collinear spin.
 
 ## Si_periodic_geometry_optimization.out
 Unit cell optimization of diamond Si with pw-lda.
+
+##no_verbatim_writeout
+This folder contains a calculation where the contents of control.in and
+geometry.in are not repeated verbatim in the output ouf FHI-aims.
