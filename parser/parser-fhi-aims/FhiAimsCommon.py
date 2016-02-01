@@ -2,7 +2,7 @@ import setup_paths
 import numpy as np
 from nomadcore.local_meta_info import loadJsonFile, InfoKindEl
 from nomadcore.unit_conversion.unit_conversion import convert_unit
-import os
+import os, re
 
 ############################################################
 # This file contains functions that are needed
@@ -20,6 +20,75 @@ def get_metaInfo(filePath):
     """
     metaInfoEnv, warnings = loadJsonFile(filePath = filePath, dependencyLoader = None, extraArgsHandling = InfoKindEl.ADD_EXTRA_ARGS, uri = None)
     return metaInfoEnv
+
+def write_controlIn(backend, metaInfoEnv, valuesDict, writeXC, location, logger):
+    """Writes the values of the control.in file.
+
+    Write the last occurrence of a keyword, i.e. [-1], since aims uses the last occurrence of a keyword.
+
+    ATTENTION
+    backend.superBackend is used here instead of only the backend to write the JSON values,
+    since this allows to bybass the caching setting which was used to collect the values for processing.
+    However, this also bypasses the checking of validity of the metadata name by the backend.
+    The scala part will check the validity nevertheless.
+
+    Args:
+        backend: Takes care of the writting of the metadata.
+        metaInfoEnv: Loaded metadata.
+        valuesDict: Dictionary that contains the cached values of a section.
+        writeXC: Boolean that determines whether the keywords related to the xc functional should be written.
+        location: A string that is used to specify where more than one setting for xc was found.
+        logger: Logging object where messages should be written to.
+    """
+    # list of excluded metadata for writeout
+    # k_grid is written with k1 so that k2 and k2 are not needed.
+    # fhi_aims_controlIn_relativistic_threshold is written with fhi_aims_controlIn_relativistic.
+    # The xc setting have to be handeled separatly since having more than one gives undefined behavior.
+    # hse_omega is only written if HSE was used and converted according to hse_unit which is not written since not needed.
+    # verbatim_writeout is only needed to detect if the control.in is written in the main file of aims.
+    exclude_list = [
+                    'fhi_aims_controlIn_k2',
+                    'fhi_aims_controlIn_k3',
+                    'fhi_aims_controlIn_relativistic_threshold',
+                    'fhi_aims_controlIn_xc',
+                    'fhi_aims_controlIn_hse_omega',
+                    'fhi_aims_controlIn_hse_unit',
+                    'fhi_aims_controlIn_verbatim_writeout',
+                   ]
+    # write settings
+    for k,v in valuesDict.items():
+        if k.startswith('fhi_aims_controlIn_'):
+            if k in exclude_list:
+                continue
+            # write k_krid
+            elif k == 'fhi_aims_controlIn_k1':
+                write_k_grid(backend, 'fhi_aims_controlIn_k', valuesDict)
+            elif k == 'fhi_aims_controlIn_relativistic':
+                # check for scalar ZORA setting and convert to one common name
+                if re.match(r"\s*zora\s+scalar", v[-1], re.IGNORECASE):
+                    backend.superBackend.addValue(k, 'zora scalar')
+                    # write threshold only for scalar ZORA
+                    value = valuesDict[k + '_threshold']
+                    if value is not None:
+                        backend.superBackend.addValue(k + '_threshold', value[-1])
+                else:
+                    backend.superBackend.addValue(k, v[-1].lower())
+            # default writeout
+            else:
+                # convert keyword values of control.in which are strings to lowercase for consistency
+                if isinstance(v[-1], str):
+                    value = v[-1].lower()
+                else:
+                    value = v[-1]
+                backend.superBackend.addValue(k, value)
+    # handling of xc functional
+    if writeXC:
+        write_xc_functional(backend = backend,
+            metaInfoEnv = metaInfoEnv,
+            metaNameStart = 'fhi_aims_controlIn',
+            valuesDict = valuesDict,
+            location = 'control.in',
+            logger = logger)
 
 def write_k_grid(backend, metaName, valuesDict):
     """Function to write k-grid for controlIn and controlInOut.

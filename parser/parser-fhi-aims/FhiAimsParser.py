@@ -2,9 +2,10 @@ import setup_paths
 import numpy as np
 import nomadcore.ActivateLogging
 from nomadcore.caching_backend import CachingLevel
-from nomadcore.simple_parser import mainFunction
+from nomadcore.simple_parser import AncillaryParser, mainFunction
 from nomadcore.simple_parser import SimpleMatcher as SM
-from FhiAimsCommon import get_metaInfo, write_k_grid, write_xc_functional
+from FhiAimsCommon import get_metaInfo, write_controlIn, write_k_grid, write_xc_functional
+import FhiAimsControlInParser
 import logging, os, re, sys
 
 ############################################################
@@ -38,6 +39,8 @@ class FhiAimsParserContext(object):
         self.scfIterNr = -1
         self.scfConvergence = False
         self.geoConvergence = None
+        self.parsedControlInFile = False
+        self.ControlInSuperContext = None
         self.eigenvalues_occupation = []
         self.eigenvalues_eigenvalues = []
         self.eigenvalues_kpoints = []
@@ -65,13 +68,16 @@ class FhiAimsParserContext(object):
         """Function is called when the parsing starts.
 
         Get compiled parser.
-        Later one can compile a parser for parsing an external file.
+        Set up parser for control.in file.
 
         Args:
             fInName: The file name on which the current parser is running.
             parser: The compiled parser. Is an object of the class SimpleParser in nomadcore.simple_parser.py.
         """
         self.parser = parser
+        self.fName = fInName
+        # save metadata
+        self.metaInfoEnv = self.parser.parserBuilder.metaInfoEnv
 
     def update_eigenvalues(self, section, addStr):
         """Update eigenvalues and occupations if they were found in the given section.
@@ -132,18 +138,31 @@ class FhiAimsParserContext(object):
         However, this also bypasses the checking of validity of the metadata name by the backend.
         The scala part will check the validity nevertheless.
         """
-        # write for geometry optimization convergence
+        # write geometry optimization convergence
         if self.geoConvergence is not None:
             backend.addValue('geometry_optimization_converged', self.geoConvergence)
-        # write settings
+        # use values of control.in which was parsed in section_method
+        if self.parsedControlInFile:
+            if self.ControlInSuperContext.sectionRun is not None:
+                valuesDict = self.ControlInSuperContext.sectionRun.simpleValues
+            else:
+                valuesDict = {}
+            location = 'control.in',
+        # otherwise use values of the verbatim writeout of control.in
+        else:
+            valuesDict = section.simpleValues
+            location = 'verbatim writeout of control.in',
+        # write settings of control.in
+        write_controlIn(backend = backend,
+            metaInfoEnv = self.metaInfoEnv,
+            valuesDict = valuesDict,
+            writeXC = False,
+            location = location,
+            logger = FhiAimsControlInParser.logger)
+        # write settings of aims output from the parsed control.in
         for k,v in section.simpleValues.items():
-            if k.startswith('fhi_aims_controlIn_') or k.startswith('fhi_aims_controlInOut_'):
-                # convert control.in keyword values which are strings to lowercase for consistency
-                if k.startswith('fhi_aims_controlIn_') and isinstance(v[-1], str):
-                    value = v[-1].lower()
-                else:
-                    value = v[-1]
-                backend.superBackend.addValue(k, value)
+            if k.startswith('fhi_aims_controlInOut_'):
+                backend.superBackend.addValue(k, v[-1])
         # reset all variables
         self.secMethodIndex = None
         self.secSystemDescriptionIndex = None
@@ -153,6 +172,7 @@ class FhiAimsParserContext(object):
         self.scfIterNr = -1
         self.scfConvergence = False
         self.geoConvergence = None
+        self.parseControlInFile = False
         self.eigenvalues_occupation = []
         self.eigenvalues_eigenvalues = []
         self.eigenvalues_kpoints = []
@@ -173,43 +193,64 @@ class FhiAimsParserContext(object):
         """
         # keep track of the latest method section
         self.secMethodIndex = gIndex
-        # list of excluded metadata
+        # check if control.in keywords were found or verbatim_writeout is false
+        verbatim_writeout = True
+        counter = 0
+        for k,v in section.simpleValues.items():
+            if k == 'fhi_aims_controlIn_verbatim_writeout':
+                # only the first letter is important for aims
+                if v[-1][0] in ['f', 'F']:
+                    verbatim_writeout = False
+                    break
+            if k.startswith('fhi_aims_controlIn_'):
+                counter += 1
+        # write settings of verbatim writeout of control.in if it was found
+        if counter != 0 and verbatim_writeout:
+            write_controlIn(backend = backend,
+                metaInfoEnv = self.metaInfoEnv,
+                valuesDict = section.simpleValues,
+                writeXC = True,
+                location = 'verbatim writeout of control.in',
+                logger = logger)
+        # otherwise parse control.in file
+        else:
+            logger.warning("Found no verbatim writeout of control.in. I will try to parse control.in directly.")
+            fName = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(self.fName)),"control.in"))
+            try:
+                with open(fName) as fIn:
+                    # construct parser for control.in file
+                    # metadata belonging to section_run is not written but stored in the superContext
+                    self.ControlInSuperContext = FhiAimsControlInParser.FhiAimsControlInParserContext(False)
+                    self.controlInParser = AncillaryParser(
+                        fileDescription = FhiAimsControlInParser.build_FhiAimsControlInFileSimpleMatcher(),
+                        parser = self.parser,
+                        cachingLevelForMetaName = FhiAimsControlInParser.get_cachingLevelForMetaName(self.metaInfoEnv, CachingLevel.Ignore),
+                        superContext = self.ControlInSuperContext)
+                    # parse control.in file
+                    self.controlInParser.parseFile(fIn)
+                    # set flag so that metadata of control.in file is also written on close of section_run
+                    self.parsedControlInFile = True
+            except IOError:
+                logger.warning("Could not find control.in file in directory '%s'. No metadata for fhi_aims_controlIn was written." % os.path.dirname(os.path.abspath(self.fName)))
+        # list of excluded metadata for writeout
         # k_grid is written with k1 so that k2 and k2 are not needed.
-        # fhi_aims_controlIn_relativistic_threshold is written with fhi_aims_controlIn_relativistic.
         # The xc setting have to be handeled separatly since having more than one gives undefined behavior.
         # hse_omega is only written if HSE was used and converted according to hse_unit which is not written since not needed.
-        exclude_list = ['fhi_aims_controlIn_k2',
-                        'fhi_aims_controlIn_k3',
+        exclude_list = [
                         'fhi_aims_controlInOut_k2',
                         'fhi_aims_controlInOut_k3',
-                        'fhi_aims_controlIn_relativistic_threshold',
-                        'fhi_aims_controlIn_xc',
                         'fhi_aims_controlInOut_xc',
-                        'fhi_aims_controlIn_hse_omega',
                         'fhi_aims_controlInOut_hse_omega',
-                        'fhi_aims_controlIn_hse_unit',
                         'fhi_aims_controlInOut_hse_unit',
                        ]
-        # write settings
+        # write settings of aims output from the parsed control.in
         for k,v in section.simpleValues.items():
-            if k.startswith('fhi_aims_controlIn_') or k.startswith('fhi_aims_controlInOut_'):
+            if k.startswith('fhi_aims_controlInOut_'):
                 if k in exclude_list:
                     continue
                 # write k_krid
-                elif k == 'fhi_aims_controlIn_k1':
-                    write_k_grid(backend, 'fhi_aims_controlIn_k', section.simpleValues)
                 elif k == 'fhi_aims_controlInOut_k1':
                     write_k_grid(backend, 'fhi_aims_controlInOut_k', section.simpleValues)
-                elif k == 'fhi_aims_controlIn_relativistic':
-                    # check for scalar ZORA setting and convert to one common name
-                    if re.match(r"\s*zora\s+scalar", v[-1], re.IGNORECASE):
-                        backend.superBackend.addValue(k, 'zora scalar')
-                        # write threshold only for scalar ZORA
-                        value = section[k + '_threshold']
-                        if value is not None:
-                            backend.superBackend.addValue(k + '_threshold', value[-1])
-                    else:
-                        backend.superBackend.addValue(k, v[-1].lower())
                 elif k == 'fhi_aims_controlInOut_relativistic_threshold':
                     # write threshold only for scalar ZORA
                     if section['fhi_aims_controlInOut_relativistic'] is not None:
@@ -217,12 +258,7 @@ class FhiAimsParserContext(object):
                             backend.superBackend.addValue(k, v[-1])
                 # default writeout
                 else:
-                    # convert keyword values of control.in which are strings to lowercase for consistency
-                    if k.startswith('fhi_aims_controlIn_') and isinstance(v[-1], str):
-                        value = v[-1].lower()
-                    else:
-                        value = v[-1]
-                    backend.superBackend.addValue(k, value)
+                    backend.superBackend.addValue(k, v[-1])
         # detect MD
         if section['fhi_aims_MD_flag'] is not None:
             self.MD = True
@@ -239,9 +275,12 @@ class FhiAimsParserContext(object):
             else:
                 logger.warning("The relativistic setting '%s' could not be converted to the required string for the metadata 'relativity_method'. Please add it to the dictionary relativisticDict." % InOut_relativistic[-1])
         # handling of xc functional
-        metaInfoEnv = self.parser.parserBuilder.metaInfoEnv
-        write_xc_functional(backend = backend, metaInfoEnv = metaInfoEnv, metaNameStart = 'fhi_aims_controlIn', valuesDict = section.simpleValues, location = 'verbatim writeout of control.in', logger = logger)
-        write_xc_functional(backend = backend, metaInfoEnv = metaInfoEnv, metaNameStart = 'fhi_aims_controlInOut', valuesDict = section.simpleValues, location = 'aims output from the parsed control.in', logger = logger)
+        write_xc_functional(backend = backend,
+            metaInfoEnv = self.metaInfoEnv,
+            metaNameStart = 'fhi_aims_controlInOut',
+            valuesDict = section.simpleValues,
+            location = 'FHI-aims output from the parsed control.in',
+            logger = logger)
 
     def onClose_section_system_description(self, backend, gIndex, section):
         """Trigger called when section_system_description is closed.
@@ -394,53 +433,11 @@ def build_FhiAimsMainFileSimpleMatcher():
         SM (name = 'ControlInKeywords',
             startReStr = r"\s*-{20}-*",
             weak = True,
-            subFlags = SM.SubFlags.Unordered,
-            subMatchers = [
-            # Now follows the list to match the keywords from the control.in.
-            # Explicitly add ^ to ensure that the keyword is not within a comment.
             # The search is done unordered since the keywords do not appear in a specific order.
-            # Repating occurrences of the same keywords are captured.
-            # List the matchers in alphabetical order according to keyword name.
-            #
-            SM (r"^\s*charge\s+(?P<fhi_aims_controlIn_charge>[-+0-9.eEdD]+)", repeats = True),
-            # only the first character is important for aims
-            SM (r"^\s*hse_unit\s+(?P<fhi_aims_controlIn_hse_unit>[a-zA-Z])[-_a-zA-Z0-9]+", repeats = True),
-            SM (r"^\s*MD_time_step\s+(?P<fhi_aims_controlIn_MD_time_step__ps>[-+0-9.eEdD]+)", repeats = True),
-            SM (r"^\s*k_grid\s+(?P<fhi_aims_controlIn_k1>[0-9]+)\s+(?P<fhi_aims_controlIn_k2>[0-9]+)\s+(?P<fhi_aims_controlIn_k3>[0-9]+)", repeats = True),
-            # need to distinguish different cases
-            SM (r"^\s*occupation_type\s+",
-                forwardMatch = True,
-                repeats = True,
-                subMatchers = [
-                SM (r"^\s*occupation_type\s+(?P<fhi_aims_controlIn_occupation_type>[-_a-zA-Z]+)\s+(?P<fhi_aims_controlIn_occupation_width>[-+0-9.eEdD]+)\s+(?P<fhi_aims_controlIn_occupation_order>[0-9]+)"),
-                SM (r"^\s*occupation_type\s+(?P<fhi_aims_controlIn_occupation_type>[-_a-zA-Z]+)\s+(?P<fhi_aims_controlIn_occupation_width>[-+0-9.eEdD]+)")
-                ]),
-            SM (r"^\s*override_relativity\s+\.?(?P<fhi_aims_controlIn_override_relativity>[-_a-zA-Z]+)\.?", repeats = True),
-            # need to distinguish different cases
-            SM (r"^\s*relativistic\s+",
-                forwardMatch = True,
-                repeats = True,
-                subMatchers = [
-                SM (r"^\s*relativistic\s+(?P<fhi_aims_controlIn_relativistic>[-_a-zA-Z]+\s+[-_a-zA-Z]+)\s+(?P<fhi_aims_controlIn_relativistic_threshold>[-+0-9.eEdD]+)"),
-                SM (r"^\s*relativistic\s+(?P<fhi_aims_controlIn_relativistic>[-_a-zA-Z]+)")
-                ]),
-            SM (r"^\s*sc_accuracy_rho\s+(?P<fhi_aims_controlIn_sc_accuracy_rho>[-+0-9.eEdD]+)", repeats = True),
-            SM (r"^\s*sc_accuracy_eev\s+(?P<fhi_aims_controlIn_sc_accuracy_eev>[-+0-9.eEdD]+)", repeats = True),
-            SM (r"^\s*sc_accuracy_etot\s+(?P<fhi_aims_controlIn_sc_accuracy_etot>[-+0-9.eEdD]+)", repeats = True),
-            SM (r"^\s*sc_accuracy_forces\s+(?P<fhi_aims_controlIn_sc_accuracy_forces>[-+0-9.eEdD]+)", repeats = True),
-            SM (r"^\s*sc_accuracy_stress\s+(?P<fhi_aims_controlIn_sc_accuracy_stress>[-+0-9.eEdD]+)", repeats = True),
-            SM (r"^\s*sc_iter_limit\s+(?P<fhi_aims_controlIn_sc_iter_limit>[0-9]+)", repeats = True),
-            SM (r"^\s*spin\s+(?P<fhi_aims_controlIn_spin>[-_a-zA-Z]+)", repeats = True),
-            SM (r"^\s*verbatim_writeout\s+[.a-zA-Z]+", repeats = True),
-            # need to distinguish two cases: just the name of the xc functional or name plus number (e.g. for HSE functional)
-            SM (r"^\s*xc\s+",
-                forwardMatch = True,
-                repeats = True,
-                subMatchers = [
-                SM (r"^\s*xc\s+(?P<fhi_aims_controlIn_xc>[-_a-zA-Z0-9]+)\s+(?P<fhi_aims_controlIn_hse_omega>[-+0-9.eEdD]+)"),
-                SM (r"^\s*xc\s+(?P<fhi_aims_controlIn_xc>[-_a-zA-Z0-9]+)")
-                ]),
-            ]), # END ControlInKeywords
+            subFlags = SM.SubFlags.Unordered,
+            # get control.in subMatcher from FhiAimsControlInParser.py
+            subMatchers = FhiAimsControlInParser.build_FhiAimsControlInKeywordsSimpleMatchers()
+            ), # END ControlInKeywords
         SM (r"\s*-{20}-*", weak = True)
         ])
     ########################################
