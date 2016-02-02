@@ -690,6 +690,7 @@ def build_FhiAimsMainFileSimpleMatcher():
     # return main Parser
     return SM (name = 'Root',
         startReStr = "",
+        forwardMatch = True,
         weak = True,
         subMatchers = [
         SM (name = 'NewRun',

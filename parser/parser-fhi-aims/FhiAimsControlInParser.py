@@ -26,6 +26,10 @@ class FhiAimsControlInParserContext(object):
         section: The cached values and sections that were found in the section that is closed.
     """
     def __init__(self, writeSectionRun = True):
+        """Args:
+            writeSectionRun: Deteremines if metadata is written on close of section_run
+                or stored in sectionRun.
+        """
         self.writeSectionRun = writeSectionRun
         self.sectionRun = None
 
@@ -132,14 +136,16 @@ def build_FhiAimsControlInFileSimpleMatcher():
     Returns:
        SimpleMatcher that parses control.in file of FHI-aims. 
     """
-    return SM (name = 'Root',
+    return SM (name = 'Root1',
         startReStr = "",
         sections = ['section_run'],
+        forwardMatch = True,
         weak = True,
         subMatchers = [
-        SM (name = 'Root',
+        SM (name = 'Root2',
             startReStr = "",
             sections = ['section_method'],
+            forwardMatch = True,
             weak = True,
             # The search is done unordered since the keywords do not appear in a specific order.
             subFlags = SM.SubFlags.Unordered,
@@ -153,15 +159,15 @@ def get_cachingLevelForMetaName(metaInfoEnv, CachingLvl):
     Args:
         metaInfoEnv: metadata which is an object of the class InfoKindEnv in nomadcore.local_meta_info.py.
         CachingLvl: Sets the CachingLevel for the sections method and run. This allows to run the parser
-            without opening new sections
+            without opening new sections.
 
     Returns:
         Dictionary with metaname as key and caching level as value. 
     """
     # manually adjust caching of metadata
     cachingLevelForMetaName = {
-                               'section_run': CachingLvl,
                                'section_method': CachingLvl,
+                               'section_run': CachingLvl,
                               }
     # Set all controlIn metadata to Cache to capture multiple occurrences of keywords and
     # their last value is then written by the onClose routine in the FhiAimsControlInParserContext.
