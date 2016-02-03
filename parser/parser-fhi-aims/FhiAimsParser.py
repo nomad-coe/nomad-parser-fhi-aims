@@ -63,6 +63,7 @@ class FhiAimsParserContext(object):
         self.scalarZORA = False
         self.periodicCalc = False
         self.MD = False
+        self.MDUnitCell = None
         self.band_segm_start_end = None
         # start with -1 since zeroth iteration is the initialization
         self.scfIterNr = -1
@@ -177,6 +178,13 @@ class FhiAimsParserContext(object):
         # reset all variables
         self.initialize_values()
 
+    def onClose_fhi_aims_section_MD_detect(self, backend, gIndex, section):
+        """Trigger called when fhi_aims_section_MD_detect is closed.
+
+        Detect if a MD run was performed.
+        """
+        self.MD = True
+
     def onClose_section_method(self, backend, gIndex, section):
         """Trigger called when section_method is closed.
 
@@ -263,9 +271,6 @@ class FhiAimsParserContext(object):
                 # default writeout
                 else:
                     backend.superBackend.addValue(k, v[-1])
-        # detect MD
-        if section['fhi_aims_MD_flag'] is not None:
-            self.MD = True
         # detect scalar ZORA
         if section['fhi_aims_controlInOut_relativistic'] is not None:
             if section['fhi_aims_controlInOut_relativistic'][-1] == 'ZORA':
@@ -318,30 +323,42 @@ class FhiAimsParserContext(object):
         """
         # keep track of the latest system description section
         self.secSystemDescriptionIndex = gIndex
-        # write atomic positions
-        atom_pos = []
-        for i in ['x', 'y', 'z']:
-            api = section['fhi_aims_geometry_atom_position_' + i]
-            if api is not None:
-                atom_pos.append(api)
-        if atom_pos is not None:
-            # need to transpose array since its shape is given by [number_of_atoms,3] in the metadata
-            backend.addArrayValues('atom_position', np.transpose(np.asarray(atom_pos)))
-        # write atom labels
-        atom_labels = section['fhi_aims_geometry_atom_label']
-        if atom_labels is not None:
-            backend.addArrayValues('atom_label', np.asarray(atom_labels))
-        # write unit cell if present and set flag self.periodicCalc
-        unit_cell = []
-        for i in ['x', 'y', 'z']:
-            uci = section['fhi_aims_geometry_lattice_vector_' + i]
-            if uci is not None:
-                unit_cell.append(uci)
-        if unit_cell:
-            # from metadata: "The first index is x,y,z and the second index the lattice vector."
-            # => unit_cell has already the right format
-            backend.addArrayValues('simulation_cell', np.asarray(unit_cell))
-            self.periodicCalc = True
+        # Write atomic geometry in the case of MD only if there has been SCF iterations
+        # because the atomic geometry together with the velocities are repeated after the finished SCF cycle.
+        if not self.MD or self.scfIterNr > -1:
+            # write atomic positions
+            atom_pos = []
+            for i in ['x', 'y', 'z']:
+                api = section['fhi_aims_geometry_atom_position_' + i]
+                if api is not None:
+                    atom_pos.append(api)
+            if atom_pos is not None:
+                # need to transpose array since its shape is given by [number_of_atoms,3] in the metadata
+                backend.addArrayValues('atom_position', np.transpose(np.asarray(atom_pos)))
+            # write atom labels
+            atom_labels = section['fhi_aims_geometry_atom_label']
+            if atom_labels is not None:
+                backend.addArrayValues('atom_label', np.asarray(atom_labels))
+        # For MD, the coordinates of the unit cell are not repeated.
+        # Therefore, we have to store the unit cell, which was read in the beginning, i.e. scfIterNr == -1.
+        if not self.MD or self.scfIterNr == -1:
+            # write/store unit cell if present and set flag self.periodicCalc
+            unit_cell = []
+            for i in ['x', 'y', 'z']:
+                uci = section['fhi_aims_geometry_lattice_vector_' + i]
+                if uci is not None:
+                    unit_cell.append(uci)
+            if unit_cell:
+                # from metadata: "The first index is x,y,z and the second index the lattice vector."
+                # => unit_cell has already the right format
+                if self.MD:
+                    self.MDUnitCell = np.asarray(unit_cell)
+                else:
+                    backend.addArrayValues('simulation_cell', np.asarray(unit_cell))
+                self.periodicCalc = True
+        # write stored unit cell in case of MD
+        if self.periodicCalc and self.MD and self.scfIterNr > -1:
+            backend.addArrayValues('simulation_cell', self.MDUnitCell)
 
     def onClose_section_single_configuration_calculation(self, backend, gIndex, section):
         """Trigger called when section_single_configuration_calculation is closed.
@@ -562,8 +579,8 @@ def build_FhiAimsMainFileSimpleMatcher():
             # only the first character is important for aims
             SM (r"\s*hse_unit: Unit for the HSE06 hybrid functional screening parameter set to (?P<fhi_aims_controlInOut_hse_unit>[a-zA-Z])[a-zA-Z]*\^\(-1\)\.", repeats = True),
             SM (r"^\s*Found k-point grid:\s+(?P<fhi_aims_controlInOut_k1>[0-9]+)\s+(?P<fhi_aims_controlInOut_k2>[0-9]+)\s+(?P<fhi_aims_controlInOut_k3>[0-9]+)", repeats = True),
-            # metadata fhi_aims_MD_flag is just used to detect already in the methods section if a MD run was perfomed
-            SM (r"\s*(?P<fhi_aims_MD_flag>Molecular dynamics time step) =\s*(?P<fhi_aims_controlInOut_MD_time_step__ps>[0-9.]+) *ps", repeats = True),
+            # section fhi_aims_section_MD_detect is just used to detect already in the methods section if a MD run was perfomed
+            SM (r"\s*Molecular dynamics time step =\s*(?P<fhi_aims_controlInOut_MD_time_step__ps>[0-9.]+) *ps", repeats = True, sections = ['fhi_aims_section_MD_detect']),
             SM (r"\s*Scalar relativistic treatment of kinetic energy: (?P<fhi_aims_controlInOut_relativistic>[-a-zA-Z\s]+)\.", repeats = True),
             SM (r"\s*(?P<fhi_aims_controlInOut_relativistic>Non-relativistic) treatment of kinetic energy\.", repeats = True),
             SM (r"\s*Threshold value for ZORA:\s*(?P<fhi_aims_controlInOut_relativistic_threshold>[-+0-9.eEdD]+)", repeats = True),
@@ -598,9 +615,9 @@ def build_FhiAimsMainFileSimpleMatcher():
                 subFlags = SM.SubFlags.Unordered,
                 subMatchers = [
                 SM (r"^\s*constrain_relaxation\s+(?:x|y|z|\.true\.|\.false\.)", repeats = True),
-                SM (r"^\s*initial_charge\s+[-+0.9.eEdD]", repeats = True),
-                SM (r"^\s*initial_moment\s+[-+0.9.eEdD]", repeats = True),
-                SM (r"^\s*velocity\s+[-+0.9.eEdD]\s+[-+0.9.eEdD]\s+[-+0.9.eEdD]", repeats = True)
+                SM (r"^\s*initial_charge\s+[-+0-9.eEdD]+", repeats = True),
+                SM (r"^\s*initial_moment\s+[-+0-9.eEdD]+", repeats = True),
+                SM (r"^\s*velocity\s+[-+0-9.eEdD]+\s+[-+0-9.eEdD]+\s+[-+0-9.eEdD]+", repeats = True)
                 ]),
             SM (r"^\s*hessian_block\s+[0-9]+\s+[0-9]+" + 9 * r"\s+[-+0-9.eEdD]+", repeats = True),
             SM (r"^\s*hessian_block_lv\s+[0-9]+\s+[0-9]+" + 9 * r"\s+[-+0-9.eEdD]+", repeats = True),
@@ -624,6 +641,7 @@ def build_FhiAimsMainFileSimpleMatcher():
         sections = ['section_system_description'],
         subMatchers = [
         SM (r"\s*-{20}-*", weak = True),
+        SM (r"\s*Input structure read successfully\."),
         SM (r"\s*The structure contains\s*[0-9]+\s*atoms,\s*and a total of\s*[0-9.]\s*electrons\."),
         SM (r"\s*Input geometry:"),
         SM (r"\s*\|\s*No unit cell requested\."),
@@ -654,21 +672,21 @@ def build_FhiAimsMainFileSimpleMatcher():
             subMatchers = [
             SM ("\s*L1\s*L2\s*L3"),
             SM (r"\s*atom_frac\s+[-+0-9.]+\s+[-+0-9.]+\s+[-+0-9.]+\s+[a-zA-Z]+", repeats = True),
+            SM (r"\s*-{20}-*", weak = True),
             SM (r'\s*Writing the current geometry to file "geometry\.in\.next_step"\.'),
-            SM (r"\s*-{20}-*", weak = True)
             ])
         ])
     ########################################
-    # subMatcher for geometry after MD step
+    # subMatcher for MD geometry that was used for the finished SCF cycle (see word 'preceding' in the description)
     geometryMDSubMatcher = SM (name = 'GeometryMD',
-        startReStr = r"\s*Atomic structure \(and velocities\) as used in the preceding time step:",
+            startReStr = r"\s*(?:A|Final a)tomic structure \(and velocities\) as used in the preceding time step:",
         sections = ['section_system_description'],
         subMatchers = [
         SM (r"\s*x \[A\]\s*y \[A\]\s*z \[A\]\s*Atom"),
         SM (startReStr = r"\s*atom\s+(?P<fhi_aims_geometry_atom_position_x__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_atom_position_y__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_atom_position_z__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_atom_label>[a-zA-Z]+)",
             repeats = True,
             subMatchers = [
-            SM (r"^\s*velocity\s+[-+0.9.eEdD]\s+[-+0.9.eEdD]\s+[-+0.9.eEdD]")
+            SM (r"\s*velocity\s+[-+0-9.]+\s+[-+0-9.]+\s+[-+0-9.]+")
             ])
         ])
     ########################################
@@ -794,6 +812,58 @@ def build_FhiAimsMainFileSimpleMatcher():
         SM (r"\s*\|\s*Electronic free energy per atom\s*:\s*(?P<energy_free_per_atom__eV>[-+0-9.eEdD]+) *eV"),
         ])
     ########################################
+    # submatcher for geometry relaxation
+    RelaxationSubMatcher = SM (name = 'Relaxation',
+        startReStr = r"\s*Geometry optimization: Attempting to predict improved coordinates\.",
+        subMatchers = [
+        SM (r"\s*Removing unitary transformations \(pure translations, rotations\) from forces on atoms\."),
+        SM (r"\s*Maximum force component is\s*[-+0-9.eEdD]+ *eV/A\."),
+        # output of final structure after relaxation not needed since it is just a repetition of the current geometry
+        SM (name =  'FinalStructure',
+            startReStr = r"\s*Present geometry (?P<fhi_aims_geometry_optimization_converged>is converged)\.",
+            subMatchers = [
+            SM (r"\s*\|\s*-{20}-*", weak = True),
+            SM (r"\s*Final atomic structure:"),
+            SM (r"\s*x \[A\]\s*y \[A\]\s*z \[A\]"),
+            SM (startReStr = r"\s*lattice_vector\s*[-+0-9.]+\s+[-+0-9.]+\s+[-+0-9.]+",
+                forwardMatch = True,
+                subMatchers = [
+                SM (r"\s*lattice_vector\s*[-+0-9.]+\s+[-+0-9.]+\s+[-+0-9.]+", repeats = True)
+                ]),
+            SM (r"\s*atom\s+[-+0-9.]+\s+[-+0-9.]+\s+[-+0-9.]+\s+[a-zA-Z]+", repeats = True),
+            SM (startReStr = r"\s*Fractional coordinates:",
+                subMatchers = [
+                SM ("\s*L1\s*L2\s*L3"),
+                SM (r"\s*atom_frac\s+[-+0-9.]+\s+[-+0-9.]+\s+[-+0-9.]+\s+[a-zA-Z]+", repeats = True),
+                SM (r"\s*-{20}-*", weak = True),
+                ])
+            ]), # END FinalStructure
+        SM (name = 'RelaxationStep',
+            startReStr = r"\s*Present geometry (?P<fhi_aims_geometry_optimization_converged>is not yet converged)\.",
+            subMatchers = [
+            SM (r"\s*Relaxation step number\s*[0-9]+: Predicting new coordinates\."),
+            SM (r"\s*Advancing geometry using (?:trust radius method|BFGS)\.")
+            ]) # END RelaxationStep
+        ])
+    ########################################
+    # submatcher for MD
+    MDSubMatcher = SM (name = 'MD',
+        startReStr = r"\s*Molecular dynamics: Attempting to update all nuclear coordinates\.",
+        subMatchers = [
+        SM (r"\s*Removing unitary transformations \(pure translations, rotations\) from forces on atoms\."),
+        SM (r"\s*Maximum force component is\s*[-+0-9.eEdD]\s*eV/A\."),
+        SM (r"\s*Present geometry is converged\."),
+        SM (name = 'MDStep',
+            startReStr = r"\s*Advancing structure using Born-Oppenheimer Molecular Dynamics:",
+            subMatchers = [
+            SM (r"\s*Complete information for previous time-step:"),
+            SM (r"\s*\|\s*Time step number\s*:\s*[0-9]+"),
+            SM (r"\s*-{20}-*", weak = True)
+            ]), # END MDStep
+        # parse MD geometry that was used for the finished SCF cycle
+        geometryMDSubMatcher
+        ])
+    ########################################
     # submatcher for band structure
     bandStructureSubMatcher = SM (name = 'BandStructure',
         startReStr = r"\s*Writing the requested band structure output:",
@@ -889,7 +959,7 @@ def build_FhiAimsMainFileSimpleMatcher():
                 geometrySubMatcher
                 ]), # END SectionMethod
             SM (r"\s*Preparing all fixed parts of the calculation\."),
-            # this SimpleMatcher groups a single configuration calculation together with output after SCF convergence from Relaxation and MD
+            # this SimpleMatcher groups a single configuration calculation together with output after SCF convergence from relaxation
             SM (name = 'SingleConfigurationCalculationWithSystemDescription',
                 startReStr = r"\s*Begin self-consistency loop: (?:I|Re-i)nitialization\.",
                 repeats = True,
@@ -941,6 +1011,15 @@ def build_FhiAimsMainFileSimpleMatcher():
                         SM (r"\s*(?P<fhi_aims_single_configuration_calculation_converged>Self-consistency cycle converged)\."),
                         SM (r"\s*End self-consistency iteration #\s*[0-9]+\s*:\s*max\(cpu_time\)\s+wall_clock\(cpu1\)")
                         ]), # END ScfIteration
+                    # SCF iterations for output_level MD_light
+                    SM (name = 'ScfIterationsMDlight',
+                        startReStr = r"\s*Convergence:\s*q app.\s*\|\s*density\s*\|\s*eigen \(eV\)\s*\|\s*Etot \(eV\)\s*\|\s*forces \(eV/A\)\s*\|\s*CPU time\s*\|\s*Clock time",
+                        subMatchers = [
+                            SM (startReStr =r"\s*SCF\s*[0-9]+\s*:\s*[-+0-9.eEdD]+\s*\|\s*[-+0-9.eEdD]+\s*\|\s*[-+0-9.eEdD]+\s*\|\s*(?P<energy_change_scf_iteration__eV>[-+0-9.eEdD]+)\s*\|\s*[-+0-9.eEdD]+\s*\|\s*[0-9.]+ *s\s*\|\s*[0-9.]+ *s",
+                            sections = ['section_scf_iteration'],
+                            repeats = True
+                            )
+                        ]), # END ScfIterationsMDlight
                     # possible scalar ZORA post-processing
                     SM (name = 'ScaledZORAPostProcessing',
                         startReStr = r"\s*Post-processing: scaled ZORA corrections to eigenvalues and total energy.",
@@ -970,6 +1049,7 @@ def build_FhiAimsMainFileSimpleMatcher():
                     # decomposition of the xc energy
                     SM (name = 'DecompositionXCEnergy',
                         startReStr = r"\s*Start decomposition of the XC Energy",
+                        endReStr = r"\s*End decomposition of the XC Energy",
                         subMatchers = [
                         SM (r"\s*-{20}-*", weak = True),
                         SM (r"\s*Hartree-Fock part\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_hartree_fock_X_scaled__eV>[-+0-9.eEdD]+) *eV"),
@@ -981,8 +1061,6 @@ def build_FhiAimsMainFileSimpleMatcher():
                         SM (r"\s*X Energy LDA\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<fhi_aims_energy_X_LDA__eV>[-+0-9.eEdD]+) *eV"),
                         SM (r"\s*C Energy LDA\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<fhi_aims_energy_C_LDA__eV>[-+0-9.eEdD]+) *eV"),
                         SM (r"\s*-{20}-*", weak = True),
-                        SM (r"\s*End decomposition of the XC Energy"),
-                        SM (r"\s*-{20}-*", weak = True)
                         ]), # END DecompositionXCEnergy
                     # caclualtion was not converged
                     SM (name = 'ScfNotConverged',
@@ -992,41 +1070,14 @@ def build_FhiAimsMainFileSimpleMatcher():
                         SM (r"\s*\*\s*DO NOT RELY ON ANY FINAL DATA WITHOUT FURTHER CHECKS\.")
                         ]),
                     # geometry relaxation
-                    SM (name = 'Relaxation',
-                        startReStr = r"\s*Geometry optimization: Attempting to predict improved coordinates\.",
-                        subMatchers = [
-                        SM (r"\s*Removing unitary transformations \(pure translations, rotations\) from forces on atoms\."),
-                        SM (r"\s*Maximum force component is\s*[-+0-9.eEdD]+ *eV/A\."),
-                        SM (r"\s*Present geometry (?P<fhi_aims_geometry_optimization_converged>is converged)\."),
-                        SM (name = 'RelaxationStep',
-                            startReStr = r"\s*Present geometry (?P<fhi_aims_geometry_optimization_converged>is not yet converged)\.",
-                            subMatchers = [
-                            SM (r"\s*Relaxation step number\s*[0-9]+: Predicting new coordinates\."),
-                            SM (r"\s*Advancing geometry using (?:trust radius method|BFGS)\.")
-                            ]) # END RelaxationStep
-                        ]), # END Relaxation
+                    RelaxationSubMatcher,
                     # MD
-                    SM (name = 'MD',
-                        startReStr = r"\s*Molecular dynamics: Attempting to update all nuclear coordinates\.",
-                        subMatchers = [
-                        SM (r"\s*Removing unitary transformations \(pure translations, rotations\) from forces on atoms\."),
-                        SM (r"\s*Maximum force component is\s*[-+0-9.eEdD]\s*eV/A\."),
-                        SM (r"\s*Present geometry is converged\."),
-                        SM (name = 'MDStep',
-                            startReStr = r"\s*Advancing structure using Born-Oppenheimer Molecular Dynamics:",
-                            subMatchers = [
-                            SM (r"\s*Complete information for previous time-step:"),
-                            SM (r"\s*\|\s*Time step number\s*:\s*[0-9]+"),
-                            SM (r"\s*-{20}-*", weak = True)
-                            ]) # END MDStep
-                        ]), # END MD
+                    MDSubMatcher,
                     # band structure
                     bandStructureSubMatcher
                     ]), # END SingleConfigurationCalculation
                 # parse updated geometry for relaxation
                 geometryRelaxationSubMatcher,
-                # parse updated geometry for MD
-                #geometryMDSubMatcher
                 ]), # END SingleConfigurationCalculationWithSystemDescription
             SM (r"\s*-{20}-*", weak = True),
             SM (r"\s*Final output of selected total energy values:"),
@@ -1063,6 +1114,7 @@ def get_cachingLevelForMetaName(metaInfoEnv):
                                'fhi_aims_band_segment': CachingLevel.Cache,
                                'fhi_aims_MD_flag': CachingLevel.Cache,
                                'fhi_aims_geometry_optimization_converged': CachingLevel.Cache,
+                               'fhi_aims_section_MD_detect': CachingLevel.Ignore,
                                'fhi_aims_single_configuration_calculation_converged': CachingLevel.Cache,
                               }
     # Set all controlIn and controlInOut metadata to Cache to capture multiple occurrences of keywords and
