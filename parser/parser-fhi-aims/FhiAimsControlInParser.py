@@ -31,7 +31,6 @@ class FhiAimsControlInParserContext(object):
                 or stored in sectionRun.
         """
         self.writeSectionRun = writeSectionRun
-        self.sectionRun = None
 
     def startedParsing(self, fInName, parser):
         """Function is called when the parsing starts and the compiled parser is obtained.
@@ -43,12 +42,13 @@ class FhiAimsControlInParserContext(object):
         self.parser = parser
         # save metadata
         self.metaInfoEnv = parser.parserBuilder.metaInfoEnv
+        # allows to reset values if the same superContext is used to parse different files
+        self.sectionRun = None
 
     def onClose_section_run(self, backend, gIndex, section):
         """Trigger called when section_run is closed.
 
-        Write the keywords from control.in, which belong to settings_run
-        or save the section.
+        Write the keywords from control.in, which belong to settings_run, or store the section.
         """
         if self.writeSectionRun:
             write_controlIn(backend = backend,

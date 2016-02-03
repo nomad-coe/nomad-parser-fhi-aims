@@ -6,6 +6,7 @@ from nomadcore.simple_parser import AncillaryParser, mainFunction
 from nomadcore.simple_parser import SimpleMatcher as SM
 from FhiAimsCommon import get_metaInfo, write_controlIn, write_k_grid, write_xc_functional
 import FhiAimsControlInParser
+import FhiAimsBandParser
 import logging, os, re, sys
 
 ############################################################
@@ -30,7 +31,6 @@ class FhiAimsParserContext(object):
         section: The cached values and sections that were found in the section that is closed.
     """
     def __init__(self):
-        self.initialize_values()
         # dictionary of energy values, which are tracked between SCF iterations and written after convergence
         self.totalEnergyList = {
                                 'energy_sum_eigenvalues': None,
@@ -59,15 +59,17 @@ class FhiAimsParserContext(object):
         """
         self.secMethodIndex = None
         self.secSystemDescriptionIndex = None
+        self.maxSpinChannel = None
         self.scalarZORA = False
         self.periodicCalc = False
         self.MD = False
+        self.band_segm_start_end = None
         # start with -1 since zeroth iteration is the initialization
         self.scfIterNr = -1
         self.scfConvergence = False
         self.geoConvergence = None
         self.parsedControlInFile = False
-        self.ControlInSuperContext = None
+        self.controlInSuperContext = None
         self.eigenvalues_occupation = []
         self.eigenvalues_eigenvalues = []
         self.eigenvalues_kpoints = []
@@ -75,8 +77,7 @@ class FhiAimsParserContext(object):
     def startedParsing(self, fInName, parser):
         """Function is called when the parsing starts.
 
-        Get compiled parser.
-        Set up parser for control.in file.
+        Get compiled parser, filename and metadata.
 
         Args:
             fInName: The file name on which the current parser is running.
@@ -86,6 +87,8 @@ class FhiAimsParserContext(object):
         self.fName = fInName
         # save metadata
         self.metaInfoEnv = self.parser.parserBuilder.metaInfoEnv
+        # allows to reset values if the same superContext is used to parse different files
+        self.initialize_values()
 
     def update_eigenvalues(self, section, addStr):
         """Update eigenvalues and occupations if they were found in the given section.
@@ -151,8 +154,8 @@ class FhiAimsParserContext(object):
             backend.addValue('geometry_optimization_converged', self.geoConvergence)
         # use values of control.in which was parsed in section_method
         if self.parsedControlInFile:
-            if self.ControlInSuperContext.sectionRun is not None:
-                valuesDict = self.ControlInSuperContext.sectionRun.simpleValues
+            if self.controlInSuperContext.sectionRun is not None:
+                valuesDict = self.controlInSuperContext.sectionRun.simpleValues
             else:
                 valuesDict = {}
             location = 'control.in',
@@ -212,17 +215,17 @@ class FhiAimsParserContext(object):
         # otherwise parse control.in file
         else:
             logger.warning("Found no verbatim writeout of control.in. I will try to parse the control.in file directly.")
-            fName = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(self.fName)),"control.in"))
+            fName = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(self.fName)), "control.in"))
             try:
                 with open(fName) as fIn:
                     # construct parser for control.in file
                     # metadata belonging to section_run is not written but stored in the superContext
-                    self.ControlInSuperContext = FhiAimsControlInParser.FhiAimsControlInParserContext(False)
+                    self.controlInSuperContext = FhiAimsControlInParser.FhiAimsControlInParserContext(False)
                     self.controlInParser = AncillaryParser(
                         fileDescription = FhiAimsControlInParser.build_FhiAimsControlInFileSimpleMatcher(),
                         parser = self.parser,
                         cachingLevelForMetaName = FhiAimsControlInParser.get_cachingLevelForMetaName(self.metaInfoEnv, CachingLevel.Ignore),
-                        superContext = self.ControlInSuperContext)
+                        superContext = self.controlInSuperContext)
                     # parse control.in file
                     self.controlInParser.parseFile(fIn)
                     # set flag so that metadata of control.in file is also written on close of section_run
@@ -240,6 +243,10 @@ class FhiAimsParserContext(object):
                         'fhi_aims_controlInOut_hse_omega',
                         'fhi_aims_controlInOut_hse_unit',
                        ]
+        # band releated data does not change the calculation and will be processed separatly
+        for name in self.metaInfoEnv.infoKinds:
+            if name.startswith('fhi_aims_controlInOut_band_'):
+                exclude_list.append(name)
         # write settings of aims output from the parsed control.in
         for k,v in section.simpleValues.items():
             if k.startswith('fhi_aims_controlInOut_'):
@@ -263,6 +270,9 @@ class FhiAimsParserContext(object):
         if section['fhi_aims_controlInOut_relativistic'] is not None:
             if section['fhi_aims_controlInOut_relativistic'][-1] == 'ZORA':
                 self.scalarZORA = True
+        # get number of spin channels
+        if section['fhi_aims_controlInOut_max_spin_channel'] is not None:
+            self.maxSpinChannel = section['fhi_aims_controlInOut_max_spin_channel'][-1]
         # convert relativistic setting to metadata string
         InOut_relativistic = section['fhi_aims_controlInOut_relativistic']
         if InOut_relativistic is not None:
@@ -278,6 +288,28 @@ class FhiAimsParserContext(object):
             valuesDict = section.simpleValues,
             location = 'FHI-aims output from the parsed control.in',
             logger = logger)
+        # handle start end end points of band segments
+        start_k = []
+        end_k = []
+        for i in ['1', '2', '3']:
+            ski = section['fhi_aims_controlInOut_band_segment_start' + i]
+            eki = section['fhi_aims_controlInOut_band_segment_end' + i]
+            if ski is not None and eki is not None:
+                start_k.append(ski)
+                end_k.append(eki)
+        if start_k and end_k:
+            # need to transpose arrays since the innermost dimension is 3 according to the metadata
+            band_segm_start = np.transpose(np.asarray(start_k))
+            band_segm_end = np.transpose(np.asarray(end_k))
+            # check if start and end have the same dimensions
+            if band_segm_start.shape == band_segm_end.shape:
+                # construct array that has the dimensions [number_of_k_point_segments,2,3] according to the metadata
+                shape = band_segm_start.shape
+                self.band_segm_start_end = np.empty([shape[0], 2, shape[1]])
+                self.band_segm_start_end[:, 0, :] = band_segm_start
+                self.band_segm_start_end[:, 1, :] = band_segm_end
+            else:
+                logger.error("The shape %s of array band_segm_start and the shape %s of array band_segm_end are inconsistent." % (band_segm_start.shape, band_segm_end.shape))
 
     def onClose_section_system_description(self, backend, gIndex, section):
         """Trigger called when section_system_description is closed.
@@ -365,8 +397,8 @@ class FhiAimsParserContext(object):
                 if v is not None:
                     backend.addValue(k, v)
         # write the references to section_method and section_system_description
-        backend.addValue('single_configuration_calculation_method_ref', self.secMethodIndex)
-        backend.addValue('single_configuration_calculation_system_description_ref', self.secSystemDescriptionIndex)
+        backend.addValue('single_configuration_to_calculation_method_ref', self.secMethodIndex)
+        backend.addValue('single_configuration_calculation_to_system_description_ref', self.secSystemDescriptionIndex)
 
     def onClose_fhi_aims_section_eigenvalues_ZORA(self, backend, gIndex, section):
         """Trigger called when fhi_aims_section_eigenvalues_ZORA is closed.
@@ -407,6 +439,73 @@ class FhiAimsParserContext(object):
             self.eigenvalues_eigenvalues = []
             self.eigenvalues_kpoints = []
             self.update_eigenvalues(section, '')
+
+    def onClose_section_k_band(self, backend, gIndex, section):
+        """Trigger called when section_k_band is closed.
+
+        Band structure is parsed from external band.out files.
+        """
+        # check if start/end of segements was found in controlInOut
+        if self.band_segm_start_end is not None:
+            # check if band segemnts and the number of spin channels were found 
+            if section['fhi_aims_band_segment'] is not None and self.maxSpinChannel is not None:
+                # construct parser for band.out file
+                bandSuperContext = FhiAimsBandParser.FhiAimsBandParserContext(False)
+                bandParser = AncillaryParser(
+                    fileDescription = FhiAimsBandParser.build_FhiAimsBandFileSimpleMatcher(),
+                    parser = self.parser,
+                    cachingLevelForMetaName = FhiAimsBandParser.get_cachingLevelForMetaName(self.metaInfoEnv, CachingLevel.Ignore),
+                    superContext = bandSuperContext)
+                band_k_points = []
+                band_energies = []
+                band_occupation = []
+                parsed_segments = []
+                # loop over found band segements
+                for seg in section['fhi_aims_band_segment']:
+                    band_k_points_spin = None
+                    band_energies_spin = []
+                    band_occupation_spin = []
+                    # loop over spin channels
+                    for spin in range(1, self.maxSpinChannel + 1):
+                        # construct file name
+                        bFile = "band%d%03d.out" % (spin, seg)
+                        dirName = os.path.dirname(os.path.abspath(self.fName))
+                        fName = os.path.normpath(os.path.join(dirName, bFile))
+                        try:
+                            with open(fName) as fIn:
+                                # parse band.out file
+                                bandParser.parseFile(fIn)
+                                # extract values
+                                if all(x is not None for x in [bandSuperContext.band_energies, bandSuperContext.band_k_points, bandSuperContext.band_occupation]):
+                                    # check if k-points are the same for the spin channels
+                                    if spin == 1:
+                                        band_k_points_spin = bandSuperContext.band_k_points
+                                    elif spin > 1 and not np.array_equal(band_k_points_spin, bandSuperContext.band_k_points):
+                                        band_k_points_spin = None
+                                        logger.warning("The k-points of spin channel 1 in file band1%03d.out and spin channel %d in file %s are not equal in directory '%s'." % (seg, spin, bFile, dirName))
+                                    band_energies_spin.append(bandSuperContext.band_energies)
+                                    band_occupation_spin.append(bandSuperContext.band_occupation)
+                                else:
+                                    logger.warning("Parsing of band structure file %s in directory '%s' did not yield values for k-points, energies, or occupations." % (bFile, dirName))
+                        except IOError:
+                            logger.warning("Could not find %s file in directory '%s'." % (bFile, dirName))
+                    # append values for spin channels to list and save which segment was parsed successfully
+                    if band_k_points_spin is not None and len(band_energies_spin) == self.maxSpinChannel and len(band_occupation_spin) == self.maxSpinChannel:
+                        parsed_segments.append(seg - 1)
+                        band_k_points.append(band_k_points_spin)
+                        band_energies.append(band_energies_spin)
+                        band_occupation.append(band_occupation_spin)
+                    else:
+                        logger.warning("Band segement %d could not be parsed correctly. Band structure parsing incomplete." % seg)
+                # write values if band segments were parsed successfully
+                if parsed_segments:
+                    backend.addArrayValues('band_energies', np.asarray(band_energies))
+                    backend.addArrayValues('band_k_points', np.asarray(band_k_points))
+                    backend.addArrayValues('band_occupation', np.asarray(band_occupation))
+                    # write only the start/end values of successfully parsed band segments
+                    backend.addArrayValues('band_segm_start_end', self.band_segm_start_end[parsed_segments])
+                else:
+                    logger.error("Band structure parsing unsuccessful. Found band structure calculation in main file, but none of the corresponding bandXYYY.out files could be parsed successfully.")
 
 def build_FhiAimsMainFileSimpleMatcher():
     """Builds the SimpleMatcher to parse the main file of FHI-aims.
@@ -452,6 +551,14 @@ def build_FhiAimsMainFileSimpleMatcher():
             # Repating occurrences of the same keywords are captured.
             # List the matchers in alphabetical order according to metadata name.
             #
+            SM (name = 'BandSegment',
+                startReStr = r"\s*Plot band\s*[0-9]+",
+                repeats = True,
+                subMatchers = [
+                SM (r"\s*\|\s*begin\s*(?P<fhi_aims_controlInOut_band_segment_start1>[-+0-9.]+)\s+(?P<fhi_aims_controlInOut_band_segment_start2>[-+0-9.]+)\s+(?P<fhi_aims_controlInOut_band_segment_start3>[-+0-9.]+)"),
+                SM (r"\s*\|\s*end\s*(?P<fhi_aims_controlInOut_band_segment_end1>[-+0-9.]+)\s+(?P<fhi_aims_controlInOut_band_segment_end2>[-+0-9.]+)\s+(?P<fhi_aims_controlInOut_band_segment_end3>[-+0-9.]+)"),
+                SM (r"\s*\|\s*number of points:\s*[0-9]+")
+                ]),
             # only the first character is important for aims
             SM (r"\s*hse_unit: Unit for the HSE06 hybrid functional screening parameter set to (?P<fhi_aims_controlInOut_hse_unit>[a-zA-Z])[a-zA-Z]*\^\(-1\)\.", repeats = True),
             SM (r"^\s*Found k-point grid:\s+(?P<fhi_aims_controlInOut_k1>[0-9]+)\s+(?P<fhi_aims_controlInOut_k2>[0-9]+)\s+(?P<fhi_aims_controlInOut_k3>[0-9]+)", repeats = True),
@@ -687,6 +794,32 @@ def build_FhiAimsMainFileSimpleMatcher():
         SM (r"\s*\|\s*Electronic free energy per atom\s*:\s*(?P<energy_free_per_atom__eV>[-+0-9.eEdD]+) *eV"),
         ])
     ########################################
+    # submatcher for band structure
+    bandStructureSubMatcher = SM (name = 'BandStructure',
+        startReStr = r"\s*Writing the requested band structure output:",
+        sections = ['section_k_band'],
+        subMatchers = [
+        SM (r"\s*\s*-{20}-*", weak = True),
+        SM (r"\s*Integrating Hamiltonian matrix: batch-based integration\."),
+        SM (r"\s*Time summed over all CPUs for integration: real work\s*[0-9.]+ *s, elapsed\s*[0-9.]+ *s"),
+        SM (name = 'BandSegment',
+            startReStr = r"\s*Treating all\s*[0-9]+ k-points in band plot segment #\s*(?P<fhi_aims_band_segment>[0-9]+):",
+            repeats= True,
+            subMatchers = [
+            SM (r'\s*"Band gap" along reciprocal space direction number:\s*[0-9]+'),
+            SM (r"\s*\|\s*Lowest unoccupied state\s*:\s*[-+0-9.]+ *eV"),
+            SM (r"\s*\|\s*Highest occupied state\s*:\s*[-+0-9.]+ *eV"),
+            SM (r"\s*\|\s*Energy difference\s*:\s*[-+0-9.]+ *eV")
+            ]), # END BandSegment
+        SM (r'\s*"Band gap" of total set of bands:'),
+        SM (r"\s*\|\s*Lowest unoccupied state\s*:\s*[-+0-9.]+ *eV"),
+        SM (r"\s*\|\s*Highest occupied state\s*:\s*[-+0-9.]+ *eV"),
+        SM (r"\s*\|\s*Energy difference\s*:\s*[-+0-9.]+ *eV"),
+        SM (r"\s*Band Structure\s*:\s*max\(cpu_time\)\s+wall_clock\(cpu1\)"),
+        SM (r"\s*\|\s*Total Time\s*:\s*[0-9.]+\s+[0-9.]+"),
+        SM (r"\s*-{20}-*", weak = True)
+        ])
+    ########################################
     # return main Parser
     return SM (name = 'Root',
         startReStr = "",
@@ -732,6 +865,24 @@ def build_FhiAimsMainFileSimpleMatcher():
                 controlInSubMatcher,
                 # parse verbatim writeout of geometry.in
                 geometryInSubMatcher,
+                # parse number of spin channels
+                SM (name = 'ArraySizeParameters',
+                    startReStr = r"\s*Basic array size parameters:",
+                    subMatchers = [
+                        SM (r"\s*\|\s*Number of species\s*:\s*[0-9]+"),
+                        SM (r"\s*\|\s*Number of atoms\s*:\s*[0-9]+"),
+                        SM (r"\s*\|\s*Number of lattice vectors\s*:\s*[0-9]+"),
+                        SM (r"\s*\|\s*Max\. basis fn\. angular momentum\s*:\s*[0-9]+"),
+                        SM (r"\s*\|\s*Max\. atomic/ionic basis occupied n\s*:\s*[0-9]+"),
+                        SM (r"\s*\|\s*Max\. number of basis fn\. types\s*:\s*[0-9]+"),
+                        SM (r"\s*\|\s*Max\. radial fns per species/type\s*:\s*[0-9]+"),
+                        SM (r"\s*\|\s*Max\. logarithmic grid size\s*:\s*[0-9]+"),
+                        SM (r"\s*\|\s*Max\. radial integration grid size\s*:\s*[0-9]+"),
+                        SM (r"\s*\|\s*Max\. angular integration grid size\s*:\s*[0-9]+"),
+                        SM (r"\s*\|\s*Max\. angular grid division number\s*:\s*[0-9]+"),
+                        SM (r"\s*\|\s*Radial grid for Hartree potential\s*:\s*[0-9]+"),
+                        SM (r"\s*\|\s*Number of spin channels\s*:\s*(?P<fhi_aims_controlInOut_max_spin_channel>[0-9]+)")
+                    ]), # END ArraySizeParameters
                 # parse settings writeout of aims
                 controlInOutSubMatcher,
                 # parse geometry writeout of aims
@@ -845,7 +996,7 @@ def build_FhiAimsMainFileSimpleMatcher():
                         startReStr = r"\s*Geometry optimization: Attempting to predict improved coordinates\.",
                         subMatchers = [
                         SM (r"\s*Removing unitary transformations \(pure translations, rotations\) from forces on atoms\."),
-                        SM (r"\s*Maximum force component is\s*[-+0-9.eEdD]\s*eV/A\."),
+                        SM (r"\s*Maximum force component is\s*[-+0-9.eEdD]+ *eV/A\."),
                         SM (r"\s*Present geometry (?P<fhi_aims_geometry_optimization_converged>is converged)\."),
                         SM (name = 'RelaxationStep',
                             startReStr = r"\s*Present geometry (?P<fhi_aims_geometry_optimization_converged>is not yet converged)\.",
@@ -868,7 +1019,9 @@ def build_FhiAimsMainFileSimpleMatcher():
                             SM (r"\s*\|\s*Time step number\s*:\s*[0-9]+"),
                             SM (r"\s*-{20}-*", weak = True)
                             ]) # END MDStep
-                        ]) # END MD
+                        ]), # END MD
+                    # band structure
+                    bandStructureSubMatcher
                     ]), # END SingleConfigurationCalculation
                 # parse updated geometry for relaxation
                 geometryRelaxationSubMatcher,
@@ -907,6 +1060,7 @@ def get_cachingLevelForMetaName(metaInfoEnv):
     """
     # manually adjust caching of metadata
     cachingLevelForMetaName = {
+                               'fhi_aims_band_segment': CachingLevel.Cache,
                                'fhi_aims_MD_flag': CachingLevel.Cache,
                                'fhi_aims_geometry_optimization_converged': CachingLevel.Cache,
                                'fhi_aims_single_configuration_calculation_converged': CachingLevel.Cache,
@@ -933,7 +1087,7 @@ def main():
     # get main file description
     FhiAimsMainFileSimpleMatcher = build_FhiAimsMainFileSimpleMatcher()
     # loading metadata from nomad-meta-info/meta_info/nomad_meta_info/fhi_aims.nomadmetainfo.json
-    metaInfoPath = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)),"../../../../nomad-meta-info/meta_info/nomad_meta_info/fhi_aims.nomadmetainfo.json"))
+    metaInfoPath = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../../../nomad-meta-info/meta_info/nomad_meta_info/fhi_aims.nomadmetainfo.json"))
     metaInfoEnv = get_metaInfo(metaInfoPath)
     # set parser info
     parserInfo = {'name':'fhi-aims-parser', 'version': '1.0'}

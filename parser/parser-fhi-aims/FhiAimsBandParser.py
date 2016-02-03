@@ -32,9 +32,6 @@ class FhiAimsBandParserContext(object):
             writeMetaData: Deteremines if metadata is written or stored in class attributes.
         """
         self.writeMetaData = writeMetaData
-        self.band_energies = None
-        self.band_k_points = None
-        self.band_occupation = None
 
     def startedParsing(self, fInName, parser):
         """Function is called when the parsing starts and the compiled parser is obtained.
@@ -44,12 +41,15 @@ class FhiAimsBandParserContext(object):
             parser: The compiled parser. Is an object of the class SimpleParser in nomadcore.simple_parser.py.
         """
         self.parser = parser
+        # allows to reset values if the same superContext is used to parse different files
+        self.band_energies = None
+        self.band_k_points = None
+        self.band_occupation = None
 
     def onClose_section_k_band(self, backend, gIndex, section):
         """Trigger called when section_k_band is closed.
 
-        Write the keywords from control.in, which belong to settings_run
-        or save the section.
+        Store the parsed values and write them if writeMetaData is True.
         """
         # extract k-points
         band_k = []
