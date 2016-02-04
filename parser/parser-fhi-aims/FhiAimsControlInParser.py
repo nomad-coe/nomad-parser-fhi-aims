@@ -90,6 +90,7 @@ def build_FhiAimsControlInKeywordsSimpleMatchers():
         SM (r"^\s*charge\s+(?P<fhi_aims_controlIn_charge>[-+0-9.eEdD]+)", repeats = True),
         # only the first character is important for aims
         SM (r"^\s*hse_unit\s+(?P<fhi_aims_controlIn_hse_unit>[a-zA-Z])[-_a-zA-Z0-9]+", repeats = True),
+        SM (r"^\s*hybrid_xc_coeff\s+(?P<fhi_aims_controlIn_hybrid_xc_coeff>[-+0-9.eEdD]+)", repeats = True),
         SM (r"^\s*MD_time_step\s+(?P<fhi_aims_controlIn_MD_time_step__ps>[-+0-9.eEdD]+)", repeats = True),
         SM (r"^\s*k_grid\s+(?P<fhi_aims_controlIn_k1>[0-9]+)\s+(?P<fhi_aims_controlIn_k2>[0-9]+)\s+(?P<fhi_aims_controlIn_k3>[0-9]+)", repeats = True),
         # need to distinguish different cases

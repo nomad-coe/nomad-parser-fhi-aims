@@ -578,6 +578,7 @@ def build_FhiAimsMainFileSimpleMatcher():
                 ]),
             # only the first character is important for aims
             SM (r"\s*hse_unit: Unit for the HSE06 hybrid functional screening parameter set to (?P<fhi_aims_controlInOut_hse_unit>[a-zA-Z])[a-zA-Z]*\^\(-1\)\.", repeats = True),
+            SM (r"\s*hybrid_xc_coeff: Mixing coefficient for hybrid-functional exact exchange modified to\s*(?P<fhi_aims_controlInOut_hybrid_xc_coeff>[0-9.]+)\s*\.", repeats = True),
             SM (r"^\s*Found k-point grid:\s+(?P<fhi_aims_controlInOut_k1>[0-9]+)\s+(?P<fhi_aims_controlInOut_k2>[0-9]+)\s+(?P<fhi_aims_controlInOut_k3>[0-9]+)", repeats = True),
             # section fhi_aims_section_MD_detect is just used to detect already in the methods section if a MD run was perfomed
             SM (r"\s*Molecular dynamics time step =\s*(?P<fhi_aims_controlInOut_MD_time_step__ps>[0-9.]+) *ps", repeats = True, sections = ['fhi_aims_section_MD_detect']),
