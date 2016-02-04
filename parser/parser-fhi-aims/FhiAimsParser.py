@@ -106,9 +106,9 @@ class FhiAimsParserContext(object):
         if sec_ev_group is not None:
             # check if only one group was found
             if len(sec_ev_group) != 1:
-                logger.warning("Found %d instead of 1 group of eigenvalues. Used entry 0." % len(sec_ev_group))
+                logger.warning("Found %d instead of 1 group of eigenvalues. Used last occurance." % len(sec_ev_group))
             # get cached fhi_aims_section_eigenvalues_group
-            sec_ev_spins = sec_ev_group[0]['fhi_aims_section_eigenvalues_spin%s' % addStr]
+            sec_ev_spins = sec_ev_group[-1]['fhi_aims_section_eigenvalues_spin%s' % addStr]
             for sec_ev_spin in sec_ev_spins:
                 occs = []
                 evs = []
@@ -642,7 +642,7 @@ def build_FhiAimsMainFileSimpleMatcher():
         subMatchers = [
         SM (r"\s*-{20}-*", weak = True),
         SM (r"\s*Input structure read successfully\."),
-        SM (r"\s*The structure contains\s*[0-9]+\s*atoms,\s*and a total of\s*[0-9.]\s*electrons\."),
+        SM (r"\s*The structure contains\s*[0-9]+\s*atoms,\s*and a total of\s*[0-9.]+\s*electrons\."),
         SM (r"\s*Input geometry:"),
         SM (r"\s*\|\s*No unit cell requested\."),
         SM (startReStr = r"\s*\|\s*Unit cell:",
