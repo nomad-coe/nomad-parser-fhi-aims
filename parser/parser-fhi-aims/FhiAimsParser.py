@@ -332,7 +332,7 @@ class FhiAimsParserContext(object):
                 api = section['fhi_aims_geometry_atom_position_' + i]
                 if api is not None:
                     atom_pos.append(api)
-            if atom_pos is not None:
+            if atom_pos:
                 # need to transpose array since its shape is given by [number_of_atoms,3] in the metadata
                 backend.addArrayValues('atom_position', np.transpose(np.asarray(atom_pos)))
             # write atom labels
@@ -909,7 +909,7 @@ def build_FhiAimsMainFileSimpleMatcher():
                 startReStr = r"\s*Invoking FHI-aims \.\.\.",
                 subMatchers = [
                 SM (r"\s*Version\s*(?P<program_version>[0-9a-zA-Z_.]+)"),
-                SM (r"\s*Compiled on\s*(?P<fhi_aims_program_compilation_date>[0-9/]+)\s*at\s*(?P<fhi_aims_program_compilation_time>[0-9:]+)\s*on host\s*(?P<program_compilation_host>[-a-zA-Z0-9._]+)"),
+                SM (r"\s*Compiled on\s*(?P<fhi_aims_program_compilation_date>[0-9/]+)\s*at\s*(?P<fhi_aims_program_compilation_time>[0-9:]+)\s*on host\s*(?P<program_compilation_host>[-a-zA-Z0-9._]+)\."),
                 SM (r"\s*Date\s*:\s*(?P<fhi_aims_program_execution_date>[-.0-9/]+)\s*,\s*Time\s*:\s*(?P<fhi_aims_program_execution_time>[-+0-9.eEdD]+)"),
                 SM (r"\s*-{20}-*", weak = True),
                 SM (r"\s*Time zero on CPU 1\s*:\s*(?P<time_run_cpu1_start>[-+0-9.eEdD]+) *s?\."),
@@ -929,7 +929,7 @@ def build_FhiAimsMainFileSimpleMatcher():
             # parse control and geometry
             SM (name = 'SectionMethod',
                 startReStr = r"\s*Parsing control\.in \(first pass over file, find array dimensions only\)\.",
-                sections = ["section_method"],
+                sections = ['section_method'],
                 subMatchers = [
                 # parse verbatim writeout of control.in
                 controlInSubMatcher,
@@ -1112,7 +1112,6 @@ def get_cachingLevelForMetaName(metaInfoEnv):
     # manually adjust caching of metadata
     cachingLevelForMetaName = {
                                'fhi_aims_band_segment': CachingLevel.Cache,
-                               'fhi_aims_MD_flag': CachingLevel.Cache,
                                'fhi_aims_geometry_optimization_converged': CachingLevel.Cache,
                                'fhi_aims_section_MD_detect': CachingLevel.Ignore,
                                'fhi_aims_single_configuration_calculation_converged': CachingLevel.Cache,
