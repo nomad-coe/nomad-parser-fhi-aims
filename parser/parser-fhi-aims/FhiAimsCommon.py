@@ -45,6 +45,7 @@ def write_controlIn(backend, metaInfoEnv, valuesDict, writeXC, location, logger)
     # fhi_aims_controlIn_relativistic_threshold is written with fhi_aims_controlIn_relativistic.
     # The xc setting have to be handeled separatly since having more than one gives undefined behavior.
     # hse_omega is only written if HSE was used and converted according to hse_unit which is not written since not needed.
+    # hybrid_xc_coeff is only written for hybrid functionals.
     # verbatim_writeout is only needed to detect if the control.in is written in the main file of aims.
     exclude_list = [
                     'fhi_aims_controlIn_k2',
@@ -53,6 +54,7 @@ def write_controlIn(backend, metaInfoEnv, valuesDict, writeXC, location, logger)
                     'fhi_aims_controlIn_xc',
                     'fhi_aims_controlIn_hse_omega',
                     'fhi_aims_controlIn_hse_unit',
+                    'fhi_aims_controlIn_hybrid_xc_coeff',
                     'fhi_aims_controlIn_verbatim_writeout',
                    ]
     # write settings
@@ -120,7 +122,7 @@ def write_xc_functional(backend, metaInfoEnv, metaNameStart, valuesDict, locatio
         location: A string that is used to specify where more than one setting for xc was found.
         logger: Logging object where messages should be written to.
     """
-    # two function to convert hybrid_xc_coeff to the correct weight
+    # two functions to convert hybrid_xc_coeff to the correct weight
     def GGA_weight(x):
         return 1.0 - x
     def HF_weight(x):
@@ -150,10 +152,10 @@ def write_xc_functional(backend, metaInfoEnv, metaNameStart, valuesDict, locatio
               'TPSSloc gradient-corrected functionals':              [{'name': 'MGGA_C_TPSSLOC'}, {'name': 'MGGA_X_TPSS'}],
               'hybrid B3LYP functional':                             [{'name': 'HYB_GGA_XC_B3LYP5'}],
               'Hartree-Fock':                                        [{'name': 'HF_X'}],
-              'hybrid-PBE0 functionals':                             [{'name': 'GGA_C_PBE'}, {'name': 'GGA_X_PBE', 'weight': 0.75, 'convert': GGA_weight}, {'name': 'HF_X', 'weight': 0.25, 'convert': HF_weight}],
-              'hybrid-PBEsol0 functionals':                          [{'name': 'GGA_C_PBE_SOL'}, {'name': 'GGA_X_PBE_SOL', 'weight': 0.75, 'convert': GGA_weight}, {'name': 'HF_X', 'weight': 0.25, 'convert': HF_weight}],
               'HSE':                                                 [{'name': 'HYB_GGA_XC_HSE03'}],
               'HSE-functional':                                      [{'name': 'HYB_GGA_XC_HSE06'}],
+              'hybrid-PBE0 functionals':                             [{'name': 'GGA_C_PBE'}, {'name': 'GGA_X_PBE', 'weight': 0.75, 'convert': GGA_weight}, {'name': 'HF_X', 'weight': 0.25, 'convert': HF_weight}],
+              'hybrid-PBEsol0 functionals':                          [{'name': 'GGA_C_PBE_SOL'}, {'name': 'GGA_X_PBE_SOL', 'weight': 0.75, 'convert': GGA_weight}, {'name': 'HF_X', 'weight': 0.25, 'convert': HF_weight}],
               'Hybrid M06 gradient-corrected functionals':           [{'name': 'HYB_MGGA_XC_M06'}],
               'Hybrid M06-2X gradient-corrected functionals':        [{'name': 'HYB_MGGA_XC_M06_2X'}],
               'Hybrid M06-HF gradient-corrected functionals':        [{'name': 'HYB_MGGA_XC_M06_HF'}],
@@ -168,9 +170,13 @@ def write_xc_functional(backend, metaInfoEnv, metaNameStart, valuesDict, locatio
     # distinguish between control.in and the aims output from the parsed control.in
     if metaNameStart == 'fhi_aims_controlIn':
         hseFunc = 'hse06'
+        # functionals where hybrid_xc_coeff is written
+        writeHybridCoeff = ['b3lyp', 'hse03', 'hse06', 'pbe0', 'pbesol0']
         xcWrite = False
     elif metaNameStart == 'fhi_aims_controlInOut':
         hseFunc = 'HSE-functional'
+        # functionals where hybrid_xc_coeff is written
+        writeHybridCoeff = ['hybrid B3LYP functional', 'HSE', 'HSE-functional', 'hybrid-PBE0 functionals', 'hybrid-PBEsol0 functionals']
         xcWrite = True
     else:
         logger.error("Unknown metaNameStart %s in function write_xc_functional in %s. Please correct." % (metaNameStart, os.path.basename(__file__)))
@@ -183,6 +189,11 @@ def write_xc_functional(backend, metaInfoEnv, metaNameStart, valuesDict, locatio
             logger.error("Found %d settings for the xc functional in %s: %s. This leads to an undefined behavior of the calculation and no metadata can be written for %s_xc." % (len(xc), location, xc, metaNameStart))
         else:
             backend.superBackend.addValue(metaNameStart + '_xc', xc[-1])
+            # check for hybrid_xc_coeff
+            hybridCoeff = valuesDict.get(metaNameStart + '_hybrid_xc_coeff')
+            # write hybrid_xc_coeff for certain functionals
+            if hybridCoeff is not None and xc[-1] in writeHybridCoeff:
+                backend.superBackend.addValue(metaNameStart + '_hybrid_xc_coeff', hybridCoeff[-1])
             # hse_omega is only written for HSE06
             if xc[-1] == hseFunc:
                 hse_omega = valuesDict.get(metaNameStart + '_hse_omega')
@@ -215,9 +226,7 @@ def write_xc_functional(backend, metaInfoEnv, metaNameStart, valuesDict, locatio
                             # write section and and XC_functional_name
                             gIndex = backend.openSection('section_XC_functionals')
                             backend.addValue('XC_functional_name', xcName)
-                            # check for hybrid_xc_coeff
-                            hybridCoeff = valuesDict.get(metaNameStart + '_hybrid_xc_coeff')
-                            # write hybrid_xc_coeff for B3LYP and HSE03
+                            # write hybrid_xc_coeff for B3LYP and HSE03 into XC_functional_parameters
                             if hybridCoeff is not None and xc[-1] in ['hybrid B3LYP functional', 'HSE']:
                                 backend.addValue('XC_functional_parameters', {xcHybridCoeffDescr: hybridCoeff[-1]})
                             # write omega and hybrid_xc_coeff for HSE06

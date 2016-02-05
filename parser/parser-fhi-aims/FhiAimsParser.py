@@ -244,12 +244,14 @@ class FhiAimsParserContext(object):
         # k_grid is written with k1 so that k2 and k2 are not needed.
         # The xc setting have to be handeled separatly since having more than one gives undefined behavior.
         # hse_omega is only written if HSE was used and converted according to hse_unit which is not written since not needed.
+        # hybrid_xc_coeff is only written for hybrid functionals.
         exclude_list = [
                         'fhi_aims_controlInOut_k2',
                         'fhi_aims_controlInOut_k3',
                         'fhi_aims_controlInOut_xc',
                         'fhi_aims_controlInOut_hse_omega',
                         'fhi_aims_controlInOut_hse_unit',
+                        'fhi_aims_controlInOut_hybrid_xc_coeff',
                        ]
         # band releated data does not change the calculation and will be processed separatly
         for name in self.metaInfoEnv.infoKinds:
