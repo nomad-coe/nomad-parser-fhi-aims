@@ -925,10 +925,8 @@ def build_FhiAimsMainFileSimpleMatcher():
                         startReStr = r"\s*Task\s*(?P<fhi_aims_parallel_task_nr>[0-9]+)\s*on host\s+(?P<fhi_aims_parallel_task_host>[-a-zA-Z0-9._]+)\s+reporting\.",
                         repeats = True,
                         sections = ["fhi_aims_section_parallel_task_assignement"])
-                    ]), # END nParallelTasks
-                SM (r"\s*Performing system and environment tests:"),
+                    ]) # END nParallelTasks
                 ]), # END ProgramHeader
-            SM (r"\s*Obtaining array dimensions for all initial allocations:"),
             # parse control and geometry
             SM (name = 'SectionMethod',
                 startReStr = r"\s*Parsing control\.in \(first pass over file, find array dimensions only\)\.",
@@ -984,7 +982,6 @@ def build_FhiAimsMainFileSimpleMatcher():
                         SM (r"\s*-{20}-*", weak = True),
                         EigenvaluesGroupSubMatcher,
                         TotalEnergyScfSubMatcher,
-                        SM (r"\s*Full exact exchange energy:\s*[-+0-9.eEdD]+ *eV"),
                         SM (r"\s*End scf initialization - timings\s*:\s*max\(cpu_time\)\s+wall_clock\(cpu1\)"),
                         SM (r"\s*-{20}-*", weak = True)
                         ]), # END ScfInitialization
@@ -996,7 +993,6 @@ def build_FhiAimsMainFileSimpleMatcher():
                         subMatchers = [
                         SM (r"\s*Date\s*:\s*(?P<fhi_aims_scf_date_start>[-.0-9/]+)\s*,\s*Time\s*:\s*(?P<fhi_aims_scf_time_start>[-+0-9.eEdD]+)"),
                         SM (r"\s*-{20}-*", weak = True),
-                        SM (r"\s*Full exact exchange energy:\s*[-+0-9.eEdD]+ *eV"),
                         EigenvaluesGroupSubMatcher.copy(), # need copy since SubMatcher already used for ScfInitialization
                         TotalEnergyScfSubMatcher.copy(), # need copy since SubMatcher already used for ScfInitialization
                         # SCF convergence info
@@ -1082,11 +1078,6 @@ def build_FhiAimsMainFileSimpleMatcher():
                 # parse updated geometry for relaxation
                 geometryRelaxationSubMatcher,
                 ]), # END SingleConfigurationCalculationWithSystemDescription
-            SM (r"\s*-{20}-*", weak = True),
-            SM (r"\s*Final output of selected total energy values:"),
-            SM (r"\s*The following output summarizes some interesting total energy values"),
-            SM (r"\s*at the end of a run \(AFTER all relaxation, molecular dynamics, etc\.\)\."),
-            SM (r"\s*-{20}-*", weak = True),
             SM (r"\s*-{20}-*", weak = True),
             SM (r"\s*Leaving FHI-aims\."),
             SM (r"\s*Date\s*:\s*[-.0-9/]+\s*,\s*Time\s*:\s*[-+0-9.eEdD]+"),
