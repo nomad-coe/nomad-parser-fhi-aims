@@ -87,7 +87,7 @@ def build_FhiAimsDosFileSimpleMatcher():
             sections = ['section_run'],
             subMatchers = [
             SM (name = 'Root3',
-                startReStr = r"# The energy reference for this output is the average chemical potential, mu =\s*[-+0-9.]+ *eV",
+                startReStr = r"# The energy reference for this output is the (?:average )?chemical potential, mu =\s*[-+0-9.]+ *eV",
                 sections = ['section_single_configuration_calculation'],
                 subMatchers = [
                 SM (name = 'Root4',

@@ -7,6 +7,7 @@ from nomadcore.simple_parser import SimpleMatcher as SM
 from FhiAimsCommon import get_metaInfo, write_controlIn, write_k_grid, write_xc_functional
 import FhiAimsControlInParser
 import FhiAimsBandParser
+import FhiAimsDosParser
 import logging, os, re, sys
 
 ############################################################
@@ -55,7 +56,7 @@ class FhiAimsParserContext(object):
         """Initializes the values of certain variables.
 
         This allows a consistent setting and resetting of the variables,
-        when the class is created and when a section_run closes.
+        when the parsing starts and when a section_run closes.
         """
         self.secMethodIndex = None
         self.secSystemDescriptionIndex = None
@@ -458,6 +459,35 @@ class FhiAimsParserContext(object):
             self.eigenvalues_eigenvalues = []
             self.eigenvalues_kpoints = []
             self.update_eigenvalues(section, '')
+
+    def onClose_section_dos(self, backend, gIndex, section):
+        """Trigger called when section_dos is closed.
+
+        DOS is parsed from external file.
+        """
+        # construct file name
+        dFile = 'KS_DOS_total.dat'
+        dirName = os.path.dirname(os.path.abspath(self.fName))
+        fName = os.path.normpath(os.path.join(dirName, dFile))
+        try:
+            with open(fName) as fIn:
+                # construct parser for DOS file
+                dosSuperContext = FhiAimsDosParser.FhiAimsDosParserContext(False)
+                dosParser = AncillaryParser(
+                    fileDescription = FhiAimsDosParser.build_FhiAimsDosFileSimpleMatcher(),
+                    parser = self.parser,
+                    cachingLevelForMetaName = FhiAimsDosParser.get_cachingLevelForMetaName(self.metaInfoEnv, CachingLevel.Ignore),
+                    superContext = dosSuperContext)
+                # parse DOS file
+                dosParser.parseFile(fIn)
+                # write values if DOS was parsed successfully
+                if dosSuperContext.dos_energies is not None and dosSuperContext.dos_values is not None:
+                    backend.addArrayValues('dos_energies', dosSuperContext.dos_energies)
+                    backend.addArrayValues('dos_values', dosSuperContext.dos_values)
+                else:
+                    logger.error("DOS parsing unsuccessful. Parsing of file %s in directory '%s' did not yield energies or values for DOS." % (dFile, dirName))
+        except IOError:
+            logger.error("DOS parsing unsuccessful. Could not find %s file in directory '%s'." % (dFile, dirName))
 
     def onClose_section_k_band(self, backend, gIndex, section):
         """Trigger called when section_k_band is closed.
@@ -867,9 +897,28 @@ def build_FhiAimsMainFileSimpleMatcher():
         geometryMDSubMatcher
         ])
     ########################################
+    # submatcher for DOS
+    dosSubMatcher = SM (name = 'DOS',
+        startReStr = r"\s*Calculating total density of states \.\.\.",
+        endReStr = r"\s*\|\s*writing DOS \(raw data\) to file \S+",
+        sections = ['section_dos'],
+        subMatchers = [
+        SM (r"\s*\|\s*writing DOS \(shifted by electron chemical potential\) to file \S+")
+        ])
+    ########################################
+    # submatcher for perturbative DOS
+    perturbDosSubMatcher = SM (name = 'perturbDOS',
+        startReStr = r"\s*Post-scf processing of Kohn-Sham eigenvalues on a denser k-point grid\.",
+        endReStr = r"\s*\|\s*writing perturbative DOS \(raw data\) to file \S+",
+        sections = ['section_dos'],
+        subMatchers = [
+        SM (r"\s*\|\s*writing perturbative DOS \(shifted by electron chemical potential\) to file \S+")
+        ])
+    ########################################
     # submatcher for band structure
     bandStructureSubMatcher = SM (name = 'BandStructure',
         startReStr = r"\s*Writing the requested band structure output:",
+        endReStr = r"\s*Band Structure\s*:\s*max\(cpu_time\)\s+wall_clock\(cpu1\)",
         sections = ['section_k_band'],
         subMatchers = [
         SM (r"\s*\s*-{20}-*", weak = True),
@@ -887,10 +936,7 @@ def build_FhiAimsMainFileSimpleMatcher():
         SM (r'\s*"Band gap" of total set of bands:'),
         SM (r"\s*\|\s*Lowest unoccupied state\s*:\s*[-+0-9.]+ *eV"),
         SM (r"\s*\|\s*Highest occupied state\s*:\s*[-+0-9.]+ *eV"),
-        SM (r"\s*\|\s*Energy difference\s*:\s*[-+0-9.]+ *eV"),
-        SM (r"\s*Band Structure\s*:\s*max\(cpu_time\)\s+wall_clock\(cpu1\)"),
-        SM (r"\s*\|\s*Total Time\s*:\s*[0-9.]+\s+[0-9.]+"),
-        SM (r"\s*-{20}-*", weak = True)
+        SM (r"\s*\|\s*Energy difference\s*:\s*[-+0-9.]+ *eV")
         ])
     ########################################
     # return main Parser
@@ -1045,6 +1091,13 @@ def build_FhiAimsMainFileSimpleMatcher():
                         SM (r"\s*\|\s*Electronic free energy\s*:\s*(?P<energy_free__eV>[-+0-9.eEdD]+) *eV"),
                         SM (r"\s*-{20}-*", weak = True)
                         ]), # END EnergyForcesSummary
+                    # DOS
+                    # TODO
+                    # aims writes the non-perturbative DOS after every relaxation/MD step. I.e., we will encounter
+                    # the DOS output statement for every step (single configuration calculation). However, there
+                    # is only one file, which corresponds to the last step. Need a way to solve this issue so that
+                    # the parsed DOS is only written for the last step.
+                    #dosSubMatcher,
                     # decomposition of the xc energy
                     SM (name = 'DecompositionXCEnergy',
                         startReStr = r"\s*Start decomposition of the XC Energy",
@@ -1072,6 +1125,8 @@ def build_FhiAimsMainFileSimpleMatcher():
                     RelaxationSubMatcher,
                     # MD
                     MDSubMatcher,
+                    # perturbative DOS
+                    perturbDosSubMatcher,
                     # band structure
                     bandStructureSubMatcher
                     ]), # END SingleConfigurationCalculation
