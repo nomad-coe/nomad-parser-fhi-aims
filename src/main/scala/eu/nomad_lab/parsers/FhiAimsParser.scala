@@ -14,6 +14,10 @@ object FhiAimsParser extends SimpleExternalParserGenerator(
         "--uri", "${mainFileUri}", "${mainFilePath}"),
       resList = Seq(
         "parser-fhi-aims/FhiAimsParser.py",
+        "parser-fhi-aims/FhiAimsCommon.py",
+        "parser-fhi-aims/FhiAimsControlInParser.py",
+        "parser-fhi-aims/FhiAimsBandParser.py",
+        "parser-fhi-aims/FhiAimsDosParser.py",
         "parser-fhi-aims/setup_paths.py",
         "nomad_meta_info/common.nomadmetainfo.json",
         "nomad_meta_info/meta_types.nomadmetainfo.json",
