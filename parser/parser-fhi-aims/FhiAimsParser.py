@@ -75,6 +75,10 @@ class FhiAimsParserContext(object):
         self.eigenvalues_occupation = []
         self.eigenvalues_eigenvalues = []
         self.eigenvalues_kpoints = []
+        self.dosRefSingleConfigurationCalculation = None
+        self.dosFound = False
+        self.dos_energies = None
+        self.dos_values = None
 
     def startedParsing(self, fInName, parser):
         """Function is called when the parsing starts.
@@ -151,6 +155,14 @@ class FhiAimsParserContext(object):
         However, this also bypasses the checking of validity of the metadata name by the backend.
         The scala part will check the validity nevertheless.
         """
+        # write dos
+        # The explanation why we write the dos not unil section_run closes is given in onClose_section_dos.
+        if self.dos_energies is not None and self.dos_values is not None:
+            gIndex = backend.openSection('fhi_aims_section_dos')
+            backend.addValue('fhi_aims_dos_to_single_configuration_ref', self.dosRefSingleConfigurationCalculation)
+            backend.addArrayValues('fhi_aims_dos_energies', self.dos_energies)
+            backend.addArrayValues('fhi_aims_dos_values', self.dos_values)
+            backend.closeSection('fhi_aims_section_dos', gIndex)
         # write geometry optimization convergence
         if self.geoConvergence is not None:
             backend.addValue('geometry_optimization_converged', self.geoConvergence)
@@ -419,6 +431,10 @@ class FhiAimsParserContext(object):
         # write the references to section_method and section_system_description
         backend.addValue('single_configuration_to_calculation_method_ref', self.secMethodIndex)
         backend.addValue('single_configuration_calculation_to_system_description_ref', self.secSystemDescriptionIndex)
+        # get reference to current section_single_configuration_calculation if DOS was found in there
+        if self.dosFound:
+            self.dosRefSingleConfigurationCalculation = gIndex
+            self.dosFound = False
 
     def onClose_fhi_aims_section_eigenvalues_ZORA(self, backend, gIndex, section):
         """Trigger called when fhi_aims_section_eigenvalues_ZORA is closed.
@@ -463,8 +479,17 @@ class FhiAimsParserContext(object):
     def onClose_section_dos(self, backend, gIndex, section):
         """Trigger called when section_dos is closed.
 
-        DOS is parsed from external file.
+        DOS is parsed from external file but the result is only stored and written later in fhi_aims_section_dos
+        in section_run. This is done because aims writes the non-perturbative DOS after every relaxation/MD step.
+        I.e., we will encounter the DOS output statement for every step (single configuration calculation). However,
+        there is only one file, which corresponds to the last step. Since we cannot figure out if we are in the last
+        step while we are in section_single_configuration_calculation, we write the stored DOS in onClose_section_run
+        with a reference to the last section_single_configuration_calculation where a DOS was found. For the
+        perturpative DOS (aims keyword dos_kgrid_factors) this is not necessary, but is still done to be consistent.
         """
+        # reset dos
+        self.dos_energies = None
+        self.dos_values = None
         # construct file name
         dFile = 'KS_DOS_total.dat'
         dirName = os.path.dirname(os.path.abspath(self.fName))
@@ -480,10 +505,11 @@ class FhiAimsParserContext(object):
                     superContext = dosSuperContext)
                 # parse DOS file
                 dosParser.parseFile(fIn)
-                # write values if DOS was parsed successfully
+                # set flag that DOS was parsed successfully and store values
                 if dosSuperContext.dos_energies is not None and dosSuperContext.dos_values is not None:
-                    backend.addArrayValues('dos_energies', dosSuperContext.dos_energies)
-                    backend.addArrayValues('dos_values', dosSuperContext.dos_values)
+                    self.dosFound = True
+                    self.dos_energies = dosSuperContext.dos_energies
+                    self.dos_values = dosSuperContext.dos_values
                 else:
                     logger.error("DOS parsing unsuccessful. Parsing of file %s in directory '%s' did not yield energies or values for DOS." % (dFile, dirName))
         except IOError:
@@ -1092,12 +1118,7 @@ def build_FhiAimsMainFileSimpleMatcher():
                         SM (r"\s*-{20}-*", weak = True)
                         ]), # END EnergyForcesSummary
                     # DOS
-                    # TODO
-                    # aims writes the non-perturbative DOS after every relaxation/MD step. I.e., we will encounter
-                    # the DOS output statement for every step (single configuration calculation). However, there
-                    # is only one file, which corresponds to the last step. Need a way to solve this issue so that
-                    # the parsed DOS is only written for the last step.
-                    #dosSubMatcher,
+                    dosSubMatcher,
                     # decomposition of the xc energy
                     SM (name = 'DecompositionXCEnergy',
                         startReStr = r"\s*Start decomposition of the XC Energy",
@@ -1164,6 +1185,7 @@ def get_cachingLevelForMetaName(metaInfoEnv):
                                'fhi_aims_geometry_optimization_converged': CachingLevel.Cache,
                                'fhi_aims_section_MD_detect': CachingLevel.Ignore,
                                'fhi_aims_single_configuration_calculation_converged': CachingLevel.Cache,
+                               'section_dos': CachingLevel.Ignore,
                               }
     # Set all controlIn and controlInOut metadata to Cache to capture multiple occurrences of keywords and
     # their last value is then written by the onClose routine in the FhiAimsParserContext.
