@@ -60,6 +60,7 @@ class FhiAimsControlInParserContext(object):
         else:
             self.sectionRun = section
 
+   
     def onClose_section_method(self, backend, gIndex, section):
         """Trigger called when fhi_aims_section_controlIn_file is closed.
 
@@ -71,6 +72,10 @@ class FhiAimsControlInParserContext(object):
             writeXC = True,
             location = 'control.in',
             logger = logger)
+
+    def onClose_fhi_aims_section_controlIn_basis_set(self, backend, gIndex, section):
+        """doc"""                                                               
+        logger.warning("Free-atom basis for %s: basis_func_type: %s n = %s l = %s radius = %s", section["fhi_aims_controlIn_species_name"], section["fhi_aims_controlIn_basis_func_type"], section["fhi_aims_controlIn_basis_func_n"], section["fhi_aims_controlIn_basis_func_l"], section["fhi_aims_controlIn_basis_func_radius"])
 
 def build_FhiAimsControlInKeywordsSimpleMatchers():
     """Builds the list of SimpleMatchers to parse the control.in keywords of FHI-aims.
@@ -126,6 +131,27 @@ def build_FhiAimsControlInKeywordsSimpleMatchers():
             SM (r"^\s*xc\s+(?P<fhi_aims_controlIn_xc>[-_a-zA-Z0-9]+)\s+(?P<fhi_aims_controlIn_hse_omega>[-+0-9.eEdD]+)"),
             SM (r"^\s*xc\s+(?P<fhi_aims_controlIn_xc>[-_a-zA-Z0-9]+)")
             ]),
+
+
+ #       SM (r"\s*\#\s*Definition of \"minimal\" basis", repeats=True,
+        SM (r"^\s*species\s*(?P<fhi_aims_controlIn_species_name>[a-zA-Z]+)", repeats=True,
+        #SM (r"^\s*division", repeats=True,
+            sections = ["fhi_aims_section_controlIn_basis_set"],         
+            subFlags = SM.SubFlags.Unordered,                               
+            subMatchers = [                                                 
+            SM (r"\s*\#\s*Definition of \"minimal\" basis", repeats=True,
+                subMatchers = [                                                 
+	        SM(r"^\s*(?P<fhi_aims_controlIn_basis_func_type>[-_a-zA-Z0-9]+)"
+                "\s*(?P<fhi_aims_controlIn_basis_func_n>[0-9]+)"
+                "\s+(?P<fhi_aims_controlIn_basis_func_l>[a-zA-Z])"
+                "\s+(?P<fhi_aims_controlIn_basis_func_radius>[.0-9]+)",
+                repeats = True),
+	        SM(r"^\s*(?P<fhi_aims_controlIn_basis_func_type>[-_a-zA-Z0-9]+)"
+                 "\s*(?P<fhi_aims_controlIn_basis_func_n>[0-9]+)"
+                 "\s+(?P<fhi_aims_controlIn_basis_func_l>[a-zA-Z])\s*auto",
+                repeats = True)
+	       ])
+            ])  
         ]
 
 def build_FhiAimsControlInFileSimpleMatcher():

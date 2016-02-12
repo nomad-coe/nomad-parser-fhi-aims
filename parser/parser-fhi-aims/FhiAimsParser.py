@@ -523,7 +523,14 @@ class FhiAimsParserContext(object):
                     backend.addArrayValues('band_segm_start_end', self.band_segm_start_end[parsed_segments])
                 else:
                     logger.error("Band structure parsing unsuccessful. Found band structure calculation in main file, but none of the corresponding bandXYYY.out files could be parsed successfully.")
-
+    def onClose_fhi_aims_section_controlInOut_atom_species(self, backend, gIndex, section):
+        """doc"""                                                              
+        logger.warning("Free-atom basis for %s: basis_func_type: %s n = %s l = %s radius = %s", section["fhi_aims_controlInOut_species_name"], section["fhi_aims_controlInOut_basis_func_type"], section["fhi_aims_controlInOut_basis_func_n"], 
+	section["fhi_aims_controlInOut_basis_func_l"], section["fhi_aims_controlInOut_basis_func_radius"])
+        #logger.warning("Free-ion basis for %s: n = %s l = %s width = %s", section["fhi_aims_controlInOut_species_name"], section["fhi_aims_controlInOut_free_ion_n"], section["fhi_aims_controlInOut_free_ion_l"], section["fhi_aims_controlInOut_free_ion_width"])
+        #logger.warning("Hydrogenic-basis for %s: n = %s l = %s width = %s", section["fhi_aims_controlInOut_species_name"], section["fhi_aims_controlInOut_hydro_basis_n"], section["fhi_aims_controlInOut_hydro_basis_l"], section["fhi_aims_controlInOut_hydro_basis_width"])
+        #logger.warning("Ionic-basis for %s: n = %s l = %s", section["fhi_aims_controlInOut_species_name"], section["fhi_aims_controlInOut_ionic_basis_n"], section["fhi_aims_controlInOut_ionic_basis_l"])
+                
 def build_FhiAimsMainFileSimpleMatcher():
     """Builds the SimpleMatcher to parse the main file of FHI-aims.
 
@@ -574,7 +581,7 @@ def build_FhiAimsMainFileSimpleMatcher():
                 subMatchers = [
                 SM (r"\s*\|\s*begin\s*(?P<fhi_aims_controlInOut_band_segment_start1>[-+0-9.]+)\s+(?P<fhi_aims_controlInOut_band_segment_start2>[-+0-9.]+)\s+(?P<fhi_aims_controlInOut_band_segment_start3>[-+0-9.]+)"),
                 SM (r"\s*\|\s*end\s*(?P<fhi_aims_controlInOut_band_segment_end1>[-+0-9.]+)\s+(?P<fhi_aims_controlInOut_band_segment_end2>[-+0-9.]+)\s+(?P<fhi_aims_controlInOut_band_segment_end3>[-+0-9.]+)"),
-                SM (r"\s*\|\s*number of points:\s*[0-9]+")
+                SM (r"\s*\|\s*number of points:\s*[0-9]+"),
                 ]),
             # only the first character is important for aims
             SM (r"\s*hse_unit: Unit for the HSE06 hybrid functional screening parameter set to (?P<fhi_aims_controlInOut_hse_unit>[a-zA-Z])[a-zA-Z]*\^\(-1\)\.", repeats = True),
@@ -592,7 +599,34 @@ def build_FhiAimsMainFileSimpleMatcher():
             SM (r"\s*XC:\s*(?P<fhi_aims_controlInOut_xc>HSE) with OMEGA_PBE =\s*[-+0-9.eEdD]+", repeats = True),
             SM (r"\s*XC: Running (?P<fhi_aims_controlInOut_xc>[-_a-zA-Z0-9\s()]+) \.\.\.", repeats = True),
             SM (r"\s*(?P<fhi_aims_controlInOut_xc>Hartree-Fock) calculation starts \.\.\.\.\.\.", repeats = True),
-            ]), # END ControlInOutLines
+	    # define some basis set specific SMs
+	    SM (r"\s*Reading configuration options for species\s*(?P<fhi_aims_controlInOut_species_name>[a-zA-Z]+)", repeats=True,			
+                sections = ["fhi_aims_section_controlInOut_atom_species"],
+        	subFlags = SM.SubFlags.Unordered,
+	        subMatchers = [
+                SM(startReStr = r"\s*\|\s*Found nuclear charge :"
+                   "\s*(?P<fhi_aims_controlInOut_species_charge>[.0-9]+\S)\s*",
+		   repeats = True),
+	           SM(r"\s*\|\s*Found atomic mass :"
+                   "\s*(?P<fhi_aims_controlInOut_species_mass__amu>[.0-9]+)"
+                   "\s*",repeats = True), 
+                   SM(r"\s*\|\s*Found\s*"
+                    "(?P<fhi_aims_controlInOut_basis_func_type>[-_a-zA-Z0-9\s]+"
+                    "\S)\s*(?:shell|function)\s*:\s*"
+                    "(?P<fhi_aims_controlInOut_basis_func_n>[0-9]+)"
+                    "\s+(?P<fhi_aims_controlInOut_basis_func_l>[a-zA-Z])"
+                    "\s+(?P<fhi_aims_controlInOut_basis_func_radius>[.0-9]+)",
+		   repeats = True, 
+		   sections = ["fhi_aims_section_controlInOut_basis_func"]),
+	           SM(r"\s*\|\s*Found\s*"
+                    "(?P<fhi_aims_controlInOut_basis_func_type>[-_a-zA-Z0-9\s]+"
+                    "\S)\s*(?:shell|function)\s*:"
+                    "\s*(?P<fhi_aims_controlInOut_basis_func_n>[0-9]+)"
+                    "\s+(?P<fhi_aims_controlInOut_basis_func_l>[a-zA-Z])"
+                    "\s*,\s*", repeats = True,
+                   sections = ["fhi_aims_section_controlInOut_basis_func"]),    
+		   ]) 
+		]), # END ControlInOutLines
         SM (r"\s*-{20}-*", weak = True)
         ])
     ########################################
@@ -1122,8 +1156,10 @@ def get_cachingLevelForMetaName(metaInfoEnv):
     # Set all geometry metadata to Cache as all of them need post-processsing.
     # Set all eigenvalue related metadata to Cache.
     for name in metaInfoEnv.infoKinds:
+
         if (   name.startswith('fhi_aims_controlIn_')
-            or name.startswith('fhi_aims_controlInOut_')
+            or ( name.startswith('fhi_aims_controlInOut_') and not name.startswith('fhi_aims_controlInOut_basis_func_')
+	    and not name.startswith('fhi_aims_controlInOut_species_'))
             or name.startswith('fhi_aims_geometry_')
             or name.startswith('fhi_aims_eigenvalue_')
             or name.startswith('fhi_aims_section_eigenvalues_')
