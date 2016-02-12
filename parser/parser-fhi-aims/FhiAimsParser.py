@@ -7,6 +7,7 @@ from nomadcore.simple_parser import SimpleMatcher as SM
 from FhiAimsCommon import get_metaInfo, write_controlIn, write_k_grid, write_xc_functional
 import FhiAimsControlInParser
 import FhiAimsBandParser
+import FhiAimsDosParser
 import logging, os, re, sys
 
 ############################################################
@@ -55,7 +56,7 @@ class FhiAimsParserContext(object):
         """Initializes the values of certain variables.
 
         This allows a consistent setting and resetting of the variables,
-        when the class is created and when a section_run closes.
+        when the parsing starts and when a section_run closes.
         """
         self.secMethodIndex = None
         self.secSystemDescriptionIndex = None
@@ -74,6 +75,10 @@ class FhiAimsParserContext(object):
         self.eigenvalues_occupation = []
         self.eigenvalues_eigenvalues = []
         self.eigenvalues_kpoints = []
+        self.dosRefSingleConfigurationCalculation = None
+        self.dosFound = False
+        self.dos_energies = None
+        self.dos_values = None
 
     def startedParsing(self, fInName, parser):
         """Function is called when the parsing starts.
@@ -150,6 +155,14 @@ class FhiAimsParserContext(object):
         However, this also bypasses the checking of validity of the metadata name by the backend.
         The scala part will check the validity nevertheless.
         """
+        # write dos
+        # The explanation why we write the dos not unil section_run closes is given in onClose_section_dos.
+        if self.dos_energies is not None and self.dos_values is not None:
+            gIndex = backend.openSection('fhi_aims_section_dos')
+            backend.addValue('fhi_aims_dos_to_single_configuration_ref', self.dosRefSingleConfigurationCalculation)
+            backend.addArrayValues('fhi_aims_dos_energies', self.dos_energies)
+            backend.addArrayValues('fhi_aims_dos_values', self.dos_values)
+            backend.closeSection('fhi_aims_section_dos', gIndex)
         # write geometry optimization convergence
         if self.geoConvergence is not None:
             backend.addValue('geometry_optimization_converged', self.geoConvergence)
@@ -244,12 +257,14 @@ class FhiAimsParserContext(object):
         # k_grid is written with k1 so that k2 and k2 are not needed.
         # The xc setting have to be handeled separatly since having more than one gives undefined behavior.
         # hse_omega is only written if HSE was used and converted according to hse_unit which is not written since not needed.
+        # hybrid_xc_coeff is only written for hybrid functionals.
         exclude_list = [
                         'fhi_aims_controlInOut_k2',
                         'fhi_aims_controlInOut_k3',
                         'fhi_aims_controlInOut_xc',
                         'fhi_aims_controlInOut_hse_omega',
                         'fhi_aims_controlInOut_hse_unit',
+                        'fhi_aims_controlInOut_hybrid_xc_coeff',
                        ]
         # band releated data does not change the calculation and will be processed separatly
         for name in self.metaInfoEnv.infoKinds:
@@ -416,6 +431,10 @@ class FhiAimsParserContext(object):
         # write the references to section_method and section_system_description
         backend.addValue('single_configuration_to_calculation_method_ref', self.secMethodIndex)
         backend.addValue('single_configuration_calculation_to_system_description_ref', self.secSystemDescriptionIndex)
+        # get reference to current section_single_configuration_calculation if DOS was found in there
+        if self.dosFound:
+            self.dosRefSingleConfigurationCalculation = gIndex
+            self.dosFound = False
 
     def onClose_fhi_aims_section_eigenvalues_ZORA(self, backend, gIndex, section):
         """Trigger called when fhi_aims_section_eigenvalues_ZORA is closed.
@@ -456,6 +475,45 @@ class FhiAimsParserContext(object):
             self.eigenvalues_eigenvalues = []
             self.eigenvalues_kpoints = []
             self.update_eigenvalues(section, '')
+
+    def onClose_section_dos(self, backend, gIndex, section):
+        """Trigger called when section_dos is closed.
+
+        DOS is parsed from external file but the result is only stored and written later in fhi_aims_section_dos
+        in section_run. This is done because aims writes the non-perturbative DOS after every relaxation/MD step.
+        I.e., we will encounter the DOS output statement for every step (single configuration calculation). However,
+        there is only one file, which corresponds to the last step. Since we cannot figure out if we are in the last
+        step while we are in section_single_configuration_calculation, we write the stored DOS in onClose_section_run
+        with a reference to the last section_single_configuration_calculation where a DOS was found. For the
+        perturpative DOS (aims keyword dos_kgrid_factors) this is not necessary, but is still done to be consistent.
+        """
+        # reset dos
+        self.dos_energies = None
+        self.dos_values = None
+        # construct file name
+        dFile = 'KS_DOS_total.dat'
+        dirName = os.path.dirname(os.path.abspath(self.fName))
+        fName = os.path.normpath(os.path.join(dirName, dFile))
+        try:
+            with open(fName) as fIn:
+                # construct parser for DOS file
+                dosSuperContext = FhiAimsDosParser.FhiAimsDosParserContext(False)
+                dosParser = AncillaryParser(
+                    fileDescription = FhiAimsDosParser.build_FhiAimsDosFileSimpleMatcher(),
+                    parser = self.parser,
+                    cachingLevelForMetaName = FhiAimsDosParser.get_cachingLevelForMetaName(self.metaInfoEnv, CachingLevel.Ignore),
+                    superContext = dosSuperContext)
+                # parse DOS file
+                dosParser.parseFile(fIn)
+                # set flag that DOS was parsed successfully and store values
+                if dosSuperContext.dos_energies is not None and dosSuperContext.dos_values is not None:
+                    self.dosFound = True
+                    self.dos_energies = dosSuperContext.dos_energies
+                    self.dos_values = dosSuperContext.dos_values
+                else:
+                    logger.error("DOS parsing unsuccessful. Parsing of file %s in directory '%s' did not yield energies or values for DOS." % (dFile, dirName))
+        except IOError:
+            logger.error("DOS parsing unsuccessful. Could not find %s file in directory '%s'." % (dFile, dirName))
 
     def onClose_section_k_band(self, backend, gIndex, section):
         """Trigger called when section_k_band is closed.
@@ -899,9 +957,28 @@ def build_FhiAimsMainFileSimpleMatcher():
         geometryMDSubMatcher
         ])
     ########################################
+    # submatcher for DOS
+    dosSubMatcher = SM (name = 'DOS',
+        startReStr = r"\s*Calculating total density of states \.\.\.",
+        endReStr = r"\s*\|\s*writing DOS \(raw data\) to file \S+",
+        sections = ['section_dos'],
+        subMatchers = [
+        SM (r"\s*\|\s*writing DOS \(shifted by electron chemical potential\) to file \S+")
+        ])
+    ########################################
+    # submatcher for perturbative DOS
+    perturbDosSubMatcher = SM (name = 'perturbDOS',
+        startReStr = r"\s*Post-scf processing of Kohn-Sham eigenvalues on a denser k-point grid\.",
+        endReStr = r"\s*\|\s*writing perturbative DOS \(raw data\) to file \S+",
+        sections = ['section_dos'],
+        subMatchers = [
+        SM (r"\s*\|\s*writing perturbative DOS \(shifted by electron chemical potential\) to file \S+")
+        ])
+    ########################################
     # submatcher for band structure
     bandStructureSubMatcher = SM (name = 'BandStructure',
         startReStr = r"\s*Writing the requested band structure output:",
+        endReStr = r"\s*Band Structure\s*:\s*max\(cpu_time\)\s+wall_clock\(cpu1\)",
         sections = ['section_k_band'],
         subMatchers = [
         SM (r"\s*\s*-{20}-*", weak = True),
@@ -919,10 +996,7 @@ def build_FhiAimsMainFileSimpleMatcher():
         SM (r'\s*"Band gap" of total set of bands:'),
         SM (r"\s*\|\s*Lowest unoccupied state\s*:\s*[-+0-9.]+ *eV"),
         SM (r"\s*\|\s*Highest occupied state\s*:\s*[-+0-9.]+ *eV"),
-        SM (r"\s*\|\s*Energy difference\s*:\s*[-+0-9.]+ *eV"),
-        SM (r"\s*Band Structure\s*:\s*max\(cpu_time\)\s+wall_clock\(cpu1\)"),
-        SM (r"\s*\|\s*Total Time\s*:\s*[0-9.]+\s+[0-9.]+"),
-        SM (r"\s*-{20}-*", weak = True)
+        SM (r"\s*\|\s*Energy difference\s*:\s*[-+0-9.]+ *eV")
         ])
     ########################################
     # return main Parser
@@ -957,10 +1031,8 @@ def build_FhiAimsMainFileSimpleMatcher():
                         startReStr = r"\s*Task\s*(?P<fhi_aims_parallel_task_nr>[0-9]+)\s*on host\s+(?P<fhi_aims_parallel_task_host>[-a-zA-Z0-9._]+)\s+reporting\.",
                         repeats = True,
                         sections = ["fhi_aims_section_parallel_task_assignement"])
-                    ]), # END nParallelTasks
-                SM (r"\s*Performing system and environment tests:"),
+                    ]) # END nParallelTasks
                 ]), # END ProgramHeader
-            SM (r"\s*Obtaining array dimensions for all initial allocations:"),
             # parse control and geometry
             SM (name = 'SectionMethod',
                 startReStr = r"\s*Parsing control\.in \(first pass over file, find array dimensions only\)\.",
@@ -1016,7 +1088,6 @@ def build_FhiAimsMainFileSimpleMatcher():
                         SM (r"\s*-{20}-*", weak = True),
                         EigenvaluesGroupSubMatcher,
                         TotalEnergyScfSubMatcher,
-                        SM (r"\s*Full exact exchange energy:\s*[-+0-9.eEdD]+ *eV"),
                         SM (r"\s*End scf initialization - timings\s*:\s*max\(cpu_time\)\s+wall_clock\(cpu1\)"),
                         SM (r"\s*-{20}-*", weak = True)
                         ]), # END ScfInitialization
@@ -1028,7 +1099,6 @@ def build_FhiAimsMainFileSimpleMatcher():
                         subMatchers = [
                         SM (r"\s*Date\s*:\s*(?P<fhi_aims_scf_date_start>[-.0-9/]+)\s*,\s*Time\s*:\s*(?P<fhi_aims_scf_time_start>[-+0-9.eEdD]+)"),
                         SM (r"\s*-{20}-*", weak = True),
-                        SM (r"\s*Full exact exchange energy:\s*[-+0-9.eEdD]+ *eV"),
                         EigenvaluesGroupSubMatcher.copy(), # need copy since SubMatcher already used for ScfInitialization
                         TotalEnergyScfSubMatcher.copy(), # need copy since SubMatcher already used for ScfInitialization
                         # SCF convergence info
@@ -1081,6 +1151,8 @@ def build_FhiAimsMainFileSimpleMatcher():
                         SM (r"\s*\|\s*Electronic free energy\s*:\s*(?P<energy_free__eV>[-+0-9.eEdD]+) *eV"),
                         SM (r"\s*-{20}-*", weak = True)
                         ]), # END EnergyForcesSummary
+                    # DOS
+                    dosSubMatcher,
                     # decomposition of the xc energy
                     SM (name = 'DecompositionXCEnergy',
                         startReStr = r"\s*Start decomposition of the XC Energy",
@@ -1108,17 +1180,14 @@ def build_FhiAimsMainFileSimpleMatcher():
                     RelaxationSubMatcher,
                     # MD
                     MDSubMatcher,
+                    # perturbative DOS
+                    perturbDosSubMatcher,
                     # band structure
                     bandStructureSubMatcher
                     ]), # END SingleConfigurationCalculation
                 # parse updated geometry for relaxation
                 geometryRelaxationSubMatcher,
                 ]), # END SingleConfigurationCalculationWithSystemDescription
-            SM (r"\s*-{20}-*", weak = True),
-            SM (r"\s*Final output of selected total energy values:"),
-            SM (r"\s*The following output summarizes some interesting total energy values"),
-            SM (r"\s*at the end of a run \(AFTER all relaxation, molecular dynamics, etc\.\)\."),
-            SM (r"\s*-{20}-*", weak = True),
             SM (r"\s*-{20}-*", weak = True),
             SM (r"\s*Leaving FHI-aims\."),
             SM (r"\s*Date\s*:\s*[-.0-9/]+\s*,\s*Time\s*:\s*[-+0-9.eEdD]+"),
@@ -1150,6 +1219,7 @@ def get_cachingLevelForMetaName(metaInfoEnv):
                                'fhi_aims_geometry_optimization_converged': CachingLevel.Cache,
                                'fhi_aims_section_MD_detect': CachingLevel.Ignore,
                                'fhi_aims_single_configuration_calculation_converged': CachingLevel.Cache,
+                               'section_dos': CachingLevel.Ignore,
                               }
     # Set all controlIn and controlInOut metadata to Cache to capture multiple occurrences of keywords and
     # their last value is then written by the onClose routine in the FhiAimsParserContext.

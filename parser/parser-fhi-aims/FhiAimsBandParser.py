@@ -4,6 +4,7 @@ import nomadcore.ActivateLogging
 from nomadcore.caching_backend import CachingLevel
 from nomadcore.simple_parser import mainFunction
 from nomadcore.simple_parser import SimpleMatcher as SM
+from nomadcore.unit_conversion.unit_conversion import convert_unit_function
 from FhiAimsCommon import get_metaInfo
 import logging, os, re, sys
 
@@ -41,6 +42,10 @@ class FhiAimsBandParserContext(object):
             parser: The compiled parser. Is an object of the class SimpleParser in nomadcore.simple_parser.py.
         """
         self.parser = parser
+        # get unit from metadata for band energies
+        unit = parser.parserBuilder.metaInfoEnv.infoKinds['band_energies'].units
+        # get function for unit conversion, aims energies are in eV
+        self.converter = convert_unit_function('eV', unit)
         # allows to reset values if the same superContext is used to parse different files
         self.band_energies = None
         self.band_k_points = None
@@ -66,10 +71,12 @@ class FhiAimsBandParserContext(object):
         if section['fhi_aims_band_occupation_eigenvalue_string'] is not None:
             for string in section['fhi_aims_band_occupation_eigenvalue_string']:
                 strings = string.split()
-                # First number is occupation and then every second one
+                # first number is occupation and then every second one
                 band_occupation.append(map(float, strings[0::2]))
-                # Second number is eigenvalue and then every second one
-                band_energies.append(map(float, strings[1::2]))
+                # second number is eigenvalue and then every second one
+                # convert units
+                band_energies.append(map(self.converter, map(float, strings[1::2])))
+
         if band_occupation:
             # do not need to transpose array since its shape is given by [n_k_points,n_eigen_values] in the metadata
             self.band_occupation = np.asarray(band_occupation)
