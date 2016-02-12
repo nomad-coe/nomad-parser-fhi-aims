@@ -224,7 +224,7 @@ def write_xc_functional(backend, metaInfoEnv, metaNameStart, valuesDict, locatio
                         xcName = xcItem.get('name')
                         if xcName is not None:
                             # write section and and XC_functional_name
-                            gIndex = backend.openSection('section_XC_functionals')
+                            gIndexTmp = backend.openSection('section_XC_functionals')
                             backend.addValue('XC_functional_name', xcName)
                             # write hybrid_xc_coeff for B3LYP and HSE03 into XC_functional_parameters
                             if hybridCoeff is not None and xc[-1] in ['hybrid B3LYP functional', 'HSE']:
@@ -248,7 +248,7 @@ def write_xc_functional(backend, metaInfoEnv, metaNameStart, valuesDict, locatio
                                 xcWeight = xcItem.get('weight')
                                 if xcWeight is not None:
                                     backend.addValue('XC_functional_weight', xcWeight)
-                            backend.closeSection('section_XC_functionals', gIndex)
+                            backend.closeSection('section_XC_functionals', gIndexTmp)
                         else:
                             logger.error("The dictionary for xc functional '%s' does not have the key 'name'. Please correct the dictionary xcDict in %s." % (xc[-1], os.path.basename(__file__)))
                 else:

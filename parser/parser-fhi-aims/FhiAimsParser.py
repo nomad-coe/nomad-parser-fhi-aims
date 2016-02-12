@@ -158,11 +158,11 @@ class FhiAimsParserContext(object):
         # write dos
         # The explanation why we write the dos not unil section_run closes is given in onClose_section_dos.
         if self.dos_energies is not None and self.dos_values is not None:
-            gIndex = backend.openSection('fhi_aims_section_dos')
+            gIndexTmp = backend.openSection('fhi_aims_section_dos')
             backend.addValue('fhi_aims_dos_to_single_configuration_ref', self.dosRefSingleConfigurationCalculation)
             backend.addArrayValues('fhi_aims_dos_energies', self.dos_energies)
             backend.addArrayValues('fhi_aims_dos_values', self.dos_values)
-            backend.closeSection('fhi_aims_section_dos', gIndex)
+            backend.closeSection('fhi_aims_section_dos', gIndexTmp)
         # write geometry optimization convergence
         if self.geoConvergence is not None:
             backend.addValue('geometry_optimization_converged', self.geoConvergence)
@@ -408,15 +408,15 @@ class FhiAimsParserContext(object):
                     kpt = np.asarray(self.eigenvalues_kpoints)
                 # check if there is the same number of spin channels for the periodic case
                 if kpt is None or len(kpt) == len(ev):
-                    gIndexGroup = backend.openSection('section_eigenvalues_group')
+                    gIndexGroupTmp = backend.openSection('section_eigenvalues_group')
                     for i in range(len(occ)):
-                        gIndex = backend.openSection('section_eigenvalues')
+                        gIndexTmp = backend.openSection('section_eigenvalues')
                         backend.addArrayValues('eigenvalues_occupation', occ[i])
                         backend.addArrayValues('eigenvalues_eigenvalues', ev[i])
                         if kpt is not None:
                             backend.addArrayValues('eigenvalues_kpoints', kpt[i])
-                        backend.closeSection('section_eigenvalues', gIndex)
-                    backend.closeSection('section_eigenvalues_group', gIndexGroup)
+                        backend.closeSection('section_eigenvalues', gIndexTmp)
+                    backend.closeSection('section_eigenvalues_group', gIndexGroupTmp)
                 else:
                     logger.warning("Found %d spin channels for eigenvalue kpoints but %d for eigenvalues in single configuration calculation %d." % (len(kpt), len(ev), gIndex))
             else:
