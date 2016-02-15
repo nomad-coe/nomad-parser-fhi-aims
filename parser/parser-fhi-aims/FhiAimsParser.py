@@ -9,6 +9,7 @@ import FhiAimsControlInParser
 import FhiAimsBandParser
 import FhiAimsDosParser
 import logging, os, re, sys
+from itertools import izip
 
 ############################################################
 # This is the parser for the main file of FHI-aims.
@@ -75,6 +76,8 @@ class FhiAimsParserContext(object):
         self.eigenvalues_occupation = []
         self.eigenvalues_eigenvalues = []
         self.eigenvalues_kpoints = []
+        self.dosSuperContext = None
+        self.dosParser = None
         self.dosRefSingleConfigurationCalculation = None
         self.dosFound = False
         self.dos_energies = None
@@ -140,6 +143,16 @@ class FhiAimsParserContext(object):
                     # transpose list
                     kpoints = map(lambda *x: list(x), *kpoints)
                     self.eigenvalues_kpoints.append(kpoints) 
+
+    def compile_dos_parser(self):
+        """Instantiate superContext and construct parser for DOS file.
+        """
+        self.dosSuperContext = FhiAimsDosParser.FhiAimsDosParserContext(False)
+        self.dosParser = AncillaryParser(
+            fileDescription = FhiAimsDosParser.build_FhiAimsDosFileSimpleMatcher(),
+            parser = self.parser,
+            cachingLevelForMetaName = FhiAimsDosParser.get_cachingLevelForMetaName(self.metaInfoEnv, CachingLevel.Ignore),
+            superContext = self.dosSuperContext)
 
     def onClose_section_run(self, backend, gIndex, section):
         """Trigger called when section_run is closed.
@@ -491,29 +504,155 @@ class FhiAimsParserContext(object):
         self.dos_energies = None
         self.dos_values = None
         # construct file name
-        dFile = 'KS_DOS_total.dat'
         dirName = os.path.dirname(os.path.abspath(self.fName))
+        dFile = 'KS_DOS_total.dat'
         fName = os.path.normpath(os.path.join(dirName, dFile))
         try:
             with open(fName) as fIn:
-                # construct parser for DOS file
-                dosSuperContext = FhiAimsDosParser.FhiAimsDosParserContext(False)
-                dosParser = AncillaryParser(
-                    fileDescription = FhiAimsDosParser.build_FhiAimsDosFileSimpleMatcher(),
-                    parser = self.parser,
-                    cachingLevelForMetaName = FhiAimsDosParser.get_cachingLevelForMetaName(self.metaInfoEnv, CachingLevel.Ignore),
-                    superContext = dosSuperContext)
+                # construct parser for DOS file if not present
+                if self.dosSuperContext is None or self.dosParser is None:
+                    self.compile_dos_parser()
                 # parse DOS file
-                dosParser.parseFile(fIn)
+                self.dosParser.parseFile(fIn)
                 # set flag that DOS was parsed successfully and store values
-                if dosSuperContext.dos_energies is not None and dosSuperContext.dos_values is not None:
+                if self.dosSuperContext.dos_energies is not None and self.dosSuperContext.dos_values is not None:
                     self.dosFound = True
-                    self.dos_energies = dosSuperContext.dos_energies
-                    self.dos_values = dosSuperContext.dos_values
+                    self.dos_energies = self.dosSuperContext.dos_energies
+                    self.dos_values = self.dosSuperContext.dos_values
                 else:
                     logger.error("DOS parsing unsuccessful. Parsing of file %s in directory '%s' did not yield energies or values for DOS." % (dFile, dirName))
         except IOError:
             logger.error("DOS parsing unsuccessful. Could not find %s file in directory '%s'." % (dFile, dirName))
+
+    def onClose_section_species_projected_dos(self, backend, gIndex, section):
+        """Trigger called when section_species_projected_dos is closed.
+
+        The extracted file names for the species projected DOS are parsed.
+        Values are written according to metadata.
+        """
+        files = section['fhi_aims_species_projected_dos_file']
+        labels = section['fhi_aims_species_projected_dos_species_label']
+        if files is not None and labels is not None:
+            returnVal = self.parse_projected_dos(backend, files, 'species')
+            # write species label if parsing of files was successful
+            # The species label is repeated maxSpinChannel times in the list of parsed species labels.
+            # Therefore, take only every maxSpinChannel-th element from the list.
+            metaName = 'species_projected_dos_species_label'
+            if returnVal == 0:
+                backend.addArrayValues('species_projected_dos_species_label', np.asarray(labels[::self.maxSpinChannel]))
+
+    def onClose_section_atom_projected_dos(self, backend, gIndex, section):
+        """Trigger called when section_atom_projected_dos is closed.
+
+        The extracted file names for the atom projected DOS are parsed.
+        Values are written according to metadata.
+        """
+        files = section['fhi_aims_atom_projected_dos_file']
+        if files is not None:
+            self.parse_projected_dos(backend, files, 'atom')
+
+    def parse_projected_dos(self, backend, files, kind):
+        """Parses projected DOS from files and writes values.
+
+        This function can be used to parse the atom and species projected DOS.
+
+        Args:
+            backend: Class that takes care of writing and caching of metadata.
+            files: List of files that contain projected DOS.
+            kind: Specifies if 'atom' or species' are parsed.
+
+        Returns:
+             0 if parsing was successful.
+            -1 if parsing was unsuccessful.
+        """
+        # kind for small and capital letter at the beginning
+        kind = kind.lower()
+        Kind = kind.capitalize()
+        dos_energies = None
+        dos_total = []
+        dos_l = []
+        n_l = []
+        max_n_l = 0
+        # get directiory of currently parsed file
+        dirName = os.path.dirname(os.path.abspath(self.fName))
+        # check if number of files is divisible by maxSpinChannel
+        if len(files) % self.maxSpinChannel == 0:
+            # construct parser for DOS file if not present
+            if self.dosSuperContext is None or self.dosParser is None:
+                self.compile_dos_parser()
+            # loop over files with step length maxSpinChannel
+            for i in range(0, len(files), self.maxSpinChannel):
+                # we create list of files that are of the same kind but have a different spin channel
+                files_spin = files[i:i + self.maxSpinChannel]
+                dos_total_spin = []
+                dos_l_spin = []
+                n_l_spin = []
+                # loop over spin channels
+                for dFile in files_spin:
+                    # construct file name
+                    fName = os.path.normpath(os.path.join(dirName, dFile))
+                    try:
+                        with open(fName) as fIn:
+                            # parse DOS file
+                            self.dosParser.parseFile(fIn)
+                            # extract values
+                            if self.dosSuperContext.dos_energies is not None and self.dosSuperContext.dos_values is not None:
+                                # check if energies are consistent for different files
+                                if dos_energies is None:
+                                    dos_energies = self.dosSuperContext.dos_energies
+                                elif not np.array_equal(dos_energies, self.dosSuperContext.dos_energies):
+                                    logger.error("%s projected DOS parsing unsuccessful. The energies in %s are not consistent with other files in directory '%s'." % (Kind, dFile, dirName))
+                                    return -1
+                                # check that at least two columns for dos_values were found
+                                val_length = len(self.dosSuperContext.dos_values)
+                                if val_length > 1:
+                                    # first column is total DOS
+                                    dos_total_spin.append(self.dosSuperContext.dos_values[0])
+                                    # the column afterwards are the l values
+                                    dos_l_spin.append(self.dosSuperContext.dos_values[1:])
+                                    # save number of l values and the maximal value
+                                    # -1 because first column is total DOS
+                                    n_l_spin.append(val_length - 1)
+                                    if val_length - 1 > max_n_l:
+                                        max_n_l = val_length - 1
+                                else:
+                                    logger.error("%s projected DOS parsing unsuccessful. Parsing of file %s in directory '%s' did not yield values for l-specific DOS." % (Kind, dFile, dirName))
+                                    return -1
+                            else:
+                                logger.error("%s projected DOS parsing unsuccessful. Parsing of file %s in directory '%s' did not yield values for energies or DOS." % (Kind, dFile, dirName))
+                                return -1
+                    except IOError:
+                        logger.error("%s projected DOS parsing unsuccessful. Could not find %s file in directory '%s'." % (Kind, dFile, dirName))
+                        return -1
+                # append values for spin channels to list
+                # no further error checking needed because we already exited the functon if we found an error for one of the spin channels
+                dos_total.append(dos_total_spin)
+                dos_l.append(dos_l_spin)
+                n_l.append(n_l_spin)
+            # add array of zeros to those projected DOS that have less l values than max_n_l
+            for projected_dos, l in izip(dos_l, n_l):
+                for i in range(len(projected_dos)):
+                    if l[i] < max_n_l:
+                        # The dimensions of the added zero array are:
+                        # first dimension:  difference between maximum number of l values (max_n_l) and current number of l values (l[i])
+                        # second dimension: same as second dimension of the current DOS (projected_dos[i])
+                        projected_dos[i] = np.vstack((projected_dos[i], np.zeros((max_n_l - l[i] , projected_dos[i].shape[1]))))
+            # write values
+            backend.addArrayValues( kind + '_projected_dos_energies', dos_energies)
+            # need to swap axis 0 (number_of_*) and axis 1 (max_spin_channel)
+            # since its shape is [max_spin_channel,number_of_*,n_*_projected_dos_values] in the metadata
+            backend.addArrayValues(kind + '_projected_dos_values_total', np.swapaxes(np.asarray(dos_total), 0, 1))
+            # in aims there is no projected DOS for per m value
+            backend.addValue(kind + '_projected_dos_m_kind', 'integrated')
+            # we create an array of the form [[0,0], [1,0], ..., [max_n_l-1,0]] to specify the l values for the projected DOS
+            backend.addArrayValues(kind + '_projected_dos_lm', np.column_stack((np.arange(max_n_l), np.zeros(max_n_l, dtype=np.int))))
+            # need to swap axis 0 (number_of_*) and axis 2 (number_of_lm_*_projected_dos)
+            # since its shape is [number_of_lm_*_projected_dos,max_spin_channel,number_of_*,n_*_projected_dos_values] in the metadata
+            backend.addArrayValues(kind + '_projected_dos_values_lm', np.swapaxes(np.asarray(dos_l), 0, 2))
+            return 0
+        else:
+            logger.error("%s projected DOS parsing unsuccessful. The number of files (%d) for the %s projected DOS in directory '%s' must be divisible by the number of spin channels (%d)." % (Kind, len(files), kind, dirName, self.maxSpinChannel))
+            return -1
 
     def onClose_section_k_band(self, backend, gIndex, section):
         """Trigger called when section_k_band is closed.
@@ -976,6 +1115,22 @@ def build_FhiAimsMainFileSimpleMatcher():
         SM (r"\s*\|\s*writing perturbative DOS \(shifted by electron chemical potential\) to file \S+")
         ])
     ########################################
+    # submatcher for species projected DOS
+    speciesDosSubMatcher = SM (name = 'speciesDOS',
+        startReStr = r"\s*Calculating angular momentum projected density of states \.\.\.",
+        sections = ['section_species_projected_dos'],
+        subMatchers = [
+            SM (r"\s*\|\s*writing(?: spin-(?:up|down))? projected DOS \(shifted by the chemical potential\) for species (?P<fhi_aims_species_projected_dos_species_label>[a-zA-Z]+) to file (?P<fhi_aims_species_projected_dos_file>\S+[^.])\.", repeats = True)
+        ])
+    ########################################
+    # submatcher for atom projected DOS
+    atomDosSubMatcher = SM (name = 'atomDOS',
+        startReStr = r"\s*Calculating atom-projected density of states \.\.\.",
+        sections = ['section_atom_projected_dos'],
+        subMatchers = [
+            SM (r"\s*\|\s*writing(?: spin-(?:up|down))? projected DOS \(shifted by the chemical potential\) for species [a-zA-Z]+ to file (?P<fhi_aims_atom_projected_dos_file>\S+[^.])\.", repeats = True)
+        ])
+    ########################################
     # submatcher for band structure
     bandStructureSubMatcher = SM (name = 'BandStructure',
         startReStr = r"\s*Writing the requested band structure output:",
@@ -1181,6 +1336,10 @@ def build_FhiAimsMainFileSimpleMatcher():
                     RelaxationSubMatcher,
                     # MD
                     MDSubMatcher,
+                    # species projected DOS
+                    speciesDosSubMatcher,
+                    # atom projected DOS
+                    atomDosSubMatcher,
                     # perturbative DOS
                     perturbDosSubMatcher,
                     # band structure
@@ -1216,10 +1375,13 @@ def get_cachingLevelForMetaName(metaInfoEnv):
     """
     # manually adjust caching of metadata
     cachingLevelForMetaName = {
+                               'fhi_aims_atom_projected_dos_file': CachingLevel.Cache,
                                'fhi_aims_band_segment': CachingLevel.Cache,
                                'fhi_aims_geometry_optimization_converged': CachingLevel.Cache,
                                'fhi_aims_section_MD_detect': CachingLevel.Ignore,
                                'fhi_aims_single_configuration_calculation_converged': CachingLevel.Cache,
+                               'fhi_aims_species_projected_dos_file': CachingLevel.Cache,
+                               'fhi_aims_species_projected_dos_species_label': CachingLevel.Cache,
                                'section_dos': CachingLevel.Ignore,
                               }
     # Set all controlIn and controlInOut metadata to Cache to capture multiple occurrences of keywords and
