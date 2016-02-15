@@ -583,8 +583,8 @@ class FhiAimsParserContext(object):
                     logger.error("Band structure parsing unsuccessful. Found band structure calculation in main file, but none of the corresponding bandXYYY.out files could be parsed successfully.")
     def onClose_fhi_aims_section_controlInOut_atom_species(self, backend, gIndex, section):
         """doc"""                                                              
-        logger.warning("Free-atom basis for %s: basis_func_type: %s n = %s l = %s radius = %s", section["fhi_aims_controlInOut_species_name"], section["fhi_aims_controlInOut_basis_func_type"], section["fhi_aims_controlInOut_basis_func_n"], 
-	section["fhi_aims_controlInOut_basis_func_l"], section["fhi_aims_controlInOut_basis_func_radius"])
+        #logger.warning("Free-atom basis for %s: basis_func_type: %s n = %s l = %s radius = %s", section["fhi_aims_controlInOut_species_name"], section["fhi_aims_controlInOut_basis_func_type"], section["fhi_aims_controlInOut_basis_func_n"], 
+	#section["fhi_aims_controlInOut_basis_func_l"], section["fhi_aims_controlInOut_basis_func_radius"])
         #logger.warning("Free-ion basis for %s: n = %s l = %s width = %s", section["fhi_aims_controlInOut_species_name"], section["fhi_aims_controlInOut_free_ion_n"], section["fhi_aims_controlInOut_free_ion_l"], section["fhi_aims_controlInOut_free_ion_width"])
         #logger.warning("Hydrogenic-basis for %s: n = %s l = %s width = %s", section["fhi_aims_controlInOut_species_name"], section["fhi_aims_controlInOut_hydro_basis_n"], section["fhi_aims_controlInOut_hydro_basis_l"], section["fhi_aims_controlInOut_hydro_basis_width"])
         #logger.warning("Ionic-basis for %s: n = %s l = %s", section["fhi_aims_controlInOut_species_name"], section["fhi_aims_controlInOut_ionic_basis_n"], section["fhi_aims_controlInOut_ionic_basis_l"])
