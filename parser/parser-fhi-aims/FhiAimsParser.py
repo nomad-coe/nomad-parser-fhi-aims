@@ -60,7 +60,7 @@ class FhiAimsParserContext(object):
         """
         self.secMethodIndex = None
         self.secSystemDescriptionIndex = None
-        self.maxSpinChannel = None
+        self.maxSpinChannel = 0
         self.scalarZORA = False
         self.periodicCalc = False
         self.MD = False
@@ -522,8 +522,8 @@ class FhiAimsParserContext(object):
         """
         # check if start/end of segements was found in controlInOut
         if self.band_segm_start_end is not None:
-            # check if band segemnts and the number of spin channels were found 
-            if section['fhi_aims_band_segment'] is not None and self.maxSpinChannel is not None:
+            # check if band segemnts were found
+            if section['fhi_aims_band_segment'] is not None:
                 # construct parser for band.out file
                 bandSuperContext = FhiAimsBandParser.FhiAimsBandParserContext(False)
                 bandParser = AncillaryParser(
@@ -535,16 +535,17 @@ class FhiAimsParserContext(object):
                 band_energies = []
                 band_occupation = []
                 parsed_segments = []
+                # get directiory of currently parsed file
+                dirName = os.path.dirname(os.path.abspath(self.fName))
                 # loop over found band segements
                 for seg in section['fhi_aims_band_segment']:
-                    band_k_points_spin = None
+                    band_k_points_seg = None
                     band_energies_spin = []
                     band_occupation_spin = []
                     # loop over spin channels
                     for spin in range(1, self.maxSpinChannel + 1):
                         # construct file name
                         bFile = "band%d%03d.out" % (spin, seg)
-                        dirName = os.path.dirname(os.path.abspath(self.fName))
                         fName = os.path.normpath(os.path.join(dirName, bFile))
                         try:
                             with open(fName) as fIn:
@@ -553,10 +554,10 @@ class FhiAimsParserContext(object):
                                 # extract values
                                 if all(x is not None for x in [bandSuperContext.band_energies, bandSuperContext.band_k_points, bandSuperContext.band_occupation]):
                                     # check if k-points are the same for the spin channels
-                                    if spin == 1:
-                                        band_k_points_spin = bandSuperContext.band_k_points
-                                    elif spin > 1 and not np.array_equal(band_k_points_spin, bandSuperContext.band_k_points):
-                                        band_k_points_spin = None
+                                    if band_k_points_seg is None:
+                                        band_k_points_seg = bandSuperContext.band_k_points
+                                    elif not np.array_equal(band_k_points_seg, bandSuperContext.band_k_points):
+                                        band_k_points_seg = None
                                         logger.warning("The k-points of spin channel 1 in file band1%03d.out and spin channel %d in file %s are not equal in directory '%s'." % (seg, spin, bFile, dirName))
                                     band_energies_spin.append(bandSuperContext.band_energies)
                                     band_occupation_spin.append(bandSuperContext.band_occupation)
@@ -565,9 +566,9 @@ class FhiAimsParserContext(object):
                         except IOError:
                             logger.warning("Could not find %s file in directory '%s'." % (bFile, dirName))
                     # append values for spin channels to list and save which segment was parsed successfully
-                    if band_k_points_spin is not None and len(band_energies_spin) == self.maxSpinChannel and len(band_occupation_spin) == self.maxSpinChannel:
+                    if band_k_points_seg is not None and len(band_energies_spin) == self.maxSpinChannel and len(band_occupation_spin) == self.maxSpinChannel:
                         parsed_segments.append(seg - 1)
-                        band_k_points.append(band_k_points_spin)
+                        band_k_points.append(band_k_points_seg)
                         band_energies.append(band_energies_spin)
                         band_occupation.append(band_occupation_spin)
                     else:
