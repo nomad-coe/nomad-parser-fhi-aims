@@ -94,7 +94,7 @@ def build_FhiAimsDosFileSimpleMatcher():
                     startReStr = r"#\s*Energy \(eV\)\s*.*",
                     sections = ['section_dos'],
                     subMatchers = [
-                    SM (r"\s*(?P<fhi_aims_dos_energy>[-+0-9.]+)\s+(?P<fhi_aims_dos_value_string>[-+0-9.\s]+)", repeats = True)
+                    SM (r"\s*(?P<fhi_aims_dos_energy__eV>[-+0-9.]+)\s+(?P<fhi_aims_dos_value_string>[-+0-9.\s]+)", repeats = True)
                     ])
                 ])
             ])
