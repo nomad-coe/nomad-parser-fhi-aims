@@ -27,7 +27,7 @@ class FhiAimsParserContext(object):
     This class keeps tracks of several aims settings to adjust the parsing to them.
     The onClose_ functions allow processing and writing of cached values after a section is closed.
     They take the following arguments:
-        backend: Class that takes care of wrting and caching of metadata.
+        backend: Class that takes care of writing and caching of metadata.
         gIndex: Index of the section that is closed.
         section: The cached values and sections that were found in the section that is closed.
     """
@@ -348,7 +348,7 @@ class FhiAimsParserContext(object):
                 if api is not None:
                     atom_pos.append(api)
             if atom_pos:
-                # need to transpose array since its shape is given by [number_of_atoms,3] in the metadata
+                # need to transpose array since its shape is [number_of_atoms,3] in the metadata
                 backend.addArrayValues('atom_position', np.transpose(np.asarray(atom_pos)))
             # write atom labels
             atom_labels = section['fhi_aims_geometry_atom_label']

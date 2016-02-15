@@ -21,7 +21,7 @@ class FhiAimsControlInParserContext(object):
 
     The onClose_ functions allow processing and writing of cached values after a section is closed.
     They take the following arguments:
-        backend: Class that takes care of wrting and caching of metadata.
+        backend: Class that takes care of writing and caching of metadata.
         gIndex: Index of the section that is closed.
         section: The cached values and sections that were found in the section that is closed.
     """

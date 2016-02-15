@@ -24,7 +24,7 @@ class FhiAimsBandParserContext(object):
 
     The onClose_ functions allow processing and writing of cached values after a section is closed.
     They take the following arguments:
-        backend: Class that takes care of wrting and caching of metadata.
+        backend: Class that takes care of writing and caching of metadata.
         gIndex: Index of the section that is closed.
         section: The cached values and sections that were found in the section that is closed.
     """
@@ -63,7 +63,7 @@ class FhiAimsBandParserContext(object):
             if ki is not None:
                 band_k.append(ki)
         if band_k:
-            # need to transpose array since its shape is given by [n_k_points_per_segment,3] in the metadata
+            # need to transpose array since its shape is [n_k_points_per_segment,3] in the metadata
             self.band_k_points = np.transpose(np.asarray(band_k))
         # extract occupations and eigenvalues
         band_occupation = []
@@ -78,10 +78,10 @@ class FhiAimsBandParserContext(object):
                 band_energies.append(map(self.converter, map(float, strings[1::2])))
 
         if band_occupation:
-            # do not need to transpose array since its shape is given by [n_k_points,n_eigen_values] in the metadata
+            # do not need to transpose array since its shape is [n_k_points,n_eigen_values] in the metadata
             self.band_occupation = np.asarray(band_occupation)
         if band_energies:
-            # do not need to transpose array since its shape is given by [n_k_points,n_eigen_values] in the metadata
+            # do not need to transpose array since its shape is [n_k_points,n_eigen_values] in the metadata
             self.band_energies = np.asarray(band_energies)
         # write metadata only if values were found for all three quantities
         if self.writeMetaData:

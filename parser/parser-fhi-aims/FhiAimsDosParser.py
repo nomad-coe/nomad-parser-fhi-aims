@@ -22,7 +22,7 @@ class FhiAimsDosParserContext(object):
 
     The onClose_ functions allow processing and writing of cached values after a section is closed.
     They take the following arguments:
-        backend: Class that takes care of wrting and caching of metadata.
+        backend: Class that takes care of writing and caching of metadata.
         gIndex: Index of the section that is closed.
         section: The cached values and sections that were found in the section that is closed.
     """
@@ -60,7 +60,7 @@ class FhiAimsDosParserContext(object):
                 strings = string.split()
                 dos_values.append(map(float, strings))
         if dos_values:
-            # need to transpose array since its shape is given by [max_spin_channel,n_dos_values] in the metadata
+            # need to transpose array since its shape is [max_spin_channel,n_dos_values] in the metadata
             self.dos_values = np.transpose(np.asarray(dos_values))
         # write metadata only if values were found for both quantities
         if self.writeMetaData:

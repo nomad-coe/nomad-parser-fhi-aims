@@ -33,7 +33,7 @@ def write_controlIn(backend, metaInfoEnv, valuesDict, writeXC, location, logger)
     The scala part will check the validity nevertheless.
 
     Args:
-        backend: Takes care of the writting of the metadata.
+        backend: Class that takes care of writing and caching of metadata.
         metaInfoEnv: Loaded metadata.
         valuesDict: Dictionary that contains the cached values of a section.
         writeXC: Boolean that determines whether the keywords related to the xc functional should be written.
@@ -96,7 +96,7 @@ def write_k_grid(backend, metaName, valuesDict):
     """Function to write k-grid for controlIn and controlInOut.
 
     Args:
-        backend: Takes care of the writting of the metadata.
+        backend: Class that takes care of writing and caching of metadata.
         metaName: Corresponding metadata name for k.
         valuesDict: Dictionary that contains the cached values of a section.
     """
@@ -115,7 +115,7 @@ def write_xc_functional(backend, metaInfoEnv, metaNameStart, valuesDict, locatio
     The xc functional from controlInOut is converted and writen in the format specified in the metadata.
 
     Args:
-        backend: Takes care of the writting of the metadata.
+        backend: Class that takes care of writing and caching of metadata.
         metaInfoEnv: Loaded metadata.
         metaNameStart: Base name of metdata for xc. Must be fhi_aims_controlIn or fhi_aims_controlInOut.
         valuesDict: Dictionary that contains the cached values of a section.
