@@ -3,8 +3,11 @@ This directory contains examples calculations of FHI-aims.
 The content of the folders and files is detailed below.
 
 ## Folders
-### Fe_band_structure_spin
-Band structure calculation of bcc Fe with pw-lda, atomic_zora and collinear spin.
+### Fe_band_structure_dos_spin
+Band structure, DOS, and stom projected DOS calculation of bcc Fe with pw-lda, atomic_zora and collinear spin.
+
+### NaCl_dos
+DOS, and species projected DOS calculation of NaCl crystal with pw-lda.
 
 ### no_verbatim_writeout
 This folder contains a calculation where the contents of control.in and
