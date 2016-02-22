@@ -368,6 +368,16 @@ class FhiAimsParserContext(object):
             atom_labels = section['fhi_aims_geometry_atom_label']
             if atom_labels is not None:
                 backend.addArrayValues('atom_label', np.asarray(atom_labels))
+            # write atomic velocities in the case of MD
+            if self.MD:
+                atom_vel = []
+                for i in ['x', 'y', 'z']:
+                    avi = section['fhi_aims_geometry_atom_velocity_' + i]
+                    if avi is not None:
+                        atom_vel.append(avi)
+                if atom_vel:
+                    # need to transpose array since its shape is [number_of_atoms,3] in the metadata
+                    backend.addArrayValues('atom_velocities', np.transpose(np.asarray(atom_vel)))
         # For MD, the coordinates of the unit cell are not repeated.
         # Therefore, we have to store the unit cell, which was read in the beginning, i.e. scfIterNr == -1.
         if not self.MD or self.scfIterNr == -1:
@@ -941,7 +951,7 @@ def build_FhiAimsMainFileSimpleMatcher():
         SM (startReStr = r"\s*atom\s+(?P<fhi_aims_geometry_atom_position_x__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_atom_position_y__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_atom_position_z__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_atom_label>[a-zA-Z]+)",
             repeats = True,
             subMatchers = [
-            SM (r"\s*velocity\s+[-+0-9.]+\s+[-+0-9.]+\s+[-+0-9.]+")
+            SM (r"\s*velocity\s+(?P<fhi_aims_geometry_atom_velocity_x__angstrom_ps_1>[-+0-9.]+)\s+(?P<fhi_aims_geometry_atom_velocity_y__angstrom_ps_1>[-+0-9.]+)\s+(?P<fhi_aims_geometry_atom_velocity_z__angstrom_ps_1>[-+0-9.]+)")
             ])
         ])
     ########################################
