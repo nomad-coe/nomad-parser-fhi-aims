@@ -1,0 +1,16 @@
+stages:
+  - test
+
+testing:
+  stage: test
+  script:
+    - git submodule update --init
+    - git submodule foreach git checkout master
+    - git submodule foreach git pull
+    - sbt fhiAims/test
+  only:
+    - master
+  tags:
+    - test
+    - spec2
+  allow_failure: true
