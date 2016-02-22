@@ -128,7 +128,7 @@ class FhiAimsParserContext(object):
                     occ = sec_ev_list['fhi_aims_eigenvalue_occupation%s' % addStr]
                     if occ is not None:
                         occs.append(occ)
-                    ev = sec_ev_list['fhi_aims_eigenvalue_occupation%s' % addStr]
+                    ev = sec_ev_list['fhi_aims_eigenvalue_eigenvalue%s' % addStr]
                     if ev is not None:
                         evs.append(ev)
                 # extract kpoints
