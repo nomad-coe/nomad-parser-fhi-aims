@@ -76,6 +76,7 @@ class FhiAimsParserContext(object):
         self.eigenvalues_occupation = []
         self.eigenvalues_eigenvalues = []
         self.eigenvalues_kpoints = []
+        self.forces_raw = []
         self.dosSuperContext = None
         self.dosParser = None
         self.dosRefSingleConfigurationCalculation = None
@@ -441,6 +442,18 @@ class FhiAimsParserContext(object):
             for k,v in self.totalEnergyList.items():
                 if v is not None:
                     backend.addValue(k, v)
+        # write forces
+        forces_free = []
+        for i in ['x', 'y', 'z']:
+            fi = section['fhi_aims_atom_forces_free_' + i]
+            if fi is not None:
+                forces_free.append(fi)
+        if forces_free:
+            # need to transpose array since its shape is [number_of_atoms,3] in the metadata
+            backend.addArrayValues('atom_forces_free', np.transpose(np.asarray(forces_free)))
+        if self.forces_raw:
+            # need to transpose array since its shape is [number_of_atoms,3] in the metadata
+            backend.addArrayValues('atom_forces_free_raw', np.transpose(np.asarray(self.forces_raw)))
         # write the references to section_method and section_system_description
         backend.addValue('single_configuration_to_calculation_method_ref', self.secMethodIndex)
         backend.addValue('single_configuration_calculation_to_system_description_ref', self.secSystemDescriptionIndex)
@@ -488,6 +501,12 @@ class FhiAimsParserContext(object):
             self.eigenvalues_eigenvalues = []
             self.eigenvalues_kpoints = []
             self.update_eigenvalues(section, '')
+        # keep track of raw forces
+        self.forces_raw = []
+        for i in ['x', 'y', 'z']:
+            fi = section['fhi_aims_atom_forces_raw_' + i]
+            if fi is not None:
+                self.forces_raw.append(fi)
 
     def onClose_section_dos(self, backend, gIndex, section):
         """Trigger called when section_dos is closed.
@@ -1260,6 +1279,12 @@ def build_FhiAimsMainFileSimpleMatcher():
                         SM (r"\s*-{20}-*", weak = True),
                         EigenvaluesGroupSubMatcher.copy(), # need copy since SubMatcher already used for ScfInitialization
                         TotalEnergyScfSubMatcher.copy(), # need copy since SubMatcher already used for ScfInitialization
+                        # raw forces
+                        SM (name = 'RawForces',
+                            startReStr = r"\s*atomic forces \[eV/Ang\]:",
+                            subMatchers = [
+                            SM (r"\s*Total forces\(\s*[0-9]+\s*\)\s*:\s+(?P<fhi_aims_atom_forces_raw_x__eV_angstrom_1>[-+0-9.eEdD]+)\s+(?P<fhi_aims_atom_forces_raw_y__eV_angstrom_1>[-+0-9.eEdD]+)\s+(?P<fhi_aims_atom_forces_raw_z__eV_angstrom_1>[-+0-9.eEdD]+)", repeats = True)
+                            ]),
                         # SCF convergence info
                         SM (name = 'SCFConvergence',
                             startReStr = r"\s*Self-consistency convergence accuracy:",
@@ -1308,6 +1333,11 @@ def build_FhiAimsMainFileSimpleMatcher():
                         SM (r"\s*\|\s*Total energy uncorrected\s*:\s*(?P<energy_total__eV>[-+0-9.eEdD]+) *eV"),
                         SM (r"\s*\|\s*Total energy corrected\s*:\s*(?P<energy_total_T0__eV>[-+0-9.eEdD]+) *eV"),
                         SM (r"\s*\|\s*Electronic free energy\s*:\s*(?P<energy_free__eV>[-+0-9.eEdD]+) *eV"),
+                        SM (name = 'ForcesSummary',
+                            startReStr = r"\s*Total atomic forces \(.*\) \[eV/Ang\]:",
+                            subMatchers = [
+                            SM (r"\s*\|\s*[0-9]+\s+(?P<fhi_aims_atom_forces_free_x__eV_angstrom_1>[-+0-9.eEdD]+)\s+(?P<fhi_aims_atom_forces_free_y__eV_angstrom_1>[-+0-9.eEdD]+)\s+(?P<fhi_aims_atom_forces_free_z__eV_angstrom_1>[-+0-9.eEdD]+)", repeats = True)
+                            ]),
                         SM (r"\s*-{20}-*", weak = True)
                         ]), # END EnergyForcesSummary
                     # DOS
@@ -1328,7 +1358,7 @@ def build_FhiAimsMainFileSimpleMatcher():
                         SM (r"\s*C Energy LDA\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<fhi_aims_energy_C_LDA__eV>[-+0-9.eEdD]+) *eV"),
                         SM (r"\s*-{20}-*", weak = True),
                         ]), # END DecompositionXCEnergy
-                    # caclualtion was not converged
+                    # calculation was not converged
                     SM (name = 'ScfNotConverged',
                         startReStr = r"\s*\*\s*WARNING! SELF-CONSISTENCY CYCLE DID NOT CONVERGE",
                         subMatchers = [
@@ -1391,6 +1421,7 @@ def get_cachingLevelForMetaName(metaInfoEnv):
     # their last value is then written by the onClose routine in the FhiAimsParserContext.
     # Set all geometry metadata to Cache as all of them need post-processsing.
     # Set all eigenvalue related metadata to Cache.
+    # Set all forces related metadata to Cache.
     for name in metaInfoEnv.infoKinds:
 
         if (   (name.startswith('fhi_aims_controlIn_') and not name.startswith('fhi_aims_controlIn_basis_func_')
@@ -1400,6 +1431,7 @@ def get_cachingLevelForMetaName(metaInfoEnv):
             or name.startswith('fhi_aims_geometry_')
             or name.startswith('fhi_aims_eigenvalue_')
             or name.startswith('fhi_aims_section_eigenvalues_')
+            or name.startswith('fhi_aims_atom_forces_')
            ):
             cachingLevelForMetaName[name] = CachingLevel.Cache
     return cachingLevelForMetaName
