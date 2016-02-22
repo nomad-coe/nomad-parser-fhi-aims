@@ -4,7 +4,9 @@ stages:
 testing:
   stage: test
   script:
-    - cd ../nomad-lab-base
+    - cd ..
+    - ls
+    - cd nomad-lab-base
     - git submodule update --init
     - git submodule foreach git checkout master
     - git submodule foreach git pull
