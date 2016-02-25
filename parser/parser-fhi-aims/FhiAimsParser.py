@@ -451,7 +451,7 @@ class FhiAimsParserContext(object):
         if not self.scalarZORA:
             for k,v in self.totalEnergyList.items():
                 if v is not None:
-                    backend.addValue(k, v)
+                    backend.addValue(k, v[-1]) # v is a list
         # write forces
         forces_free = []
         for i in ['x', 'y', 'z']:
@@ -505,7 +505,7 @@ class FhiAimsParserContext(object):
         # which are read there. Therefore, we do not track the energy values for scalar ZORA.
         if not self.scalarZORA:
             for k in self.totalEnergyList:
-                self.totalEnergyList[k] = section[k + '_scf_iteration'][-1]
+                self.totalEnergyList[k] = section[k + '_scf_iteration']
             # reset eigenvalues
             self.eigenvalues_occupation = []
             self.eigenvalues_eigenvalues = []
