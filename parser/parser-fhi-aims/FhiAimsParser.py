@@ -505,7 +505,7 @@ class FhiAimsParserContext(object):
         # which are read there. Therefore, we do not track the energy values for scalar ZORA.
         if not self.scalarZORA:
             for k in self.totalEnergyList:
-                self.totalEnergyList[k] = section[k + '_scf_iteration']
+                self.totalEnergyList[k] = section[k + '_scf_iteration'][-1]
             # reset eigenvalues
             self.eigenvalues_occupation = []
             self.eigenvalues_eigenvalues = []
