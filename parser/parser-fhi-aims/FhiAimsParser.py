@@ -751,10 +751,10 @@ class FhiAimsParserContext(object):
                 else:
                     logger.error("Band structure parsing unsuccessful. Found band structure calculation in main file, but none of the corresponding bandXYYY.out files could be parsed successfully.")
 
-    def onClose_fhi_aims_section_controlInOut_atom_species(self, backend, gIndex, section):
-        """doc"""                                                              
-    def onClose_section_atom_type(self, backend, gIndex, section):
-        """doc"""                                                              
+#    def onClose_fhi_aims_section_controlInOut_atom_species(self, backend, gIndex, section):
+#        """doc"""                                                              
+#    def onClose_section_atom_type(self, backend, gIndex, section):
+#        """doc"""                                                              
         #logger.warning("Free-atom basis for %s: basis_func_type: %s n = %s l = %s radius = %s", section["fhi_aims_controlInOut_species_name"], section["fhi_aims_controlInOut_basis_func_type"], section["fhi_aims_controlInOut_basis_func_n"], 
 	#section["fhi_aims_controlInOut_basis_func_l"], section["fhi_aims_controlInOut_basis_func_radius"])
         #logger.warning("Free-ion basis for %s: n = %s l = %s width = %s", section["fhi_aims_controlInOut_species_name"], section["fhi_aims_controlInOut_free_ion_n"], section["fhi_aims_controlInOut_free_ion_l"], section["fhi_aims_controlInOut_free_ion_width"])
@@ -797,6 +797,7 @@ def build_FhiAimsMainFileSimpleMatcher():
         subMatchers = [
         SM (name = 'ControlInOutLines',
             startReStr = r"\s*-{20}-*",
+            sections = ['section_topology'],
             weak = True,
             subFlags = SM.SubFlags.Unordered,
             subMatchers = [
@@ -830,12 +831,11 @@ def build_FhiAimsMainFileSimpleMatcher():
             SM (r"\s*XC: Running (?P<fhi_aims_controlInOut_xc>[-_a-zA-Z0-9\s()]+) \.\.\.", repeats = True),
             SM (r"\s*(?P<fhi_aims_controlInOut_xc>Hartree-Fock) calculation starts \.\.\.\.\.\.", repeats = True),
 	    # define some basis set specific SMs
-	    #SM (r"\s*Reading configuration options for species\s*(?P<fhi_aims_controlInOut_species_name>[a-zA-Z]+)", repeats=True,			
-	    SM (r"\s*Reading configuration options for species\s*(?P<atom_type_name>[a-zA-Z]+)", repeats=True,			
-                sections = ["fhi_aims_section_controlInOut_atom_species", "section_atom_type"],
+	    SM (r"\s*Reading configuration options for species\s*(?P<fhi_aims_controlInOut_species_name>[a-zA-Z]+)", repeats=True,			
+	    #SM (r"\s*Reading configuration options for species\s*(?P<atom_type_name>[a-zA-Z]+)", repeats=True,			
+                sections = ["fhi_aims_section_controlInOut_atom_species",'section_atom_type'],
         	subFlags = SM.SubFlags.Unordered,
 	        subMatchers = [
-
                    SM (r"\s*\|\s*Found\s*request\s*to\s*include\s*pure\s*gaussian\s*fns.\s*:"
                         "\s+(?P<fhi_aims_controlInOut_pure_gaussian>[A-Z]+)"  
                         "\s*", repeats = True),
@@ -858,6 +858,7 @@ def build_FhiAimsMainFileSimpleMatcher():
 		    "(?P<fhi_aims_controlInOut_basis_func_gauss_l>[0-9]+)"
 		    "\s*,\s*(?P<fhi_aims_controlInOut_basis_func_gauss_N>[0-9]+)",              
                    repeats = True,                                         
+                   #sections = ["fhi_aims_section_controlInOut_basis_func"],
                    sections = ["fhi_aims_section_controlInOut_basis_func", 
                                "section_basis_set_atom_centered"],
 	           subMatchers = [
@@ -871,13 +872,13 @@ def build_FhiAimsMainFileSimpleMatcher():
 		   ]),
 	
                    SM(r"\s*\|\s*Found\s*"                                       
-                    #"(?P<fhi_aims_controlInOut_basis_func_type>[-_a-zA-Z0-9\s]+"
+                   # "(?P<fhi_aims_controlInOut_basis_func_type>[-_a-zA-Z0-9\s]+"
                     "(?P<basis_set_atom_centered_unique_name>[-_a-zA-Z0-9\s]+"
                     "\S)\s*(?:basis function)\s*:\s*"                   
                     "(?P<fhi_aims_controlInOut_basis_func_gauss_l>[0-9]+)"      
                     "\s*(?P<fhi_aims_controlInOut_basis_func_primitive_gauss_alpha>[-+0-9.eEdD]+)",
                    repeats = True,                                              
-#                   sections = ["fhi_aims_section_controlInOut_basis_func"]),
+                   #sections = ["fhi_aims_section_controlInOut_basis_func"]),
                    sections = ["fhi_aims_section_controlInOut_basis_func", 
                                "section_basis_set_atom_centered"]),
 		# Parsing for Gaussian basis ends
