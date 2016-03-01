@@ -1,12 +1,23 @@
 package eu.nomad_lab.parsers
+
+import eu.nomad_lab
 import eu.nomad_lab.DefaultPythonInterpreter
 import org.{json4s => jn}
+import eu.{nomad_lab => lab}
+import scala.collection.breakOut
 
 object FhiAimsParser extends SimpleExternalParserGenerator(
       name = "FhiAimsParser",
       parserInfo = jn.JObject(
         ("name" -> jn.JString("FhiAimsParser")) ::
-          ("version" -> jn.JString("1.0")) :: Nil),
+          ("parserId" -> jn.JString("FhiAimsParser" + lab.FhiAimsVersionInfo.version)) ::
+          ("versionInfo" -> jn.JObject(
+            ("nomadCoreVersion" -> jn.JString(lab.NomadCoreVersionInfo.version)) ::
+              (lab.FhiAimsVersionInfo.toMap.map{ case (key, value) =>
+                (key -> jn.JString(value.toString))
+              }(breakOut): List[(String, jn.JString)])
+          )) :: Nil
+      ),
       mainFileTypes = Seq("text/.*"),
       mainFileRe = """\s*Invoking FHI-aims \.\.\.
 \s*Version """.r,
