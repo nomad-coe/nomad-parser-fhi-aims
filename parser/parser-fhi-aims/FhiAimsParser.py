@@ -837,46 +837,46 @@ def build_FhiAimsMainFileSimpleMatcher():
         	subFlags = SM.SubFlags.Unordered,
 	        subMatchers = [
                    SM (r"\s*\|\s*Found\s*request\s*to\s*include\s*pure\s*gaussian\s*fns.\s*:"
-                        "\s+(?P<fhi_aims_controlInOut_pure_gaussian>[A-Z]+)"  
-                        "\s*", repeats = True),
+                       r"\s+(?P<fhi_aims_controlInOut_pure_gaussian>[A-Z]+)"  
+                       r"\s*", repeats = True),
                    SM(startReStr = r"\s*\|\s*Found nuclear charge :"
                     #"\s*(?P<fhi_aims_controlInOut_species_charge>[.0-9]+\S)\s*",
-                    "\s*(?P<atom_type_charge>[.0-9]+\S)\s*",
+                    r"\s*(?P<atom_type_charge>[.0-9]+\S)\s*",
 		   repeats = True),
 	           SM(r"\s*\|\s*Found atomic mass :"
                     #"\s*(?P<fhi_aims_controlInOut_species_mass__amu>[.0-9]+)"
-                    "\s*(?P<atom_type_mass__amu>[.0-9]+)"
-                    "\s*",repeats = True),
+                    r"\s*(?P<atom_type_mass__amu>[.0-9]+)"
+                    r"\s*",repeats = True),
                    SM(r"\s*\|\s*Found cutoff potl. onset \[A\], width \[A\], scale factor :"                            
-                    "\s*(?P<fhi_aims_controlInOut_species_cut_pot__angstrom>[.0-9]+)"   
-                    "\s*",repeats = True),   
+                    r"\s*(?P<fhi_aims_controlInOut_species_cut_pot__angstrom>[.0-9]+)"   
+                    r"\s*",repeats = True),   
 		# Parsing for Gaussian basis starts
                    SM(r"\s*\|\s*Found\s*"                                    
                     #"(?P<fhi_aims_controlInOut_basis_func_type>[-_a-zA-Z0-9\s]+"
-                    "(?P<basis_set_atom_centered_unique_name>[-_a-zA-Z0-9\s]+"
-                    "\S)\s*(?:basis function)\s*:\s*L\s*=\s*"
-		    "(?P<fhi_aims_controlInOut_basis_func_gauss_l>[0-9]+)"
-		    "\s*,\s*(?P<fhi_aims_controlInOut_basis_func_gauss_N>[0-9]+)",              
+                    r"(?P<basis_set_atom_centered_unique_name>[-_a-zA-Z0-9\s]+"
+                    r"\S)\s*(?:basis function)\s*:\s*L\s*=\s*"
+		    r"(?P<fhi_aims_controlInOut_basis_func_gauss_l>[0-9]+)"
+		    r"\s*,\s*(?P<fhi_aims_controlInOut_basis_func_gauss_N>[0-9]+)",              
                    repeats = True,                                         
                    #sections = ["fhi_aims_section_controlInOut_basis_func"],
                    sections = ["fhi_aims_section_controlInOut_basis_func", 
-                               "section_basis_set_atom_centered"],
+                               r"section_basis_set_atom_centered"],
 	           subMatchers = [
 
 	                   SM(r"\s*\|\s*alpha\s*=\s*"                                       
-	                    "(?P<fhi_aims_controlInOut_basis_func_gauss_alpha>[-+0-9.eEdD]+)"
-	                    "\s*weight\s*=\s*"
-			    "(?P<fhi_aims_controlInOut_basis_func_gauss_weight>[-+0-9.eEdD]+)",      
+	                    r"(?P<fhi_aims_controlInOut_basis_func_gauss_alpha>[-+0-9.eEdD]+)"
+	                    r"\s*weight\s*=\s*"
+			    r"(?P<fhi_aims_controlInOut_basis_func_gauss_weight>[-+0-9.eEdD]+)",      
         	           repeats = True,                                              
 	                   sections = ["fhi_aims_section_controlInOut_basis_func"])
 		   ]),
 	
                    SM(r"\s*\|\s*Found\s*"                                       
-                   # "(?P<fhi_aims_controlInOut_basis_func_type>[-_a-zA-Z0-9\s]+"
-                    "(?P<basis_set_atom_centered_unique_name>[-_a-zA-Z0-9\s]+"
-                    "\S)\s*(?:basis function)\s*:\s*"                   
-                    "(?P<fhi_aims_controlInOut_basis_func_gauss_l>[0-9]+)"      
-                    "\s*(?P<fhi_aims_controlInOut_basis_func_primitive_gauss_alpha>[-+0-9.eEdD]+)",
+                   # r"(?P<fhi_aims_controlInOut_basis_func_type>[-_a-zA-Z0-9\s]+"
+                    r"(?P<basis_set_atom_centered_unique_name>[-_a-zA-Z0-9\s]+"
+                    r"\S)\s*(?:basis function)\s*:\s*"                   
+                    r"(?P<fhi_aims_controlInOut_basis_func_gauss_l>[0-9]+)"      
+                    r"\s*(?P<fhi_aims_controlInOut_basis_func_primitive_gauss_alpha>[-+0-9.eEdD]+)",
                    repeats = True,                                              
                    #sections = ["fhi_aims_section_controlInOut_basis_func"]),
                    sections = ["fhi_aims_section_controlInOut_basis_func", 
@@ -890,11 +890,11 @@ def build_FhiAimsMainFileSimpleMatcher():
                 # In FHI-aims for a valence or ion_occ basis function the last digit refers to their occupation
                          SM(r"\s*\|\s*Found\s*"
                            #"(?P<fhi_aims_controlInOut_basis_func_type>[-_a-zA-Z0-9\s]+"
-                           "(?P<basis_set_atom_centered_unique_name>[-_a-zA-Z0-9\s]+"
-                           "\S)\s*(?:shell)\s*:\s*"
-                           "(?P<fhi_aims_controlInOut_basis_func_n>[0-9]+)"
-                           "\s+(?P<fhi_aims_controlInOut_basis_func_l>[a-zA-Z])"
-                           "\s+(?P<fhi_aims_controlInOut_basis_func_occ>[.0-9]+)",
+                           r"(?P<basis_set_atom_centered_unique_name>[-_a-zA-Z0-9\s]+"
+                           r"\S)\s*(?:shell)\s*:\s*"
+                           r"(?P<fhi_aims_controlInOut_basis_func_n>[0-9]+)"
+                           r"\s+(?P<fhi_aims_controlInOut_basis_func_l>[a-zA-Z])"
+                           r"\s+(?P<fhi_aims_controlInOut_basis_func_occ>[.0-9]+)",
        		           repeats = True, 
       		           #sections = ["fhi_aims_section_controlInOut_basis_func"]),
                            sections = ["fhi_aims_section_controlInOut_basis_func", 
@@ -905,11 +905,11 @@ def build_FhiAimsMainFileSimpleMatcher():
                             subMatchers = [                                           
                               SM(r"\s*\|\s*Found\s*"                                   
                                #"(?P<fhi_aims_controlInOut_basis_func_type>[-_a-zA-Z0-9\s]+"
-                               "(?P<basis_set_atom_centered_unique_name>[-_a-zA-Z0-9\s]+"
-                               "\S)\s*(?:function)\s*:\s*"                      
-                               "(?P<fhi_aims_controlInOut_basis_func_n>[0-9]+)"       
-                               "\s+(?P<fhi_aims_controlInOut_basis_func_l>[a-zA-Z])"  
-                               "\s+(?P<fhi_aims_controlInOut_basis_func_eff_charge>[.0-9]+)",
+                               r"(?P<basis_set_atom_centered_unique_name>[-_a-zA-Z0-9\s]+"
+                               r"\S)\s*(?:function)\s*:\s*"                      
+                               r"(?P<fhi_aims_controlInOut_basis_func_n>[0-9]+)"       
+                               r"\s+(?P<fhi_aims_controlInOut_basis_func_l>[a-zA-Z])"  
+                               r"\s+(?P<fhi_aims_controlInOut_basis_func_eff_charge>[.0-9]+)",
                                repeats = True,                                        
                                #sections = ["fhi_aims_section_controlInOut_basis_func"])
                                sections = ["fhi_aims_section_controlInOut_basis_func", 
@@ -921,10 +921,10 @@ def build_FhiAimsMainFileSimpleMatcher():
                             subMatchers = [                                     
                               SM(r"\s*\|\s*Found\s*"                            
                                #"(?P<fhi_aims_controlInOut_basis_func_type>[-_a-zA-Z0-9\s]+"
-                               "(?P<basis_set_atom_centered_unique_name>[-_a-zA-Z0-9\s]+"
-                               "\S)\s*(?:function)\s*:\s*"                      
-                               "(?P<fhi_aims_controlInOut_basis_func_n>[0-9]+)" 
-                               "\s+(?P<fhi_aims_controlInOut_basis_func_l>[a-zA-Z])",
+                               r"(?P<basis_set_atom_centered_unique_name>[-_a-zA-Z0-9\s]+"
+                               r"\S)\s*(?:function)\s*:\s*"                      
+                               r"(?P<fhi_aims_controlInOut_basis_func_n>[0-9]+)" 
+                               r"\s+(?P<fhi_aims_controlInOut_basis_func_l>[a-zA-Z])",
                               repeats = True,                                  
                                #sections = ["fhi_aims_section_controlInOut_basis_func"])
                                sections = ["fhi_aims_section_controlInOut_basis_func", 
