@@ -9,7 +9,6 @@ import FhiAimsControlInParser
 import FhiAimsBandParser
 import FhiAimsDosParser
 import logging, os, re, sys
-from itertools import izip
 
 ############################################################
 # This is the parser for the main file of FHI-aims.
@@ -28,7 +27,7 @@ class FhiAimsParserContext(object):
     This class keeps tracks of several aims settings to adjust the parsing to them.
     The onClose_ functions allow processing and writing of cached values after a section is closed.
     They take the following arguments:
-        backend: Class that takes care of writing and caching of metadata.
+        backend: Class that takes care of wrting and caching of metadata.
         gIndex: Index of the section that is closed.
         section: The cached values and sections that were found in the section that is closed.
     """
@@ -61,7 +60,7 @@ class FhiAimsParserContext(object):
         """
         self.secMethodIndex = None
         self.secSystemDescriptionIndex = None
-        self.maxSpinChannel = 0
+        self.maxSpinChannel = None
         self.scalarZORA = False
         self.periodicCalc = False
         self.MD = False
@@ -76,9 +75,6 @@ class FhiAimsParserContext(object):
         self.eigenvalues_occupation = []
         self.eigenvalues_eigenvalues = []
         self.eigenvalues_kpoints = []
-        self.forces_raw = []
-        self.dosSuperContext = None
-        self.dosParser = None
         self.dosRefSingleConfigurationCalculation = None
         self.dosFound = False
         self.dos_energies = None
@@ -129,7 +125,7 @@ class FhiAimsParserContext(object):
                     occ = sec_ev_list['fhi_aims_eigenvalue_occupation%s' % addStr]
                     if occ is not None:
                         occs.append(occ)
-                    ev = sec_ev_list['fhi_aims_eigenvalue_eigenvalue%s' % addStr]
+                    ev = sec_ev_list['fhi_aims_eigenvalue_occupation%s' % addStr]
                     if ev is not None:
                         evs.append(ev)
                 # extract kpoints
@@ -144,16 +140,6 @@ class FhiAimsParserContext(object):
                     # transpose list
                     kpoints = map(lambda *x: list(x), *kpoints)
                     self.eigenvalues_kpoints.append(kpoints) 
-
-    def compile_dos_parser(self):
-        """Instantiate superContext and construct parser for DOS file.
-        """
-        self.dosSuperContext = FhiAimsDosParser.FhiAimsDosParserContext(False)
-        self.dosParser = AncillaryParser(
-            fileDescription = FhiAimsDosParser.build_FhiAimsDosFileSimpleMatcher(),
-            parser = self.parser,
-            cachingLevelForMetaName = FhiAimsDosParser.get_cachingLevelForMetaName(self.metaInfoEnv, CachingLevel.Ignore),
-            superContext = self.dosSuperContext)
 
     def onClose_section_run(self, backend, gIndex, section):
         """Trigger called when section_run is closed.
@@ -172,11 +158,11 @@ class FhiAimsParserContext(object):
         # write dos
         # The explanation why we write the dos not unil section_run closes is given in onClose_section_dos.
         if self.dos_energies is not None and self.dos_values is not None:
-            gIndexTmp = backend.openSection('fhi_aims_section_dos')
+            gIndex = backend.openSection('fhi_aims_section_dos')
             backend.addValue('fhi_aims_dos_to_single_configuration_ref', self.dosRefSingleConfigurationCalculation)
             backend.addArrayValues('fhi_aims_dos_energies', self.dos_energies)
             backend.addArrayValues('fhi_aims_dos_values', self.dos_values)
-            backend.closeSection('fhi_aims_section_dos', gIndexTmp)
+            backend.closeSection('fhi_aims_section_dos', gIndex)
         # write geometry optimization convergence
         if self.geoConvergence is not None:
             backend.addValue('geometry_optimization_converged', self.geoConvergence)
@@ -362,22 +348,12 @@ class FhiAimsParserContext(object):
                 if api is not None:
                     atom_pos.append(api)
             if atom_pos:
-                # need to transpose array since its shape is [number_of_atoms,3] in the metadata
+                # need to transpose array since its shape is given by [number_of_atoms,3] in the metadata
                 backend.addArrayValues('atom_position', np.transpose(np.asarray(atom_pos)))
             # write atom labels
             atom_labels = section['fhi_aims_geometry_atom_label']
             if atom_labels is not None:
                 backend.addArrayValues('atom_label', np.asarray(atom_labels))
-            # write atomic velocities in the case of MD
-            if self.MD:
-                atom_vel = []
-                for i in ['x', 'y', 'z']:
-                    avi = section['fhi_aims_geometry_atom_velocity_' + i]
-                    if avi is not None:
-                        atom_vel.append(avi)
-                if atom_vel:
-                    # need to transpose array since its shape is [number_of_atoms,3] in the metadata
-                    backend.addArrayValues('atom_velocities', np.transpose(np.asarray(atom_vel)))
         # For MD, the coordinates of the unit cell are not repeated.
         # Therefore, we have to store the unit cell, which was read in the beginning, i.e. scfIterNr == -1.
         if not self.MD or self.scfIterNr == -1:
@@ -432,15 +408,15 @@ class FhiAimsParserContext(object):
                     kpt = np.asarray(self.eigenvalues_kpoints)
                 # check if there is the same number of spin channels for the periodic case
                 if kpt is None or len(kpt) == len(ev):
-                    gIndexGroupTmp = backend.openSection('section_eigenvalues_group')
+                    gIndexGroup = backend.openSection('section_eigenvalues_group')
                     for i in range(len(occ)):
-                        gIndexTmp = backend.openSection('section_eigenvalues')
+                        gIndex = backend.openSection('section_eigenvalues')
                         backend.addArrayValues('eigenvalues_occupation', occ[i])
                         backend.addArrayValues('eigenvalues_eigenvalues', ev[i])
                         if kpt is not None:
                             backend.addArrayValues('eigenvalues_kpoints', kpt[i])
-                        backend.closeSection('section_eigenvalues', gIndexTmp)
-                    backend.closeSection('section_eigenvalues_group', gIndexGroupTmp)
+                        backend.closeSection('section_eigenvalues', gIndex)
+                    backend.closeSection('section_eigenvalues_group', gIndexGroup)
                 else:
                     logger.warning("Found %d spin channels for eigenvalue kpoints but %d for eigenvalues in single configuration calculation %d." % (len(kpt), len(ev), gIndex))
             else:
@@ -451,19 +427,7 @@ class FhiAimsParserContext(object):
         if not self.scalarZORA:
             for k,v in self.totalEnergyList.items():
                 if v is not None:
-                    backend.addValue(k, v[-1]) # v is a list
-        # write forces
-        forces_free = []
-        for i in ['x', 'y', 'z']:
-            fi = section['fhi_aims_atom_forces_free_' + i]
-            if fi is not None:
-                forces_free.append(fi)
-        if forces_free:
-            # need to transpose array since its shape is [number_of_atoms,3] in the metadata
-            backend.addArrayValues('atom_forces_free', np.transpose(np.asarray(forces_free)))
-        if self.forces_raw:
-            # need to transpose array since its shape is [number_of_atoms,3] in the metadata
-            backend.addArrayValues('atom_forces_free_raw', np.transpose(np.asarray(self.forces_raw)))
+                    backend.addValue(k, v)
         # write the references to section_method and section_system_description
         backend.addValue('single_configuration_to_calculation_method_ref', self.secMethodIndex)
         backend.addValue('single_configuration_calculation_to_system_description_ref', self.secSystemDescriptionIndex)
@@ -511,12 +475,6 @@ class FhiAimsParserContext(object):
             self.eigenvalues_eigenvalues = []
             self.eigenvalues_kpoints = []
             self.update_eigenvalues(section, '')
-        # keep track of raw forces
-        self.forces_raw = []
-        for i in ['x', 'y', 'z']:
-            fi = section['fhi_aims_atom_forces_raw_' + i]
-            if fi is not None:
-                self.forces_raw.append(fi)
 
     def onClose_section_dos(self, backend, gIndex, section):
         """Trigger called when section_dos is closed.
@@ -533,155 +491,29 @@ class FhiAimsParserContext(object):
         self.dos_energies = None
         self.dos_values = None
         # construct file name
-        dirName = os.path.dirname(os.path.abspath(self.fName))
         dFile = 'KS_DOS_total.dat'
+        dirName = os.path.dirname(os.path.abspath(self.fName))
         fName = os.path.normpath(os.path.join(dirName, dFile))
         try:
             with open(fName) as fIn:
-                # construct parser for DOS file if not present
-                if self.dosSuperContext is None or self.dosParser is None:
-                    self.compile_dos_parser()
+                # construct parser for DOS file
+                dosSuperContext = FhiAimsDosParser.FhiAimsDosParserContext(False)
+                dosParser = AncillaryParser(
+                    fileDescription = FhiAimsDosParser.build_FhiAimsDosFileSimpleMatcher(),
+                    parser = self.parser,
+                    cachingLevelForMetaName = FhiAimsDosParser.get_cachingLevelForMetaName(self.metaInfoEnv, CachingLevel.Ignore),
+                    superContext = dosSuperContext)
                 # parse DOS file
-                self.dosParser.parseFile(fIn)
+                dosParser.parseFile(fIn)
                 # set flag that DOS was parsed successfully and store values
-                if self.dosSuperContext.dos_energies is not None and self.dosSuperContext.dos_values is not None:
+                if dosSuperContext.dos_energies is not None and dosSuperContext.dos_values is not None:
                     self.dosFound = True
-                    self.dos_energies = self.dosSuperContext.dos_energies
-                    self.dos_values = self.dosSuperContext.dos_values
+                    self.dos_energies = dosSuperContext.dos_energies
+                    self.dos_values = dosSuperContext.dos_values
                 else:
                     logger.error("DOS parsing unsuccessful. Parsing of file %s in directory '%s' did not yield energies or values for DOS." % (dFile, dirName))
         except IOError:
             logger.error("DOS parsing unsuccessful. Could not find %s file in directory '%s'." % (dFile, dirName))
-
-    def onClose_section_species_projected_dos(self, backend, gIndex, section):
-        """Trigger called when section_species_projected_dos is closed.
-
-        The extracted file names for the species projected DOS are parsed.
-        Values are written according to metadata.
-        """
-        files = section['fhi_aims_species_projected_dos_file']
-        labels = section['fhi_aims_species_projected_dos_species_label']
-        if files is not None and labels is not None:
-            returnVal = self.parse_projected_dos(backend, files, 'species')
-            # write species label if parsing of files was successful
-            # The species label is repeated maxSpinChannel times in the list of parsed species labels.
-            # Therefore, take only every maxSpinChannel-th element from the list.
-            metaName = 'species_projected_dos_species_label'
-            if returnVal == 0:
-                backend.addArrayValues('species_projected_dos_species_label', np.asarray(labels[::self.maxSpinChannel]))
-
-    def onClose_section_atom_projected_dos(self, backend, gIndex, section):
-        """Trigger called when section_atom_projected_dos is closed.
-
-        The extracted file names for the atom projected DOS are parsed.
-        Values are written according to metadata.
-        """
-        files = section['fhi_aims_atom_projected_dos_file']
-        if files is not None:
-            self.parse_projected_dos(backend, files, 'atom')
-
-    def parse_projected_dos(self, backend, files, kind):
-        """Parses projected DOS from files and writes values.
-
-        This function can be used to parse the atom and species projected DOS.
-
-        Args:
-            backend: Class that takes care of writing and caching of metadata.
-            files: List of files that contain projected DOS.
-            kind: Specifies if 'atom' or species' are parsed.
-
-        Returns:
-             0 if parsing was successful.
-            -1 if parsing was unsuccessful.
-        """
-        # kind for small and capital letter at the beginning
-        kind = kind.lower()
-        Kind = kind.capitalize()
-        dos_energies = None
-        dos_total = []
-        dos_l = []
-        n_l = []
-        max_n_l = 0
-        # get directiory of currently parsed file
-        dirName = os.path.dirname(os.path.abspath(self.fName))
-        # check if number of files is divisible by maxSpinChannel
-        if len(files) % self.maxSpinChannel == 0:
-            # construct parser for DOS file if not present
-            if self.dosSuperContext is None or self.dosParser is None:
-                self.compile_dos_parser()
-            # loop over files with step length maxSpinChannel
-            for i in range(0, len(files), self.maxSpinChannel):
-                # we create list of files that are of the same kind but have a different spin channel
-                files_spin = files[i:i + self.maxSpinChannel]
-                dos_total_spin = []
-                dos_l_spin = []
-                n_l_spin = []
-                # loop over spin channels
-                for dFile in files_spin:
-                    # construct file name
-                    fName = os.path.normpath(os.path.join(dirName, dFile))
-                    try:
-                        with open(fName) as fIn:
-                            # parse DOS file
-                            self.dosParser.parseFile(fIn)
-                            # extract values
-                            if self.dosSuperContext.dos_energies is not None and self.dosSuperContext.dos_values is not None:
-                                # check if energies are consistent for different files
-                                if dos_energies is None:
-                                    dos_energies = self.dosSuperContext.dos_energies
-                                elif not np.array_equal(dos_energies, self.dosSuperContext.dos_energies):
-                                    logger.error("%s projected DOS parsing unsuccessful. The energies in %s are not consistent with other files in directory '%s'." % (Kind, dFile, dirName))
-                                    return -1
-                                # check that at least two columns for dos_values were found
-                                val_length = len(self.dosSuperContext.dos_values)
-                                if val_length > 1:
-                                    # first column is total DOS
-                                    dos_total_spin.append(self.dosSuperContext.dos_values[0])
-                                    # the column afterwards are the l values
-                                    dos_l_spin.append(self.dosSuperContext.dos_values[1:])
-                                    # save number of l values and the maximal value
-                                    # -1 because first column is total DOS
-                                    n_l_spin.append(val_length - 1)
-                                    if val_length - 1 > max_n_l:
-                                        max_n_l = val_length - 1
-                                else:
-                                    logger.error("%s projected DOS parsing unsuccessful. Parsing of file %s in directory '%s' did not yield values for l-specific DOS." % (Kind, dFile, dirName))
-                                    return -1
-                            else:
-                                logger.error("%s projected DOS parsing unsuccessful. Parsing of file %s in directory '%s' did not yield values for energies or DOS." % (Kind, dFile, dirName))
-                                return -1
-                    except IOError:
-                        logger.error("%s projected DOS parsing unsuccessful. Could not find %s file in directory '%s'." % (Kind, dFile, dirName))
-                        return -1
-                # append values for spin channels to list
-                # no further error checking needed because we already exited the functon if we found an error for one of the spin channels
-                dos_total.append(dos_total_spin)
-                dos_l.append(dos_l_spin)
-                n_l.append(n_l_spin)
-            # add array of zeros to those projected DOS that have less l values than max_n_l
-            for projected_dos, l in izip(dos_l, n_l):
-                for i in range(len(projected_dos)):
-                    if l[i] < max_n_l:
-                        # The dimensions of the added zero array are:
-                        # first dimension:  difference between maximum number of l values (max_n_l) and current number of l values (l[i])
-                        # second dimension: same as second dimension of the current DOS (projected_dos[i])
-                        projected_dos[i] = np.vstack((projected_dos[i], np.zeros((max_n_l - l[i] , projected_dos[i].shape[1]))))
-            # write values
-            backend.addArrayValues( kind + '_projected_dos_energies', dos_energies)
-            # need to swap axis 0 (number_of_*) and axis 1 (max_spin_channel)
-            # since its shape is [max_spin_channel,number_of_*,n_*_projected_dos_values] in the metadata
-            backend.addArrayValues(kind + '_projected_dos_values_total', np.swapaxes(np.asarray(dos_total), 0, 1))
-            # in aims there is no projected DOS for per m value
-            backend.addValue(kind + '_projected_dos_m_kind', 'integrated')
-            # we create an array of the form [[0,0], [1,0], ..., [max_n_l-1,0]] to specify the l values for the projected DOS
-            backend.addArrayValues(kind + '_projected_dos_lm', np.column_stack((np.arange(max_n_l), np.zeros(max_n_l, dtype=np.int))))
-            # need to swap axis 0 (number_of_*) and axis 2 (number_of_lm_*_projected_dos)
-            # since its shape is [number_of_lm_*_projected_dos,max_spin_channel,number_of_*,n_*_projected_dos_values] in the metadata
-            backend.addArrayValues(kind + '_projected_dos_values_lm', np.swapaxes(np.asarray(dos_l), 0, 2))
-            return 0
-        else:
-            logger.error("%s projected DOS parsing unsuccessful. The number of files (%d) for the %s projected DOS in directory '%s' must be divisible by the number of spin channels (%d)." % (Kind, len(files), kind, dirName, self.maxSpinChannel))
-            return -1
 
     def onClose_section_k_band(self, backend, gIndex, section):
         """Trigger called when section_k_band is closed.
@@ -690,8 +522,8 @@ class FhiAimsParserContext(object):
         """
         # check if start/end of segements was found in controlInOut
         if self.band_segm_start_end is not None:
-            # check if band segemnts were found
-            if section['fhi_aims_band_segment'] is not None:
+            # check if band segemnts and the number of spin channels were found 
+            if section['fhi_aims_band_segment'] is not None and self.maxSpinChannel is not None:
                 # construct parser for band.out file
                 bandSuperContext = FhiAimsBandParser.FhiAimsBandParserContext(False)
                 bandParser = AncillaryParser(
@@ -703,17 +535,16 @@ class FhiAimsParserContext(object):
                 band_energies = []
                 band_occupation = []
                 parsed_segments = []
-                # get directiory of currently parsed file
-                dirName = os.path.dirname(os.path.abspath(self.fName))
                 # loop over found band segements
                 for seg in section['fhi_aims_band_segment']:
-                    band_k_points_seg = None
+                    band_k_points_spin = None
                     band_energies_spin = []
                     band_occupation_spin = []
                     # loop over spin channels
                     for spin in range(1, self.maxSpinChannel + 1):
                         # construct file name
                         bFile = "band%d%03d.out" % (spin, seg)
+                        dirName = os.path.dirname(os.path.abspath(self.fName))
                         fName = os.path.normpath(os.path.join(dirName, bFile))
                         try:
                             with open(fName) as fIn:
@@ -722,10 +553,10 @@ class FhiAimsParserContext(object):
                                 # extract values
                                 if all(x is not None for x in [bandSuperContext.band_energies, bandSuperContext.band_k_points, bandSuperContext.band_occupation]):
                                     # check if k-points are the same for the spin channels
-                                    if band_k_points_seg is None:
-                                        band_k_points_seg = bandSuperContext.band_k_points
-                                    elif not np.array_equal(band_k_points_seg, bandSuperContext.band_k_points):
-                                        band_k_points_seg = None
+                                    if spin == 1:
+                                        band_k_points_spin = bandSuperContext.band_k_points
+                                    elif spin > 1 and not np.array_equal(band_k_points_spin, bandSuperContext.band_k_points):
+                                        band_k_points_spin = None
                                         logger.warning("The k-points of spin channel 1 in file band1%03d.out and spin channel %d in file %s are not equal in directory '%s'." % (seg, spin, bFile, dirName))
                                     band_energies_spin.append(bandSuperContext.band_energies)
                                     band_occupation_spin.append(bandSuperContext.band_occupation)
@@ -734,9 +565,9 @@ class FhiAimsParserContext(object):
                         except IOError:
                             logger.warning("Could not find %s file in directory '%s'." % (bFile, dirName))
                     # append values for spin channels to list and save which segment was parsed successfully
-                    if band_k_points_seg is not None and len(band_energies_spin) == self.maxSpinChannel and len(band_occupation_spin) == self.maxSpinChannel:
+                    if band_k_points_spin is not None and len(band_energies_spin) == self.maxSpinChannel and len(band_occupation_spin) == self.maxSpinChannel:
                         parsed_segments.append(seg - 1)
-                        band_k_points.append(band_k_points_seg)
+                        band_k_points.append(band_k_points_spin)
                         band_energies.append(band_energies_spin)
                         band_occupation.append(band_occupation_spin)
                     else:
@@ -750,11 +581,10 @@ class FhiAimsParserContext(object):
                     backend.addArrayValues('band_segm_start_end', self.band_segm_start_end[parsed_segments])
                 else:
                     logger.error("Band structure parsing unsuccessful. Found band structure calculation in main file, but none of the corresponding bandXYYY.out files could be parsed successfully.")
-
-#    def onClose_fhi_aims_section_controlInOut_atom_species(self, backend, gIndex, section):
-#        """doc"""                                                              
-#    def onClose_section_atom_type(self, backend, gIndex, section):
-#        """doc"""                                                              
+    def onClose_fhi_aims_section_controlInOut_atom_species(self, backend, gIndex, section):
+        """doc"""                                                              
+    def onClose_section_atom_type(self, backend, gIndex, section):
+        """doc"""                                                              
         #logger.warning("Free-atom basis for %s: basis_func_type: %s n = %s l = %s radius = %s", section["fhi_aims_controlInOut_species_name"], section["fhi_aims_controlInOut_basis_func_type"], section["fhi_aims_controlInOut_basis_func_n"], 
 	#section["fhi_aims_controlInOut_basis_func_l"], section["fhi_aims_controlInOut_basis_func_radius"])
         #logger.warning("Free-ion basis for %s: n = %s l = %s width = %s", section["fhi_aims_controlInOut_species_name"], section["fhi_aims_controlInOut_free_ion_n"], section["fhi_aims_controlInOut_free_ion_l"], section["fhi_aims_controlInOut_free_ion_width"])
@@ -797,7 +627,6 @@ def build_FhiAimsMainFileSimpleMatcher():
         subMatchers = [
         SM (name = 'ControlInOutLines',
             startReStr = r"\s*-{20}-*",
-            sections = ['section_topology'],
             weak = True,
             subFlags = SM.SubFlags.Unordered,
             subMatchers = [
@@ -831,58 +660,54 @@ def build_FhiAimsMainFileSimpleMatcher():
             SM (r"\s*XC: Running (?P<fhi_aims_controlInOut_xc>[-_a-zA-Z0-9\s()]+) \.\.\.", repeats = True),
             SM (r"\s*(?P<fhi_aims_controlInOut_xc>Hartree-Fock) calculation starts \.\.\.\.\.\.", repeats = True),
 	    # define some basis set specific SMs
-	    SM (r"\s*Reading configuration options for species\s*(?P<fhi_aims_controlInOut_species_name>[a-zA-Z]+)", repeats=True,			
-	    #SM (r"\s*Reading configuration options for species\s*(?P<atom_type_name>[a-zA-Z]+)", repeats=True,			
-                sections = ["fhi_aims_section_controlInOut_atom_species",'section_atom_type'],
+	    #SM (r"\s*Reading configuration options for species\s*(?P<fhi_aims_controlInOut_species_name>[a-zA-Z]+)", repeats=True,			
+	    SM (r"\s*Reading configuration options for species\s*(?P<atom_type_name>[a-zA-Z]+)", repeats=True,			
+                sections = ["fhi_aims_section_controlInOut_atom_species", "section_atom_type"],
         	subFlags = SM.SubFlags.Unordered,
 	        subMatchers = [
+
                    SM (r"\s*\|\s*Found\s*request\s*to\s*include\s*pure\s*gaussian\s*fns.\s*:"
-                       r"\s+(?P<fhi_aims_controlInOut_pure_gaussian>[A-Z]+)"  
-                       r"\s*", repeats = True),
-                       #r"\s+(?P<fhi_aims_controlInOut_pure_gaussian>[A-Z]+)"  
-                       #r"\s*", repeats = True),
+                        "\s+(?P<fhi_aims_controlInOut_pure_gaussian>[A-Z]+)"  
+                        "\s*", repeats = True),
                    SM(startReStr = r"\s*\|\s*Found nuclear charge :"
                     #"\s*(?P<fhi_aims_controlInOut_species_charge>[.0-9]+\S)\s*",
-                    r"\s*(?P<atom_type_charge>[.0-9]+\S)\s*",
+                    "\s*(?P<atom_type_charge>[.0-9]+\S)\s*",
 		   repeats = True),
 	           SM(r"\s*\|\s*Found atomic mass :"
                     #"\s*(?P<fhi_aims_controlInOut_species_mass__amu>[.0-9]+)"
-                    r"\s*(?P<atom_type_mass__amu>[.0-9]+)"
-                    r"\s*",repeats = True),
+                    "\s*(?P<atom_type_mass__amu>[.0-9]+)"
+                    "\s*",repeats = True),
                    SM(r"\s*\|\s*Found cutoff potl. onset \[A\], width \[A\], scale factor :"                            
-                    r"\s*(?P<fhi_aims_controlInOut_species_cut_pot__angstrom>[.0-9]+)"   
-                    r"\s*",repeats = True),   
+                    "\s*(?P<fhi_aims_controlInOut_species_cut_pot__angstrom>[.0-9]+)"   
+                    "\s*",repeats = True),   
 		# Parsing for Gaussian basis starts
                    SM(r"\s*\|\s*Found\s*"                                    
-                    #r"(?P<basis_set_atom_centered_unique_name>[-_a-zA-Z0-9\s]+"
-                    r"(?P<fhi_aims_controlInOut_basis_func_type>[-_a-zA-Z0-9\s]+"
-                    #r"(?P<basis_set_atom_centered_unique_name>[-_a-zA-Z0-9\s]+"
-                    r"\S)\s*(?:basis function)\s*:\s*L\s*=\s*"
-		    r"(?P<fhi_aims_controlInOut_basis_func_gauss_l>[0-9]+)"
-		    r"\s*,\s*(?P<fhi_aims_controlInOut_basis_func_gauss_N>[0-9]+)",              
+                    #"(?P<fhi_aims_controlInOut_basis_func_type>[-_a-zA-Z0-9\s]+"
+                    "(?P<basis_set_atom_centered_unique_name>[-_a-zA-Z0-9\s]+"
+                    "\S)\s*(?:basis function)\s*:\s*L\s*=\s*"
+		    "(?P<fhi_aims_controlInOut_basis_func_gauss_l>[0-9]+)"
+		    "\s*,\s*(?P<fhi_aims_controlInOut_basis_func_gauss_N>[0-9]+)",              
                    repeats = True,                                         
-                   #sections = ["fhi_aims_section_controlInOut_basis_func"],
                    sections = ["fhi_aims_section_controlInOut_basis_func", 
-                               r"section_basis_set_atom_centered"],
+                               "section_basis_set_atom_centered"],
 	           subMatchers = [
 
 	                   SM(r"\s*\|\s*alpha\s*=\s*"                                       
-	                    r"(?P<fhi_aims_controlInOut_basis_func_gauss_alpha>[-+0-9.eEdD]+)"
-	                    r"\s*weight\s*=\s*"
-			    r"(?P<fhi_aims_controlInOut_basis_func_gauss_weight>[-+0-9.eEdD]+)",      
+	                    "(?P<fhi_aims_controlInOut_basis_func_gauss_alpha>[-+0-9.eEdD]+)"
+	                    "\s*weight\s*=\s*"
+			    "(?P<fhi_aims_controlInOut_basis_func_gauss_weight>[-+0-9.eEdD]+)",      
         	           repeats = True,                                              
 	                   sections = ["fhi_aims_section_controlInOut_basis_func"])
 		   ]),
 	
                    SM(r"\s*\|\s*Found\s*"                                       
-                    #r"(?P<basis_set_atom_centered_unique_name>[-_a-zA-Z0-9\s]+"
-                    r"(?P<fhi_aims_controlInOut_basis_func_type>[-_a-zA-Z0-9\s]+"
-                    #r"(?P<basis_set_atom_centered_unique_name>[-_a-zA-Z0-9\s]+"
-                    r"\S)\s*(?:basis function)\s*:\s*"                   
-                    r"(?P<fhi_aims_controlInOut_basis_func_gauss_l>[0-9]+)"      
-                    r"\s*(?P<fhi_aims_controlInOut_basis_func_primitive_gauss_alpha>[-+0-9.eEdD]+)",
+                    #"(?P<fhi_aims_controlInOut_basis_func_type>[-_a-zA-Z0-9\s]+"
+                    "(?P<basis_set_atom_centered_unique_name>[-_a-zA-Z0-9\s]+"
+                    "\S)\s*(?:basis function)\s*:\s*"                   
+                    "(?P<fhi_aims_controlInOut_basis_func_gauss_l>[0-9]+)"      
+                    "\s*(?P<fhi_aims_controlInOut_basis_func_primitive_gauss_alpha>[-+0-9.eEdD]+)",
                    repeats = True,                                              
-                   #sections = ["fhi_aims_section_controlInOut_basis_func"]),
+#                   sections = ["fhi_aims_section_controlInOut_basis_func"]),
                    sections = ["fhi_aims_section_controlInOut_basis_func", 
                                "section_basis_set_atom_centered"]),
 		# Parsing for Gaussian basis ends
@@ -893,12 +718,12 @@ def build_FhiAimsMainFileSimpleMatcher():
                       subMatchers = [ 
                 # In FHI-aims for a valence or ion_occ basis function the last digit refers to their occupation
                          SM(r"\s*\|\s*Found\s*"
-                           "(?P<fhi_aims_controlInOut_basis_func_type>[-_a-zA-Z0-9\s]+"
-                           #r"(?P<basis_set_atom_centered_unique_name>[-_a-zA-Z0-9\s]+"
-                           r"\S)\s*(?:shell)\s*:\s*"
-                           r"(?P<fhi_aims_controlInOut_basis_func_n>[0-9]+)"
-                           r"\s+(?P<fhi_aims_controlInOut_basis_func_l>[a-zA-Z])"
-                           r"\s+(?P<fhi_aims_controlInOut_basis_func_occ>[.0-9]+)",
+                           #"(?P<fhi_aims_controlInOut_basis_func_type>[-_a-zA-Z0-9\s]+"
+                           "(?P<basis_set_atom_centered_unique_name>[-_a-zA-Z0-9\s]+"
+                           "\S)\s*(?:shell)\s*:\s*"
+                           "(?P<fhi_aims_controlInOut_basis_func_n>[0-9]+)"
+                           "\s+(?P<fhi_aims_controlInOut_basis_func_l>[a-zA-Z])"
+                           "\s+(?P<fhi_aims_controlInOut_basis_func_occ>[.0-9]+)",
        		           repeats = True, 
       		           #sections = ["fhi_aims_section_controlInOut_basis_func"]),
                            sections = ["fhi_aims_section_controlInOut_basis_func", 
@@ -908,8 +733,8 @@ def build_FhiAimsMainFileSimpleMatcher():
                             forwardMatch = True,                                      
                             subMatchers = [                                           
                               SM(r"\s*\|\s*Found\s*"                                   
-                               "(?P<fhi_aims_controlInOut_basis_func_type>[-_a-zA-Z0-9\s]+"
-                               #"(?P<basis_set_atom_centered_unique_name>[-_a-zA-Z0-9\s]+"
+                               #"(?P<fhi_aims_controlInOut_basis_func_type>[-_a-zA-Z0-9\s]+"
+                               "(?P<basis_set_atom_centered_unique_name>[-_a-zA-Z0-9\s]+"
                                "\S)\s*(?:function)\s*:\s*"                      
                                "(?P<fhi_aims_controlInOut_basis_func_n>[0-9]+)"       
                                "\s+(?P<fhi_aims_controlInOut_basis_func_l>[a-zA-Z])"  
@@ -1032,7 +857,7 @@ def build_FhiAimsMainFileSimpleMatcher():
         SM (startReStr = r"\s*atom\s+(?P<fhi_aims_geometry_atom_position_x__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_atom_position_y__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_atom_position_z__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_atom_label>[a-zA-Z]+)",
             repeats = True,
             subMatchers = [
-            SM (r"\s*velocity\s+(?P<fhi_aims_geometry_atom_velocity_x__angstrom_ps_1>[-+0-9.]+)\s+(?P<fhi_aims_geometry_atom_velocity_y__angstrom_ps_1>[-+0-9.]+)\s+(?P<fhi_aims_geometry_atom_velocity_z__angstrom_ps_1>[-+0-9.]+)")
+            SM (r"\s*velocity\s+[-+0-9.]+\s+[-+0-9.]+\s+[-+0-9.]+")
             ])
         ])
     ########################################
@@ -1228,22 +1053,6 @@ def build_FhiAimsMainFileSimpleMatcher():
         SM (r"\s*\|\s*writing perturbative DOS \(shifted by electron chemical potential\) to file \S+")
         ])
     ########################################
-    # submatcher for species projected DOS
-    speciesDosSubMatcher = SM (name = 'speciesDOS',
-        startReStr = r"\s*Calculating angular momentum projected density of states \.\.\.",
-        sections = ['section_species_projected_dos'],
-        subMatchers = [
-            SM (r"\s*\|\s*writing(?: spin-(?:up|down))? projected DOS \(shifted by the chemical potential\) for species (?P<fhi_aims_species_projected_dos_species_label>[a-zA-Z]+) to file (?P<fhi_aims_species_projected_dos_file>\S+[^.])\.", repeats = True)
-        ])
-    ########################################
-    # submatcher for atom projected DOS
-    atomDosSubMatcher = SM (name = 'atomDOS',
-        startReStr = r"\s*Calculating atom-projected density of states \.\.\.",
-        sections = ['section_atom_projected_dos'],
-        subMatchers = [
-            SM (r"\s*\|\s*writing(?: spin-(?:up|down))? projected DOS \(shifted by the chemical potential\) for species [a-zA-Z]+ to file (?P<fhi_aims_atom_projected_dos_file>\S+[^.])\.", repeats = True)
-        ])
-    ########################################
     # submatcher for band structure
     bandStructureSubMatcher = SM (name = 'BandStructure',
         startReStr = r"\s*Writing the requested band structure output:",
@@ -1370,12 +1179,6 @@ def build_FhiAimsMainFileSimpleMatcher():
                         SM (r"\s*-{20}-*", weak = True),
                         EigenvaluesGroupSubMatcher.copy(), # need copy since SubMatcher already used for ScfInitialization
                         TotalEnergyScfSubMatcher.copy(), # need copy since SubMatcher already used for ScfInitialization
-                        # raw forces
-                        SM (name = 'RawForces',
-                            startReStr = r"\s*atomic forces \[eV/Ang\]:",
-                            subMatchers = [
-                            SM (r"\s*Total forces\(\s*[0-9]+\s*\)\s*:\s+(?P<fhi_aims_atom_forces_raw_x__eV_angstrom_1>[-+0-9.eEdD]+)\s+(?P<fhi_aims_atom_forces_raw_y__eV_angstrom_1>[-+0-9.eEdD]+)\s+(?P<fhi_aims_atom_forces_raw_z__eV_angstrom_1>[-+0-9.eEdD]+)", repeats = True)
-                            ]),
                         # SCF convergence info
                         SM (name = 'SCFConvergence',
                             startReStr = r"\s*Self-consistency convergence accuracy:",
@@ -1424,11 +1227,6 @@ def build_FhiAimsMainFileSimpleMatcher():
                         SM (r"\s*\|\s*Total energy uncorrected\s*:\s*(?P<energy_total__eV>[-+0-9.eEdD]+) *eV"),
                         SM (r"\s*\|\s*Total energy corrected\s*:\s*(?P<energy_total_T0__eV>[-+0-9.eEdD]+) *eV"),
                         SM (r"\s*\|\s*Electronic free energy\s*:\s*(?P<energy_free__eV>[-+0-9.eEdD]+) *eV"),
-                        SM (name = 'ForcesSummary',
-                            startReStr = r"\s*Total atomic forces \(.*\) \[eV/Ang\]:",
-                            subMatchers = [
-                            SM (r"\s*\|\s*[0-9]+\s+(?P<fhi_aims_atom_forces_free_x__eV_angstrom_1>[-+0-9.eEdD]+)\s+(?P<fhi_aims_atom_forces_free_y__eV_angstrom_1>[-+0-9.eEdD]+)\s+(?P<fhi_aims_atom_forces_free_z__eV_angstrom_1>[-+0-9.eEdD]+)", repeats = True)
-                            ]),
                         SM (r"\s*-{20}-*", weak = True)
                         ]), # END EnergyForcesSummary
                     # DOS
@@ -1449,7 +1247,7 @@ def build_FhiAimsMainFileSimpleMatcher():
                         SM (r"\s*C Energy LDA\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<fhi_aims_energy_C_LDA__eV>[-+0-9.eEdD]+) *eV"),
                         SM (r"\s*-{20}-*", weak = True),
                         ]), # END DecompositionXCEnergy
-                    # calculation was not converged
+                    # caclualtion was not converged
                     SM (name = 'ScfNotConverged',
                         startReStr = r"\s*\*\s*WARNING! SELF-CONSISTENCY CYCLE DID NOT CONVERGE",
                         subMatchers = [
@@ -1460,10 +1258,6 @@ def build_FhiAimsMainFileSimpleMatcher():
                     RelaxationSubMatcher,
                     # MD
                     MDSubMatcher,
-                    # species projected DOS
-                    speciesDosSubMatcher,
-                    # atom projected DOS
-                    atomDosSubMatcher,
                     # perturbative DOS
                     perturbDosSubMatcher,
                     # band structure
@@ -1499,30 +1293,24 @@ def get_cachingLevelForMetaName(metaInfoEnv):
     """
     # manually adjust caching of metadata
     cachingLevelForMetaName = {
-                               'fhi_aims_atom_projected_dos_file': CachingLevel.Cache,
                                'fhi_aims_band_segment': CachingLevel.Cache,
                                'fhi_aims_geometry_optimization_converged': CachingLevel.Cache,
                                'fhi_aims_section_MD_detect': CachingLevel.Ignore,
                                'fhi_aims_single_configuration_calculation_converged': CachingLevel.Cache,
-                               'fhi_aims_species_projected_dos_file': CachingLevel.Cache,
-                               'fhi_aims_species_projected_dos_species_label': CachingLevel.Cache,
                                'section_dos': CachingLevel.Ignore,
                               }
     # Set all controlIn and controlInOut metadata to Cache to capture multiple occurrences of keywords and
     # their last value is then written by the onClose routine in the FhiAimsParserContext.
     # Set all geometry metadata to Cache as all of them need post-processsing.
     # Set all eigenvalue related metadata to Cache.
-    # Set all forces related metadata to Cache.
     for name in metaInfoEnv.infoKinds:
 
-        if (   (name.startswith('fhi_aims_controlIn_') and not name.startswith('fhi_aims_controlIn_basis_func_')
-                and not name.startswith('fhi_aims_controlIn_species_'))
-            or (name.startswith('fhi_aims_controlInOut_') and not name.startswith('fhi_aims_controlInOut_basis_func_')
-	        and not name.startswith('fhi_aims_controlInOut_species_'))
+        if (   name.startswith('fhi_aims_controlIn_')
+            or ( name.startswith('fhi_aims_controlInOut_') and not name.startswith('fhi_aims_controlInOut_basis_func_')
+	    and not name.startswith('fhi_aims_controlInOut_species_'))
             or name.startswith('fhi_aims_geometry_')
             or name.startswith('fhi_aims_eigenvalue_')
             or name.startswith('fhi_aims_section_eigenvalues_')
-            or name.startswith('fhi_aims_atom_forces_')
            ):
             cachingLevelForMetaName[name] = CachingLevel.Cache
     return cachingLevelForMetaName
