@@ -1267,6 +1267,24 @@ def build_FhiAimsMainFileSimpleMatcher():
         SM (r"\s*\|\s*Highest occupied state\s*:\s*[-+0-9.]+ *eV"),
         SM (r"\s*\|\s*Energy difference\s*:\s*[-+0-9.]+ *eV")
         ])
+    ########################################                                    
+    # submatcher for Tkatchenko-Scheffler van der Waals 
+    TS_VanDerWaalsSubMatcher = SM (name = 'TS_VanDerWaals',
+        startReStr = r"\s*Evaluating non-empirical van der Waals correction",
+        sections = ['fhi_aims_section_vdW_TS'],
+        repeats = True,
+        subMatchers = [ 
+            SM (startReStr = r"\s*\|\s*Atom",                       
+                repeats = True,                                                 
+                forwardMatch = True,                                            
+                subMatchers = [                                                 
+                SM (r"\s*\|\s*Atom\s*[0-9]:\s*(?P<fhi_aims_atom_type_vdW>[a-zA-Z]+)", repeats = True),
+                SM (r"\s*\|\s*Hirshfeld charge\s*:\s*(?P<fhi_aims_hirschfeld_charge>[-+0-9.]+)", repeats = True),
+                SM (r"\s*\|\s*Free atom volume\s*:\s*(?P<fhi_aims_free_atom_volume>[-+0-9.]+)", repeats = True),
+                SM (r"\s*\|\s*Hirshfeld volume\s*:\s*(?P<fhi_aims_hirschfeld_volume>[-+0-9.]+)", repeats = True)
+                ]),
+            SM (r"\s*\|\s*van der Waals energy corr.\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<fhi_aims_vdW_energy_corr_TS__eV>[-+0-9.eEdD]+) *eV")  
+        ])
     ########################################
     # return main Parser
     return SM (name = 'Root',
@@ -1467,7 +1485,9 @@ def build_FhiAimsMainFileSimpleMatcher():
                     # perturbative DOS
                     perturbDosSubMatcher,
                     # band structure
-                    bandStructureSubMatcher
+                    bandStructureSubMatcher,
+                    # TS van der Waals
+                    TS_VanDerWaalsSubMatcher
                     ]), # END SingleConfigurationCalculation
                 # parse updated geometry for relaxation
                 geometryRelaxationSubMatcher,
