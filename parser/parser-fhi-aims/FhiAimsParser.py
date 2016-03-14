@@ -1285,6 +1285,21 @@ def build_FhiAimsMainFileSimpleMatcher():
                 ]),
             SM (r"\s*\|\s*van der Waals energy corr.\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<fhi_aims_vdW_energy_corr_TS__eV>[-+0-9.eEdD]+) *eV")  
         ])
+    ########################################                                    
+    # submatcher for total energy components during SCF interation              
+    ScgwEnergyScfSubMatcher = SM (name = 'ScgwEnergyScfSubMatcher',                     
+        startReStr = r"\s*\---\s*GW Total Energy Calculation",                            
+        sections = ['section_scf_iteration'],
+        repeats = True,
+        subMatchers = [                                                         
+        SM (r"\s*\|\s*Galitskii-Migdal Total Energy\s*:\s*(?P<fhi_aims_scgw_galitskii_migdal_total_energy__eV>[-+0-9.eEdD]+) *eV"),
+        SM (r"\s*\|\s*GW Kinetic Energy\s*:\s*(?P<fhi_aims_scgw_kinetic_energy__eV>[-+0-9.eEdD]+) *eV"),
+        SM (r"\s*\|\s*Hartree energy from GW density\s*:\s*(?P<fhi_aims_scgw_hartree_energy_sum_eigenvalues_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
+        SM (r"\s*\|\s*GW correlation Energy\s*:\s*(?P<fhi_aims_energy_scgw_correlation_energy__eV>[-+0-9.eEdD]+) *eV"),
+        SM (r"\s*\|\s*RPA correlation Energy\s*:\s*(?P<fhi_aims_scgw_rpa_correlation_energy__eV>[-+0-9.eEdD]+) *eV"),
+        SM (r"\s*\|\s*Sigle Particle Energy\s*:\s*(?P<fhi_aims_single_particle_energy__eV>[-+0-9.eEdD]+) *eV"),
+        SM (r"\s*\|\s*Fit accuracy for G\(w\)\s*(?P<fhi_aims_poles_fit_accuracy>[-+0-9.eEdD]+)")
+        ])    
     ########################################
     # return main Parser
     return SM (name = 'Root',
@@ -1487,7 +1502,9 @@ def build_FhiAimsMainFileSimpleMatcher():
                     # band structure
                     bandStructureSubMatcher,
                     # TS van der Waals
-                    TS_VanDerWaalsSubMatcher
+                    TS_VanDerWaalsSubMatcher,
+                    # self-consistent GW
+                    ScgwEnergyScfSubMatcher 
                     ]), # END SingleConfigurationCalculation
                 # parse updated geometry for relaxation
                 geometryRelaxationSubMatcher,
