@@ -1274,7 +1274,7 @@ def build_FhiAimsMainFileSimpleMatcher():
         sections = ['fhi_aims_section_vdW_TS'],
         repeats = True,
         subMatchers = [ 
-            SM (startReStr = r"\s*\|\s*Atom",                       
+            SM (startReStr = r"\s*\|\s*Atom\s*[0-9]:\s*[a-zA-Z]+",                       
                 repeats = True,                                                 
                 forwardMatch = True,                                            
                 subMatchers = [                                                 
