@@ -394,10 +394,12 @@ class FhiAimsParserContext(object):
                     self.MDUnitCell = np.asarray(unit_cell)
                 else:
                     backend.addArrayValues('simulation_cell', np.asarray(unit_cell))
+                    backend.addArrayValues('configuration_periodic_dimensions', np.asarray([True, True, True]))
                 self.periodicCalc = True
         # write stored unit cell in case of MD
         if self.periodicCalc and self.MD and self.scfIterNr > -1:
             backend.addArrayValues('simulation_cell', self.MDUnitCell)
+            backend.addArrayValues('configuration_periodic_dimensions', np.asarray([True, True, True]))
 
     def onClose_section_single_configuration_calculation(self, backend, gIndex, section):
         """Trigger called when section_single_configuration_calculation is closed.
