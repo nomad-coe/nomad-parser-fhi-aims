@@ -1315,6 +1315,7 @@ def build_FhiAimsMainFileSimpleMatcher():
             repeats = True,
             required = True,
             forwardMatch = True,
+            fixedStartValues={'program_name': 'FHI-aims', 'program_basis_set_type': 'numeric AOs' },
             sections = ['section_run'],
             subMatchers = [
             # header specifing version, compilation info, task assignment
