@@ -83,6 +83,7 @@ class FhiAimsParserContext(object):
         self.dosFound = False
         self.dos_energies = None
         self.dos_values = None
+	self.lastCalculationGIndex = None
 
     def startedParsing(self, fInName, parser):
         """Function is called when the parsing starts.
@@ -473,7 +474,7 @@ class FhiAimsParserContext(object):
         if self.dosFound:
             self.dosRefSingleConfigurationCalculation = gIndex
             self.dosFound = False
-
+        self.lastCalculationGIndex = gIndex
     def onClose_fhi_aims_section_eigenvalues_ZORA(self, backend, gIndex, section):
         """Trigger called when fhi_aims_section_eigenvalues_ZORA is closed.
 
@@ -753,16 +754,14 @@ class FhiAimsParserContext(object):
                 else:
                     logger.error("Band structure parsing unsuccessful. Found band structure calculation in main file, but none of the corresponding bandXYYY.out files could be parsed successfully.")
 
-#    def onClose_fhi_aims_section_controlInOut_atom_species(self, backend, gIndex, section):
-#        """doc"""                                                              
-#    def onClose_section_atom_type(self, backend, gIndex, section):
-#        """doc"""                                                              
-        #logger.warning("Free-atom basis for %s: basis_func_type: %s n = %s l = %s radius = %s", section["fhi_aims_controlInOut_species_name"], section["fhi_aims_controlInOut_basis_func_type"], section["fhi_aims_controlInOut_basis_func_n"], 
-	#section["fhi_aims_controlInOut_basis_func_l"], section["fhi_aims_controlInOut_basis_func_radius"])
-        #logger.warning("Free-ion basis for %s: n = %s l = %s width = %s", section["fhi_aims_controlInOut_species_name"], section["fhi_aims_controlInOut_free_ion_n"], section["fhi_aims_controlInOut_free_ion_l"], section["fhi_aims_controlInOut_free_ion_width"])
-        #logger.warning("Hydrogenic-basis for %s: n = %s l = %s width = %s", section["fhi_aims_controlInOut_species_name"], section["fhi_aims_controlInOut_hydro_basis_n"], section["fhi_aims_controlInOut_hydro_basis_l"], section["fhi_aims_controlInOut_hydro_basis_width"])
-        #logger.warning("Ionic-basis for %s: n = %s l = %s", section["fhi_aims_controlInOut_species_name"], section["fhi_aims_controlInOut_ionic_basis_n"], section["fhi_aims_controlInOut_ionic_basis_l"])
-                
+    def setStartingPointCalculation(self, parser):
+ 	backend = parser.backend
+        backend.openSection('section_calculation_to_calculation_refs')             
+        backend.addValue('calculation_to_calculation_ref', self.lastCalculationGIndex)
+        backend.addValue('calculation_to_calculation_kind', 'pertubative GW')
+#        backend.closeSection('section_calculation_to_calculation_refs') 
+	return None
+
 def build_FhiAimsMainFileSimpleMatcher():
     """Builds the SimpleMatcher to parse the main file of FHI-aims.
 
@@ -1047,7 +1046,7 @@ def build_FhiAimsMainFileSimpleMatcher():
             addStr: String that is appended to the metadata names.
     
         Returns:
-            SimpleMatcher that parses eigenvalues with metadata ccording to addStr. 
+            SimpleMatcher that parses eigenvalues with metadata according to addStr. 
         """
         # submatcher for eigenvalue list
         EigenvaluesListSubMatcher =  SM (name = 'EigenvaluesLists',
@@ -1111,6 +1110,44 @@ def build_FhiAimsMainFileSimpleMatcher():
     # now construct the two subMatchers
     EigenvaluesGroupSubMatcher = build_eigenvaluesGroupSubMatcher('')
     EigenvaluesGroupSubMatcherZORA = build_eigenvaluesGroupSubMatcher('_ZORA')
+    ########################################
+    # submatcher for pertubative GW eigenvalues
+    # first define function to build subMatcher 
+    def build_GWeigenvaluesGroupSubMatcher(addStr):
+        """Builds the SimpleMatcher to parse the iperturbative GW eigenvalues in aims.
+    
+        Args:
+            addStr: String that is appended to the metadata names.
+    
+        Returns:
+            SimpleMatcher that parses eigenvalues with metadata according to addStr. 
+        """
+        # submatcher for eigenvalue list
+        GWEigenvaluesListSubMatcher =  SM (name = 'EigenvaluesLists',
+            startReStr = r"\s*state\s+occ_num\s+e_gs\s+e_x\^ex",
+            sections = ['fhi_aims_section_eigenvalues_list%s' % addStr],
+            subMatchers = [
+            SM (startReStr = r"\s*[0-9]+\s+(?P<fhi_aims_eigenvalue_occupation%s>[0-9.eEdD]+)\s+[-+0-9.eEdD]+\s+(?P<fhi_aims_eigenvalue_eigenvalue%s__eV>[-+0-9.eEdD]+)" % (2 * (addStr,)), 
+            adHoc = lambda parser: parser.superContext.setStartingPointCalculation(parser),repeats = True)
+            ])
+        return SM (name = 'EigenvaluesGroup',
+            startReStr = r"\s*GW quasiparticle calculation starts ...",
+            sections = ['fhi_aims_section_eigenvalues_group%s' % addStr],
+            subMatchers = [
+            # non-spin-polarized, non-periodic
+            SM (name = 'GW_EigenvaluesNoSpinNonPeriodic',
+                startReStr = r"\s*state\s+occ_num\s+e_gs\s+e_x\^ex",
+                sections = ['fhi_aims_section_eigenvalues_spin%s' % addStr],
+                forwardMatch = True,
+                subMatchers = [
+                SM (r"\s*-+"),
+               SM (r"\s*-+"),
+                GWEigenvaluesListSubMatcher.copy()
+                ]), # END EigenvaluesNoSpinNonPeriodic
+            ])
+    # now construct the two subMatchers
+    GWEigenvaluesGroupSubMatcher = build_GWeigenvaluesGroupSubMatcher('')
+
     ########################################
     # submatcher for total energy components during SCF interation
     TotalEnergyScfSubMatcher = SM (name = 'TotalEnergyScf',
@@ -1507,7 +1544,9 @@ def build_FhiAimsMainFileSimpleMatcher():
                     # TS van der Waals
                     TS_VanDerWaalsSubMatcher,
                     # self-consistent GW
-                    ScgwEnergyScfSubMatcher 
+                    ScgwEnergyScfSubMatcher, 
+                    # perturbative GW
+                    GWEigenvaluesGroupSubMatcher 
                     ]), # END SingleConfigurationCalculation
                 # parse updated geometry for relaxation
                 geometryRelaxationSubMatcher,
