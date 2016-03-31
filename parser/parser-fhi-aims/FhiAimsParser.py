@@ -1114,7 +1114,7 @@ def build_FhiAimsMainFileSimpleMatcher():
     # submatcher for pertubative GW eigenvalues
     # first define function to build subMatcher 
     def build_GWeigenvaluesGroupSubMatcher(addStr):
-        """Builds the SimpleMatcher to parse the iperturbative GW eigenvalues in aims.
+        """Builds the SimpleMatcher to parse the perturbative GW eigenvalues in aims.
     
         Args:
             addStr: String that is appended to the metadata names.
@@ -1123,14 +1123,15 @@ def build_FhiAimsMainFileSimpleMatcher():
             SimpleMatcher that parses eigenvalues with metadata according to addStr. 
         """
         # submatcher for eigenvalue list
-        GWEigenvaluesListSubMatcher =  SM (name = 'EigenvaluesLists',
+        GWEigenvaluesListSubMatcher = SM (name = 'perturbativeGW_EigenvaluesLists',
             startReStr = r"\s*state\s+occ_num\s+e_gs\s+e_x\^ex",
             sections = ['fhi_aims_section_eigenvalues_list%s' % addStr],
             subMatchers = [
             SM (startReStr = r"\s*[0-9]+\s+(?P<fhi_aims_eigenvalue_occupation%s>[0-9.eEdD]+)\s+[-+0-9.eEdD]+\s+(?P<fhi_aims_eigenvalue_eigenvalue%s__eV>[-+0-9.eEdD]+)" % (2 * (addStr,)), 
-            adHoc = lambda parser: parser.superContext.setStartingPointCalculation(parser),repeats = True)
+            adHoc = lambda parser: parser.superContext.setStartingPointCalculation(parser),
+            repeats = True)
             ])
-        return SM (name = 'EigenvaluesGroup',
+        return SM (name = 'perturbativeGW_EigenvaluesGroup',
             startReStr = r"\s*GW quasiparticle calculation starts ...",
             sections = ['fhi_aims_section_eigenvalues_group%s' % addStr],
             subMatchers = [
@@ -1146,7 +1147,7 @@ def build_FhiAimsMainFileSimpleMatcher():
                 ]), # END EigenvaluesNoSpinNonPeriodic
             ])
     # now construct the two subMatchers
-    GWEigenvaluesGroupSubMatcher = build_GWeigenvaluesGroupSubMatcher('')
+    GWEigenvaluesGroupSubMatcher = build_GWeigenvaluesGroupSubMatcher('_perturbativeGW')
 
     ########################################
     # submatcher for total energy components during SCF interation
