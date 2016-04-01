@@ -1124,10 +1124,12 @@ def build_FhiAimsMainFileSimpleMatcher():
         """
         # submatcher for eigenvalue list
         GWEigenvaluesListSubMatcher = SM (name = 'perturbativeGW_EigenvaluesLists',
-            startReStr = r"\s*state\s+occ_num\s+e_gs\s+e_x\^ex",
+            startReStr = r"\s*state\s+occ_num\s+e_gs\s+e_x\^ex\s+e_xc\^gs\s+e_c\^nloc\s+e_qp",
             sections = ['fhi_aims_section_eigenvalues_list%s' % addStr],
             subMatchers = [
-            SM (startReStr = r"\s*[0-9]+\s+(?P<fhi_aims_eigenvalue_occupation%s>[0-9.eEdD]+)\s+[-+0-9.eEdD]+\s+(?P<fhi_aims_eigenvalue_eigenvalue%s__eV>[-+0-9.eEdD]+)" % (2 * (addStr,)), 
+            SM (startReStr = r"\s*[0-9]+\s+(?P<fhi_aims_eigenvalue_occupation%s>[0-9.eEdD]+)\s+(?P<fhi_aims_eigenvalue_ks_GroundState__eV>[-+0-9.eEdD]+)\s+"
+                              "(?P<fhi_aims_eigenvalue_ExactExchange_perturbativeGW__eV>[-+0-9.eEdD]+)\s+(?P<fhi_aims_eigenvalue_ks_ExchangeCorrelation__eV>[-+0-9.eEdD]+)\s+"
+                              "(?P<fhi_aims_eigenvalue_correlation_perturbativeGW__eV>[-+0-9.eEdD]+)\s+(?P<fhi_aims_eigenvalue_quasiParticle_energy__eV>[-+0-9.eEdD]+)" % (1 * (addStr,)), 
             adHoc = lambda parser: parser.superContext.setStartingPointCalculation(parser),
             repeats = True)
             ])
@@ -1137,7 +1139,7 @@ def build_FhiAimsMainFileSimpleMatcher():
             subMatchers = [
             # non-spin-polarized, non-periodic
             SM (name = 'GW_EigenvaluesNoSpinNonPeriodic',
-                startReStr = r"\s*state\s+occ_num\s+e_gs\s+e_x\^ex",
+                startReStr = r"\s*state\s+occ_num\s+e_gs\s+e_x\^ex\s+e_xc\^gs\s+e_c\^nloc\s+e_qp",
                 sections = ['fhi_aims_section_eigenvalues_spin%s' % addStr],
                 forwardMatch = True,
                 subMatchers = [
