@@ -10,6 +10,7 @@ syntax: glob
 *.bk
 *.swp
 .DS_Store
+*.annotate
 
 # eclipse conf file
 .settings
