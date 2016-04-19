@@ -31,6 +31,7 @@ object FhiAimsParser extends SimpleExternalParserGenerator(
     "parser-fhi-aims/FhiAimsBandParser.py",
     "parser-fhi-aims/FhiAimsDosParser.py",
     "parser-fhi-aims/setup_paths.py",
+    "nomad_meta_info/public.nomadmetainfo.json",
     "nomad_meta_info/common.nomadmetainfo.json",
     "nomad_meta_info/meta_types.nomadmetainfo.json",
     "nomad_meta_info/fhi_aims.nomadmetainfo.json"
