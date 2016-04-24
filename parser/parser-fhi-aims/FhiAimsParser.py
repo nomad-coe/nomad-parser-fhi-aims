@@ -757,7 +757,8 @@ class FhiAimsParserContext(object):
     def setStartingPointCalculation(self, parser):
  	backend = parser.backend
         backend.openSection('section_calculation_to_calculation_refs')             
-        backend.addValue('calculation_to_calculation_ref', self.lastCalculationGIndex)
+        if self.lastCalculationGIndex:
+            backend.addValue('calculation_to_calculation_ref', self.lastCalculationGIndex)
         backend.addValue('calculation_to_calculation_kind', 'pertubative GW')
 #        backend.closeSection('section_calculation_to_calculation_refs') 
 	return None
