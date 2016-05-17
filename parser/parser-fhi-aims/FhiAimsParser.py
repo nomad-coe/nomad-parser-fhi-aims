@@ -346,8 +346,8 @@ class FhiAimsParserContext(object):
             else:
                 logger.error("The shape %s of array band_segm_start and the shape %s of array band_segm_end are inconsistent." % (band_segm_start.shape, band_segm_end.shape))
 
-    def onClose_section_system_description(self, backend, gIndex, section):
-        """Trigger called when section_system_description is closed.
+    def onClose_section_system(self, backend, gIndex, section):
+        """Trigger called when section_system is closed.
 
         Writes atomic positions, atom labels and lattice vectors.
         """
@@ -409,7 +409,7 @@ class FhiAimsParserContext(object):
         Check for convergence of geometry optimization.
         Write eigenvalues.
         Write converged energy values (not for scalar ZORA as these values are extracted separatly).
-        Write reference to section_method and section_system_description
+        Write reference to section_method and section_system
         """
         # write number of SCF iterations
         backend.addValue('scf_dft_number_of_iterations', self.scfIterNr)
@@ -467,7 +467,7 @@ class FhiAimsParserContext(object):
         if self.forces_raw:
             # need to transpose array since its shape is [number_of_atoms,3] in the metadata
             backend.addArrayValues('atom_forces_free_raw', np.transpose(np.asarray(self.forces_raw)))
-        # write the references to section_method and section_system_description
+        # write the references to section_method and section_system
         backend.addValue('single_configuration_to_calculation_method_ref', self.secMethodIndex)
         backend.addValue('single_configuration_calculation_to_system_description_ref', self.secSystemDescriptionIndex)
         # get reference to current section_single_configuration_calculation if DOS was found in there
@@ -986,7 +986,7 @@ def build_FhiAimsMainFileSimpleMatcher():
     # using the geometry output of aims has the advantage that it has a clearer structure
     geometrySubMatcher = SM (name = 'Geometry',
         startReStr = r"\s*Reading geometry description geometry\.in\.",
-        sections = ['section_system_description'],
+        sections = ['section_system'],
         subMatchers = [
         SM (r"\s*-{20}-*", weak = True),
         SM (r"\s*Input structure read successfully\."),
@@ -1007,7 +1007,7 @@ def build_FhiAimsMainFileSimpleMatcher():
     # subMatcher for geometry after relaxation step
     geometryRelaxationSubMatcher = SM (name = 'GeometryRelaxation',
         startReStr = r"\s*Updated atomic structure:",
-        sections = ['section_system_description'],
+        sections = ['section_system'],
         subMatchers = [
         SM (r"\s*x \[A\]\s*y \[A\]\s*z \[A\]"),
         SM (startReStr = r"\s*lattice_vector\s*[-+0-9.]+\s+[-+0-9.]+\s+[-+0-9.]+",
@@ -1028,7 +1028,7 @@ def build_FhiAimsMainFileSimpleMatcher():
     # subMatcher for MD geometry that was used for the finished SCF cycle (see word 'preceding' in the description)
     geometryMDSubMatcher = SM (name = 'GeometryMD',
             startReStr = r"\s*(?:A|Final a)tomic structure \(and velocities\) as used in the preceding time step:",
-        sections = ['section_system_description'],
+        sections = ['section_system'],
         subMatchers = [
         SM (r"\s*x \[A\]\s*y \[A\]\s*z \[A\]\s*Atom"),
         SM (startReStr = r"\s*atom\s+(?P<fhi_aims_geometry_atom_position_x__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_atom_position_y__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_atom_position_z__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_atom_label>[a-zA-Z]+)",
