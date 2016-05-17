@@ -60,7 +60,7 @@ class FhiAimsDosParserContext(object):
                 strings = string.split()
                 dos_values.append(map(float, strings))
         if dos_values:
-            # need to transpose array since its shape is [max_spin_channel,n_dos_values] in the metadata
+            # need to transpose array since its shape is [number_of_spin_channels,n_dos_values] in the metadata
             self.dos_values = np.transpose(np.asarray(dos_values))
         # write metadata only if values were found for both quantities
         if self.writeMetaData:

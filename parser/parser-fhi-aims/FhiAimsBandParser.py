@@ -20,7 +20,7 @@ class FhiAimsBandParserContext(object):
     Attributes:
         band_energies: Stores parsed eigenvalues.
         band_k_points Stores parsed k-points.
-        band_occupation: Stores parsed occupations.
+        band_occupations: Stores parsed occupations.
 
     The onClose_ functions allow processing and writing of cached values after a section is closed.
     They take the following arguments:
@@ -49,7 +49,7 @@ class FhiAimsBandParserContext(object):
         # allows to reset values if the same superContext is used to parse different files
         self.band_energies = None
         self.band_k_points = None
-        self.band_occupation = None
+        self.band_occupations = None
 
     def onClose_section_k_band(self, backend, gIndex, section):
         """Trigger called when section_k_band is closed.
@@ -66,31 +66,31 @@ class FhiAimsBandParserContext(object):
             # need to transpose array since its shape is [n_k_points_per_segment,3] in the metadata
             self.band_k_points = np.transpose(np.asarray(band_k))
         # extract occupations and eigenvalues
-        band_occupation = []
+        band_occupations = []
         band_energies = []
-        if section['fhi_aims_band_occupation_eigenvalue_string'] is not None:
-            for string in section['fhi_aims_band_occupation_eigenvalue_string']:
+        if section['fhi_aims_band_occupations_eigenvalue_string'] is not None:
+            for string in section['fhi_aims_band_occupations_eigenvalue_string']:
                 strings = string.split()
                 # first number is occupation and then every second one
-                band_occupation.append(map(float, strings[0::2]))
+                band_occupations.append(map(float, strings[0::2]))
                 # second number is eigenvalue and then every second one
                 # convert units
                 band_energies.append(map(self.converter, map(float, strings[1::2])))
 
-        if band_occupation:
+        if band_occupations:
             # do not need to transpose array since its shape is [n_k_points,n_eigen_values] in the metadata
-            self.band_occupation = np.asarray(band_occupation)
+            self.band_occupations = np.asarray(band_occupations)
         if band_energies:
             # do not need to transpose array since its shape is [n_k_points,n_eigen_values] in the metadata
             self.band_energies = np.asarray(band_energies)
         # write metadata only if values were found for all three quantities
         if self.writeMetaData:
-            if band_k and band_occupation and band_energies:
+            if band_k and band_occupations and band_energies:
                 # need to add dimension for number_of_k_point_segments
                 backend.addArrayValues('band_k_points', np.asarray([self.band_k_points]))
-                # need to add dimension for number_of_k_point_segments and max_spin_channel
-                backend.addArrayValues('band_occupation', np.asarray([[self.band_occupation]]))
-                # need to add dimension for number_of_k_point_segments and max_spin_channel
+                # need to add dimension for number_of_k_point_segments and number_of_spin_channels
+                backend.addArrayValues('band_occupations', np.asarray([[self.band_occupations]]))
+                # need to add dimension for number_of_k_point_segments and number_of_spin_channels
                 backend.addArrayValues('band_energies', np.asarray([[self.band_energies]]))
 
 def build_FhiAimsBandFileSimpleMatcher():
@@ -120,7 +120,7 @@ def build_FhiAimsBandFileSimpleMatcher():
                 forwardMatch = True,
                 weak = True,
                 subMatchers = [
-                SM (r"\s*[0-9]+\s+(?P<fhi_aims_band_k1>[-+0-9.]+)\s+(?P<fhi_aims_band_k2>[-+0-9.]+)\s+(?P<fhi_aims_band_k3>[-+0-9.]+)\s+(?P<fhi_aims_band_occupation_eigenvalue_string>[-+0-9.\s]+)", repeats = True)
+                SM (r"\s*[0-9]+\s+(?P<fhi_aims_band_k1>[-+0-9.]+)\s+(?P<fhi_aims_band_k2>[-+0-9.]+)\s+(?P<fhi_aims_band_k3>[-+0-9.]+)\s+(?P<fhi_aims_band_occupations_eigenvalue_string>[-+0-9.\s]+)", repeats = True)
                 ])
             ])
         ])

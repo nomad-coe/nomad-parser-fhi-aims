@@ -74,7 +74,7 @@ class FhiAimsParserContext(object):
         self.parsedControlInFile = False
         self.controlInSuperContext = None
         self.eigenvalues_occupation = []
-        self.eigenvalues_eigenvalues = []
+        self.eigenvalues_values = []
         self.eigenvalues_kpoints = []
         self.forces_raw = []
         self.dosSuperContext = None
@@ -140,7 +140,7 @@ class FhiAimsParserContext(object):
                         kpoints.append(ki)
                 # append values for each spin channel
                 self.eigenvalues_occupation.append(occs)
-                self.eigenvalues_eigenvalues.append(evs)
+                self.eigenvalues_values.append(evs)
                 if kpoints:
                     # transpose list
                     kpoints = map(lambda *x: list(x), *kpoints)
@@ -306,8 +306,8 @@ class FhiAimsParserContext(object):
             if section['fhi_aims_controlInOut_relativistic'][-1] == 'ZORA':
                 self.scalarZORA = True
         # get number of spin channels
-        if section['fhi_aims_controlInOut_max_spin_channel'] is not None:
-            self.maxSpinChannel = section['fhi_aims_controlInOut_max_spin_channel'][-1]
+        if section['fhi_aims_controlInOut_number_of_spin_channels'] is not None:
+            self.maxSpinChannel = section['fhi_aims_controlInOut_number_of_spin_channels'][-1]
         # convert relativistic setting to metadata string
         InOut_relativistic = section['fhi_aims_controlInOut_relativistic']
         if InOut_relativistic is not None:
@@ -359,16 +359,16 @@ class FhiAimsParserContext(object):
             # write atomic positions
             atom_pos = []
             for i in ['x', 'y', 'z']:
-                api = section['fhi_aims_geometry_atom_position_' + i]
+                api = section['fhi_aims_geometry_atom_positions_' + i]
                 if api is not None:
                     atom_pos.append(api)
             if atom_pos:
                 # need to transpose array since its shape is [number_of_atoms,3] in the metadata
-                backend.addArrayValues('atom_position', np.transpose(np.asarray(atom_pos)))
+                backend.addArrayValues('atom_positions', np.transpose(np.asarray(atom_pos)))
             # write atom labels
-            atom_labels = section['fhi_aims_geometry_atom_label']
+            atom_labels = section['fhi_aims_geometry_atom_labels']
             if atom_labels is not None:
-                backend.addArrayValues('atom_label', np.asarray(atom_labels))
+                backend.addArrayValues('atom_labels', np.asarray(atom_labels))
             # write atomic velocities in the case of MD
             if self.MD:
                 atom_vel = []
@@ -412,7 +412,7 @@ class FhiAimsParserContext(object):
         Write reference to section_method and section_system
         """
         # write number of SCF iterations
-        backend.addValue('scf_dft_number_of_iterations', self.scfIterNr)
+        backend.addValue('number_of_scf_iterations', self.scfIterNr)
         # write SCF convergence and reset
         backend.addValue('single_configuration_calculation_converged', self.scfConvergence)
         self.scfConvergence = False
@@ -425,9 +425,9 @@ class FhiAimsParserContext(object):
         # start with -1 since zeroth iteration is the initialization
         self.scfIterNr = -1
         # write eigenvalues if found
-        if self.eigenvalues_occupation and self.eigenvalues_eigenvalues:
+        if self.eigenvalues_occupation and self.eigenvalues_values:
             occ = np.asarray(self.eigenvalues_occupation)
-            ev = np.asarray(self.eigenvalues_eigenvalues)
+            ev = np.asarray(self.eigenvalues_values)
             # check if there is the same number of spin channels
             if len(occ) == len(ev):
                 kpt = None
@@ -439,7 +439,7 @@ class FhiAimsParserContext(object):
                     for i in range(len(occ)):
                         gIndexTmp = backend.openSection('section_eigenvalues')
                         backend.addArrayValues('eigenvalues_occupation', occ[i])
-                        backend.addArrayValues('eigenvalues_eigenvalues', ev[i])
+                        backend.addArrayValues('eigenvalues_values', ev[i])
                         if kpt is not None:
                             backend.addArrayValues('eigenvalues_kpoints', kpt[i])
                         backend.closeSection('section_eigenvalues', gIndexTmp)
@@ -482,7 +482,7 @@ class FhiAimsParserContext(object):
         """
         # reset eigenvalues
         self.eigenvalues_occupation = []
-        self.eigenvalues_eigenvalues = []
+        self.eigenvalues_values = []
         self.eigenvalues_kpoints = []
         self.update_eigenvalues(section, '_ZORA')
 
@@ -511,7 +511,7 @@ class FhiAimsParserContext(object):
                 self.totalEnergyList[k] = section[k + '_scf_iteration']
             # reset eigenvalues
             self.eigenvalues_occupation = []
-            self.eigenvalues_eigenvalues = []
+            self.eigenvalues_values = []
             self.eigenvalues_kpoints = []
             self.update_eigenvalues(section, '')
         # keep track of raw forces
@@ -671,15 +671,15 @@ class FhiAimsParserContext(object):
                         projected_dos[i] = np.vstack((projected_dos[i], np.zeros((max_n_l - l[i] , projected_dos[i].shape[1]))))
             # write values
             backend.addArrayValues( kind + '_projected_dos_energies', dos_energies)
-            # need to swap axis 0 (number_of_*) and axis 1 (max_spin_channel)
-            # since its shape is [max_spin_channel,number_of_*,n_*_projected_dos_values] in the metadata
+            # need to swap axis 0 (number_of_*) and axis 1 (number_of_spin_channels)
+            # since its shape is [number_of_spin_channels,number_of_*,n_*_projected_dos_values] in the metadata
             backend.addArrayValues(kind + '_projected_dos_values_total', np.swapaxes(np.asarray(dos_total), 0, 1))
             # in aims there is no projected DOS for per m value
             backend.addValue(kind + '_projected_dos_m_kind', 'integrated')
             # we create an array of the form [[0,0], [1,0], ..., [max_n_l-1,0]] to specify the l values for the projected DOS
             backend.addArrayValues(kind + '_projected_dos_lm', np.column_stack((np.arange(max_n_l), np.zeros(max_n_l, dtype=np.int))))
             # need to swap axis 0 (number_of_*) and axis 2 (number_of_lm_*_projected_dos)
-            # since its shape is [number_of_lm_*_projected_dos,max_spin_channel,number_of_*,n_*_projected_dos_values] in the metadata
+            # since its shape is [number_of_lm_*_projected_dos,number_of_spin_channels,number_of_*,n_*_projected_dos_values] in the metadata
             backend.addArrayValues(kind + '_projected_dos_values_lm', np.swapaxes(np.asarray(dos_l), 0, 2))
             return 0
         else:
@@ -704,7 +704,7 @@ class FhiAimsParserContext(object):
                     superContext = bandSuperContext)
                 band_k_points = []
                 band_energies = []
-                band_occupation = []
+                band_occupations = []
                 parsed_segments = []
                 # get directiory of currently parsed file
                 dirName = os.path.dirname(os.path.abspath(self.fName))
@@ -712,7 +712,7 @@ class FhiAimsParserContext(object):
                 for seg in section['fhi_aims_band_segment']:
                     band_k_points_seg = None
                     band_energies_spin = []
-                    band_occupation_spin = []
+                    band_occupations_spin = []
                     # loop over spin channels
                     for spin in range(1, self.maxSpinChannel + 1):
                         # construct file name
@@ -723,7 +723,7 @@ class FhiAimsParserContext(object):
                                 # parse band.out file
                                 bandParser.parseFile(fIn)
                                 # extract values
-                                if all(x is not None for x in [bandSuperContext.band_energies, bandSuperContext.band_k_points, bandSuperContext.band_occupation]):
+                                if all(x is not None for x in [bandSuperContext.band_energies, bandSuperContext.band_k_points, bandSuperContext.band_occupations]):
                                     # check if k-points are the same for the spin channels
                                     if band_k_points_seg is None:
                                         band_k_points_seg = bandSuperContext.band_k_points
@@ -731,24 +731,24 @@ class FhiAimsParserContext(object):
                                         band_k_points_seg = None
                                         logger.warning("The k-points of spin channel 1 in file band1%03d.out and spin channel %d in file %s are not equal in directory '%s'." % (seg, spin, bFile, dirName))
                                     band_energies_spin.append(bandSuperContext.band_energies)
-                                    band_occupation_spin.append(bandSuperContext.band_occupation)
+                                    band_occupations_spin.append(bandSuperContext.band_occupations)
                                 else:
                                     logger.warning("Parsing of band structure file %s in directory '%s' did not yield values for k-points, energies, or occupations." % (bFile, dirName))
                         except IOError:
                             logger.warning("Could not find %s file in directory '%s'." % (bFile, dirName))
                     # append values for spin channels to list and save which segment was parsed successfully
-                    if band_k_points_seg is not None and len(band_energies_spin) == self.maxSpinChannel and len(band_occupation_spin) == self.maxSpinChannel:
+                    if band_k_points_seg is not None and len(band_energies_spin) == self.maxSpinChannel and len(band_occupations_spin) == self.maxSpinChannel:
                         parsed_segments.append(seg - 1)
                         band_k_points.append(band_k_points_seg)
                         band_energies.append(band_energies_spin)
-                        band_occupation.append(band_occupation_spin)
+                        band_occupations.append(band_occupations_spin)
                     else:
                         logger.warning("Band segement %d could not be parsed correctly. Band structure parsing incomplete." % seg)
                 # write values if band segments were parsed successfully
                 if parsed_segments:
                     backend.addArrayValues('band_energies', np.asarray(band_energies))
                     backend.addArrayValues('band_k_points', np.asarray(band_k_points))
-                    backend.addArrayValues('band_occupation', np.asarray(band_occupation))
+                    backend.addArrayValues('band_occupations', np.asarray(band_occupations))
                     # write only the start/end values of successfully parsed band segments
                     backend.addArrayValues('band_segm_start_end', self.band_segm_start_end[parsed_segments])
                 else:
@@ -1000,7 +1000,7 @@ def build_FhiAimsMainFileSimpleMatcher():
         SM (startReStr = r"\s*\|\s*Atomic structure:",
             subMatchers = [
             SM (r"\s*\|\s*Atom\s*x \[A\]\s*y \[A\]\s*z \[A\]"),
-            SM (r"\s*\|\s*[0-9]+:\s*Species\s+(?P<fhi_aims_geometry_atom_label>[a-zA-Z]+)\s+(?P<fhi_aims_geometry_atom_position_x__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_atom_position_y__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_atom_position_z__angstrom>[-+0-9.]+)", repeats = True)
+            SM (r"\s*\|\s*[0-9]+:\s*Species\s+(?P<fhi_aims_geometry_atom_labels>[a-zA-Z]+)\s+(?P<fhi_aims_geometry_atom_positions_x__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_atom_positions_y__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_atom_positions_z__angstrom>[-+0-9.]+)", repeats = True)
             ])
         ])
     ########################################
@@ -1015,7 +1015,7 @@ def build_FhiAimsMainFileSimpleMatcher():
             subMatchers = [
             SM (r"\s*lattice_vector\s+(?P<fhi_aims_geometry_lattice_vector_x__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_lattice_vector_y__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_lattice_vector_z__angstrom>[-+0-9.]+)", repeats = True)
             ]),
-        SM (r"\s*atom\s+(?P<fhi_aims_geometry_atom_position_x__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_atom_position_y__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_atom_position_z__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_atom_label>[a-zA-Z]+)", repeats = True),
+        SM (r"\s*atom\s+(?P<fhi_aims_geometry_atom_positions_x__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_atom_positions_y__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_atom_positions_z__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_atom_labels>[a-zA-Z]+)", repeats = True),
         SM (startReStr = r"\s*Fractional coordinates:",
             subMatchers = [
             SM ("\s*L1\s*L2\s*L3"),
@@ -1031,7 +1031,7 @@ def build_FhiAimsMainFileSimpleMatcher():
         sections = ['section_system'],
         subMatchers = [
         SM (r"\s*x \[A\]\s*y \[A\]\s*z \[A\]\s*Atom"),
-        SM (startReStr = r"\s*atom\s+(?P<fhi_aims_geometry_atom_position_x__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_atom_position_y__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_atom_position_z__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_atom_label>[a-zA-Z]+)",
+        SM (startReStr = r"\s*atom\s+(?P<fhi_aims_geometry_atom_positions_x__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_atom_positions_y__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_atom_positions_z__angstrom>[-+0-9.]+)\s+(?P<fhi_aims_geometry_atom_labels>[a-zA-Z]+)",
             repeats = True,
             subMatchers = [
             SM (r"\s*velocity\s+(?P<fhi_aims_geometry_atom_velocity_x__angstrom_ps_1>[-+0-9.]+)\s+(?P<fhi_aims_geometry_atom_velocity_y__angstrom_ps_1>[-+0-9.]+)\s+(?P<fhi_aims_geometry_atom_velocity_z__angstrom_ps_1>[-+0-9.]+)")
@@ -1404,7 +1404,7 @@ def build_FhiAimsMainFileSimpleMatcher():
                         SM (r"\s*\|\s*Max\. angular integration grid size\s*:\s*[0-9]+"),
                         SM (r"\s*\|\s*Max\. angular grid division number\s*:\s*[0-9]+"),
                         SM (r"\s*\|\s*Radial grid for Hartree potential\s*:\s*[0-9]+"),
-                        SM (r"\s*\|\s*Number of spin channels\s*:\s*(?P<fhi_aims_controlInOut_max_spin_channel>[0-9]+)")
+                        SM (r"\s*\|\s*Number of spin channels\s*:\s*(?P<fhi_aims_controlInOut_number_of_spin_channels>[0-9]+)")
                     ]), # END ArraySizeParameters
                 # parse settings writeout of aims
                 controlInOutSubMatcher,
