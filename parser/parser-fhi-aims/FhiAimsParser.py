@@ -435,7 +435,7 @@ class FhiAimsParserContext(object):
                     kpt = np.asarray(self.eigenvalues_kpoints)
                 # check if there is the same number of spin channels for the periodic case
                 if kpt is None or len(kpt) == len(ev):
-                    gIndexGroupTmp = backend.openSection('section_eigenvalues_group')
+                    gIndexGroupTmp = backend.openSection('fhi_aims_section_eigenvalues_group')
                     for i in range(len(occ)):
                         gIndexTmp = backend.openSection('section_eigenvalues')
                         backend.addArrayValues('eigenvalues_occupation', occ[i])
@@ -443,7 +443,7 @@ class FhiAimsParserContext(object):
                         if kpt is not None:
                             backend.addArrayValues('eigenvalues_kpoints', kpt[i])
                         backend.closeSection('section_eigenvalues', gIndexTmp)
-                    backend.closeSection('section_eigenvalues_group', gIndexGroupTmp)
+                    backend.closeSection('fhi_aims_section_eigenvalues_group', gIndexGroupTmp)
                 else:
                     logger.warning("Found %d spin channels for eigenvalue kpoints but %d for eigenvalues in single configuration calculation %d." % (len(kpt), len(ev), gIndex))
             else:
@@ -468,8 +468,8 @@ class FhiAimsParserContext(object):
             # need to transpose array since its shape is [number_of_atoms,3] in the metadata
             backend.addArrayValues('atom_forces_free_raw', np.transpose(np.asarray(self.forces_raw)))
         # write the references to section_method and section_system
-        backend.addValue('single_configuration_to_calculation_method_ref', self.secMethodIndex)
-        backend.addValue('single_configuration_calculation_to_system_description_ref', self.secSystemDescriptionIndex)
+        #backend.addValue('single_configuration_to_calculation_method_ref', self.secMethodIndex)
+        #backend.addValue('single_configuration_calculation_to_system_description_ref', self.secSystemDescriptionIndex)
         # get reference to current section_single_configuration_calculation if DOS was found in there
         if self.dosFound:
             self.dosRefSingleConfigurationCalculation = gIndex
