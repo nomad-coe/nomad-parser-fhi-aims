@@ -179,9 +179,11 @@ class FhiAimsParserContext(object):
             backend.addArrayValues('fhi_aims_dos_values', self.dos_values)
             backend.closeSection('fhi_aims_section_dos', gIndexTmp)
         # write geometry optimization convergence
+        gIndexTmp = backend.openSection('section_single_configuration_calculation')
         if self.geoConvergence is not None:
-            backend.addValue('geometry_optimization_converged', self.geoConvergence)
+            backend.addValue('fhi_aims_geometry_optimization_converged', self.geoConvergence)
         # use values of control.in which was parsed in section_method
+        backend.closeSection('section_single_configuration_calculation', gIndexTmp)
         if self.parsedControlInFile:
             if self.controlInSuperContext.sectionRun is not None:
                 valuesDict = self.controlInSuperContext.sectionRun.simpleValues
