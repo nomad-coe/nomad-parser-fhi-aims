@@ -437,15 +437,12 @@ class FhiAimsParserContext(object):
                     kpt = np.asarray(self.eigenvalues_kpoints)
                 # check if there is the same number of spin channels for the periodic case
                 if kpt is None or len(kpt) == len(ev):
-                    gIndexGroupTmp = backend.openSection('fhi_aims_section_eigenvalues_group')
-                    for i in range(len(occ)):
-                        gIndexTmp = backend.openSection('section_eigenvalues')
-                        backend.addArrayValues('eigenvalues_occupation', occ[i])
-                        backend.addArrayValues('eigenvalues_values', ev[i])
-                        if kpt is not None:
-                            backend.addArrayValues('eigenvalues_kpoints', kpt[i])
-                        backend.closeSection('section_eigenvalues', gIndexTmp)
-                    backend.closeSection('fhi_aims_section_eigenvalues_group', gIndexGroupTmp)
+                    gIndexTmp = backend.openSection('section_eigenvalues')
+                    backend.addArrayValues('eigenvalues_occupation', occ)
+                    backend.addArrayValues('eigenvalues_values', ev)
+                    if kpt is not None:
+                        backend.addArrayValues('eigenvalues_kpoints', kpt)
+                    backend.closeSection('section_eigenvalues', gIndexTmp)
                 else:
                     logger.warning("Found %d spin channels for eigenvalue kpoints but %d for eigenvalues in single configuration calculation %d." % (len(kpt), len(ev), gIndex))
             else:
@@ -748,11 +745,14 @@ class FhiAimsParserContext(object):
                         logger.warning("Band segement %d could not be parsed correctly. Band structure parsing incomplete." % seg)
                 # write values if band segments were parsed successfully
                 if parsed_segments:
-                    backend.addArrayValues('band_energies', np.asarray(band_energies))
-                    backend.addArrayValues('band_k_points', np.asarray(band_k_points))
-                    backend.addArrayValues('band_occupations', np.asarray(band_occupations))
-                    # write only the start/end values of successfully parsed band segments
-                    backend.addArrayValues('band_segm_start_end', self.band_segm_start_end[parsed_segments])
+                    for isegment in range(len(parsed_segments)):
+                        segmentGIndex = backend.openSection("section_k_band_segment")
+                        backend.addArrayValues('band_energies', np.asarray(band_energies[isegment]))
+                        backend.addArrayValues('band_k_points', np.asarray(band_k_points[isegment]))
+                        backend.addArrayValues('band_occupations', np.asarray(band_occupations[isegment]))
+                        # write only the start/end values of successfully parsed band segments
+                        backend.addArrayValues('band_segm_start_end', self.band_segm_start_end[parsed_segments[isegment]])
+                        backend.closeSection("section_k_band_segment", segmentGIndex)
                 else:
                     logger.error("Band structure parsing unsuccessful. Found band structure calculation in main file, but none of the corresponding bandXYYY.out files could be parsed successfully.")
 
