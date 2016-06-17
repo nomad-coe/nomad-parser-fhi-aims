@@ -42,5 +42,6 @@ object FhiAimsParser extends SimpleExternalParserGenerator(
     "parser-fhi-aims" -> "parsers/fhi-aims/parser/parser-fhi-aims",
     "nomad_meta_info" -> "nomad-meta-info/meta_info/nomad_meta_info",
     "python" -> "python-common/common/python/nomadcore"
-  ) ++ DefaultPythonInterpreter.commonDirMapping()
+  ) ++ DefaultPythonInterpreter.commonDirMapping(),
+  metaInfoEnv = Some(lab.meta.KnownMetaInfoEnvs.fhiAims)
 )
