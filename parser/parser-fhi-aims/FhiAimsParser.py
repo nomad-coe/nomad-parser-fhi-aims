@@ -1,3 +1,6 @@
+from builtins import map
+from builtins import range
+from builtins import object
 import setup_paths
 import numpy as np
 import nomadcore.ActivateLogging
@@ -9,7 +12,7 @@ import FhiAimsControlInParser
 import FhiAimsBandParser
 import FhiAimsDosParser
 import logging, os, re, sys
-from itertools import izip
+
 
 ############################################################
 # This is the parser for the main file of FHI-aims.
@@ -143,7 +146,7 @@ class FhiAimsParserContext(object):
                 self.eigenvalues_values.append(evs)
                 if kpoints:
                     # transpose list
-                    kpoints = map(lambda *x: list(x), *kpoints)
+                    kpoints = list(map(lambda *x: list(x), *kpoints))
                     self.eigenvalues_kpoints.append(kpoints) 
 
     def compile_dos_parser(self):
@@ -661,7 +664,7 @@ class FhiAimsParserContext(object):
                 dos_l.append(dos_l_spin)
                 n_l.append(n_l_spin)
             # add array of zeros to those projected DOS that have less l values than max_n_l
-            for projected_dos, l in izip(dos_l, n_l):
+            for projected_dos, l in zip(dos_l, n_l):
                 for i in range(len(projected_dos)):
                     if l[i] < max_n_l:
                         # The dimensions of the added zero array are:
