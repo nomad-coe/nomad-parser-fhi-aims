@@ -18,12 +18,12 @@ import logging, os, re, sys
 # This is the parser for the main file of FHI-aims.
 #
 # REMARKS
-# 
-# Energies are parsed in eV to get consistent values 
+#
+# Energies are parsed in eV to get consistent values
 # since not all energies are given in hartree.
 ############################################################
 
-logger = logging.getLogger("nomad.FhiAimsParser") 
+logger = logging.getLogger("nomad.FhiAimsParser")
 
 class FhiAimsParserContext(object):
     """Context for parsing FHI-aims main file.
@@ -86,7 +86,7 @@ class FhiAimsParserContext(object):
         self.dosFound = False
         self.dos_energies = None
         self.dos_values = None
-	self.lastCalculationGIndex = None
+        self.lastCalculationGIndex = None
 
     def startedParsing(self, fInName, parser):
         """Function is called when the parsing starts.
@@ -147,7 +147,7 @@ class FhiAimsParserContext(object):
                 if kpoints:
                     # transpose list
                     kpoints = list(map(lambda *x: list(x), *kpoints))
-                    self.eigenvalues_kpoints.append(kpoints) 
+                    self.eigenvalues_kpoints.append(kpoints)
 
     def compile_dos_parser(self):
         """Instantiate superContext and construct parser for DOS file.
@@ -760,13 +760,13 @@ class FhiAimsParserContext(object):
                     logger.error("Band structure parsing unsuccessful. Found band structure calculation in main file, but none of the corresponding bandXYYY.out files could be parsed successfully.")
 
     def setStartingPointCalculation(self, parser):
- 	backend = parser.backend
-        backend.openSection('section_calculation_to_calculation_refs')             
+        backend = parser.backend
+        backend.openSection('section_calculation_to_calculation_refs')
         if self.lastCalculationGIndex:
             backend.addValue('calculation_to_calculation_ref', self.lastCalculationGIndex)
         backend.addValue('calculation_to_calculation_kind', 'pertubative GW')
-#        backend.closeSection('section_calculation_to_calculation_refs') 
-	return None
+#        backend.closeSection('section_calculation_to_calculation_refs')
+        return None
 
 def build_FhiAimsMainFileSimpleMatcher():
     """Builds the SimpleMatcher to parse the main file of FHI-aims.
@@ -777,7 +777,7 @@ def build_FhiAimsMainFileSimpleMatcher():
     which allows nice formating of nested SimpleMatchers in python.
 
     Returns:
-       SimpleMatcher that parses main file of FHI-aims. 
+       SimpleMatcher that parses main file of FHI-aims.
     """
     ########################################
     # submatcher for control.in
@@ -837,67 +837,67 @@ def build_FhiAimsMainFileSimpleMatcher():
             SM (r"\s*XC:\s*(?P<fhi_aims_controlInOut_xc>HSE) with OMEGA_PBE =\s*[-+0-9.eEdD]+", repeats = True),
             SM (r"\s*XC: Running (?P<fhi_aims_controlInOut_xc>[-_a-zA-Z0-9\s()]+) \.\.\.", repeats = True),
             SM (r"\s*(?P<fhi_aims_controlInOut_xc>Hartree-Fock) calculation starts \.\.\.\.\.\.", repeats = True),
-	    # define some basis set specific SMs
-	    SM (r"\s*Reading configuration options for species\s*(?P<fhi_aims_controlInOut_species_name>[a-zA-Z]+)", repeats=True,			
-	    #SM (r"\s*Reading configuration options for species\s*(?P<atom_type_name>[a-zA-Z]+)", repeats=True,			
+            # define some basis set specific SMs
+            SM (r"\s*Reading configuration options for species\s*(?P<fhi_aims_controlInOut_species_name>[a-zA-Z]+)", repeats=True,
+            #SM (r"\s*Reading configuration options for species\s*(?P<atom_type_name>[a-zA-Z]+)", repeats=True,
                 sections = ["fhi_aims_section_controlInOut_atom_species",'section_atom_type'],
-        	subFlags = SM.SubFlags.Unordered,
-	        subMatchers = [
+                subFlags = SM.SubFlags.Unordered,
+                subMatchers = [
                    SM (r"\s*\|\s*Found\s*request\s*to\s*include\s*pure\s*gaussian\s*fns.\s*:"
-                       r"\s+(?P<fhi_aims_controlInOut_pure_gaussian>[A-Z]+)"  
+                       r"\s+(?P<fhi_aims_controlInOut_pure_gaussian>[A-Z]+)"
                        r"\s*", repeats = True),
-                       #r"\s+(?P<fhi_aims_controlInOut_pure_gaussian>[A-Z]+)"  
+                       #r"\s+(?P<fhi_aims_controlInOut_pure_gaussian>[A-Z]+)"
                        #r"\s*", repeats = True),
                    SM(startReStr = r"\s*\|\s*Found nuclear charge :"
                     #"\s*(?P<fhi_aims_controlInOut_species_charge>[.0-9]+\S)\s*",
                     r"\s*(?P<atom_type_charge>[.0-9]+\S)\s*",
-		   repeats = True),
-	           SM(r"\s*\|\s*Found atomic mass :"
+                   repeats = True),
+                   SM(r"\s*\|\s*Found atomic mass :"
                     #"\s*(?P<fhi_aims_controlInOut_species_mass__amu>[.0-9]+)"
                     r"\s*(?P<atom_type_mass__amu>[.0-9]+)"
                     r"\s*",repeats = True),
-                   SM(r"\s*\|\s*Found cutoff potl. onset \[A\], width \[A\], scale factor :"                            
-                    r"\s*(?P<fhi_aims_controlInOut_species_cut_pot__angstrom>[.0-9]+)"   
-                    r"\s*",repeats = True),   
-		# Parsing for Gaussian basis starts
-                   SM(r"\s*\|\s*Found\s*"                                    
+                   SM(r"\s*\|\s*Found cutoff potl. onset \[A\], width \[A\], scale factor :"
+                    r"\s*(?P<fhi_aims_controlInOut_species_cut_pot__angstrom>[.0-9]+)"
+                    r"\s*",repeats = True),
+                # Parsing for Gaussian basis starts
+                   SM(r"\s*\|\s*Found\s*"
                     #r"(?P<basis_set_atom_centered_unique_name>[-_a-zA-Z0-9\s]+"
                     r"(?P<fhi_aims_controlInOut_basis_func_type>[-_a-zA-Z0-9\s]+"
                     #r"(?P<basis_set_atom_centered_unique_name>[-_a-zA-Z0-9\s]+"
                     r"\S)\s*(?:basis function)\s*:\s*L\s*=\s*"
-		    r"(?P<fhi_aims_controlInOut_basis_func_gauss_l>[0-9]+)"
-		    r"\s*,\s*(?P<fhi_aims_controlInOut_basis_func_gauss_N>[0-9]+)",              
-                   repeats = True,                                         
+                    r"(?P<fhi_aims_controlInOut_basis_func_gauss_l>[0-9]+)"
+                    r"\s*,\s*(?P<fhi_aims_controlInOut_basis_func_gauss_N>[0-9]+)",
+                   repeats = True,
                    #sections = ["fhi_aims_section_controlInOut_basis_func"],
-                   sections = ["fhi_aims_section_controlInOut_basis_func", 
+                   sections = ["fhi_aims_section_controlInOut_basis_func",
                                r"section_basis_set_atom_centered"],
-	           subMatchers = [
+                   subMatchers = [
 
-	                   SM(r"\s*\|\s*alpha\s*=\s*"                                       
-	                    r"(?P<fhi_aims_controlInOut_basis_func_gauss_alpha>[-+0-9.eEdD]+)"
-	                    r"\s*weight\s*=\s*"
-			    r"(?P<fhi_aims_controlInOut_basis_func_gauss_weight>[-+0-9.eEdD]+)",      
-        	           repeats = True,                                              
-	                   sections = ["fhi_aims_section_controlInOut_basis_func"])
-		   ]),
-	
-                   SM(r"\s*\|\s*Found\s*"                                       
+                           SM(r"\s*\|\s*alpha\s*=\s*"
+                            r"(?P<fhi_aims_controlInOut_basis_func_gauss_alpha>[-+0-9.eEdD]+)"
+                            r"\s*weight\s*=\s*"
+                            r"(?P<fhi_aims_controlInOut_basis_func_gauss_weight>[-+0-9.eEdD]+)",
+                           repeats = True,
+                           sections = ["fhi_aims_section_controlInOut_basis_func"])
+                   ]),
+
+                   SM(r"\s*\|\s*Found\s*"
                     #r"(?P<basis_set_atom_centered_unique_name>[-_a-zA-Z0-9\s]+"
                     r"(?P<fhi_aims_controlInOut_basis_func_type>[-_a-zA-Z0-9\s]+"
                     #r"(?P<basis_set_atom_centered_unique_name>[-_a-zA-Z0-9\s]+"
-                    r"\S)\s*(?:basis function)\s*:\s*"                   
-                    r"(?P<fhi_aims_controlInOut_basis_func_gauss_l>[0-9]+)"      
+                    r"\S)\s*(?:basis function)\s*:\s*"
+                    r"(?P<fhi_aims_controlInOut_basis_func_gauss_l>[0-9]+)"
                     r"\s*(?P<fhi_aims_controlInOut_basis_func_primitive_gauss_alpha>[-+0-9.eEdD]+)",
-                   repeats = True,                                              
+                   repeats = True,
                    #sections = ["fhi_aims_section_controlInOut_basis_func"]),
-                   sections = ["fhi_aims_section_controlInOut_basis_func", 
+                   sections = ["fhi_aims_section_controlInOut_basis_func",
                                "section_basis_set_atom_centered"]),
-		# Parsing for Gaussian basis ends
+                # Parsing for Gaussian basis ends
 
-		# Parsing for NAO basis starts
+                # Parsing for NAO basis starts
                    SM(startReStr = r"\s*\|\s*Found free-atom valence",
-                      forwardMatch = True,                                                
-                      subMatchers = [ 
+                      forwardMatch = True,
+                      subMatchers = [
                 # In FHI-aims for a valence or ion_occ basis function the last digit refers to their occupation
                          SM(r"\s*\|\s*Found\s*"
                            "(?P<fhi_aims_controlInOut_basis_func_type>[-_a-zA-Z0-9\s]+"
@@ -906,45 +906,45 @@ def build_FhiAimsMainFileSimpleMatcher():
                            r"(?P<fhi_aims_controlInOut_basis_func_n>[0-9]+)"
                            r"\s+(?P<fhi_aims_controlInOut_basis_func_l>[a-zA-Z])"
                            r"\s+(?P<fhi_aims_controlInOut_basis_func_occ>[.0-9]+)",
-       		           repeats = True, 
-      		           #sections = ["fhi_aims_section_controlInOut_basis_func"]),
-                           sections = ["fhi_aims_section_controlInOut_basis_func", 
+                           repeats = True,
+                           #sections = ["fhi_aims_section_controlInOut_basis_func"]),
+                           sections = ["fhi_aims_section_controlInOut_basis_func",
                                        "section_basis_set_atom_centered"]),
                 # In FHI-aims for a hydrogenic basis function the last digit refers to the effective nuclear charge
-                         SM (startReStr = r"\s*\|\s*Found hydrogenic basis",         
-                            forwardMatch = True,                                      
-                            subMatchers = [                                           
-                              SM(r"\s*\|\s*Found\s*"                                   
+                         SM (startReStr = r"\s*\|\s*Found hydrogenic basis",
+                            forwardMatch = True,
+                            subMatchers = [
+                              SM(r"\s*\|\s*Found\s*"
                                "(?P<fhi_aims_controlInOut_basis_func_type>[-_a-zA-Z0-9\s]+"
                                #"(?P<basis_set_atom_centered_unique_name>[-_a-zA-Z0-9\s]+"
-                               "\S)\s*(?:function)\s*:\s*"                      
-                               "(?P<fhi_aims_controlInOut_basis_func_n>[0-9]+)"       
-                               "\s+(?P<fhi_aims_controlInOut_basis_func_l>[a-zA-Z])"  
+                               "\S)\s*(?:function)\s*:\s*"
+                               "(?P<fhi_aims_controlInOut_basis_func_n>[0-9]+)"
+                               "\s+(?P<fhi_aims_controlInOut_basis_func_l>[a-zA-Z])"
                                "\s+(?P<fhi_aims_controlInOut_basis_func_eff_charge>[.0-9]+)",
-                               repeats = True,                                        
+                               repeats = True,
                                #sections = ["fhi_aims_section_controlInOut_basis_func"])
-                               sections = ["fhi_aims_section_controlInOut_basis_func", 
+                               sections = ["fhi_aims_section_controlInOut_basis_func",
                                            "section_basis_set_atom_centered"])
                              ]),
                 # In FHI-aims for a ionic basis function the last digit is equal to the cut-off radius
-                         SM (startReStr = r"\s*\|\s*Found ionic basis",    
-                            forwardMatch = True,                                
-                            subMatchers = [                                     
-                              SM(r"\s*\|\s*Found\s*"                            
+                         SM (startReStr = r"\s*\|\s*Found ionic basis",
+                            forwardMatch = True,
+                            subMatchers = [
+                              SM(r"\s*\|\s*Found\s*"
                                #"(?P<fhi_aims_controlInOut_basis_func_type>[-_a-zA-Z0-9\s]+"
                                "(?P<basis_set_atom_centered_unique_name>[-_a-zA-Z0-9\s]+"
-                               "\S)\s*(?:function)\s*:\s*"                      
-                               "(?P<fhi_aims_controlInOut_basis_func_n>[0-9]+)" 
+                               "\S)\s*(?:function)\s*:\s*"
+                               "(?P<fhi_aims_controlInOut_basis_func_n>[0-9]+)"
                                "\s+(?P<fhi_aims_controlInOut_basis_func_l>[a-zA-Z])",
-                              repeats = True,                                  
+                              repeats = True,
                                #sections = ["fhi_aims_section_controlInOut_basis_func"])
-                               sections = ["fhi_aims_section_controlInOut_basis_func", 
+                               sections = ["fhi_aims_section_controlInOut_basis_func",
                                            "section_basis_set_atom_centered"])
                              ])
                     ])
-		# Parsing for NAO basis ends
-		   ]) 
-		]), # END ControlInOutLines
+                # Parsing for NAO basis ends
+                   ])
+                ]), # END ControlInOutLines
         SM (r"\s*-{20}-*", weak = True)
         ])
     ########################################
@@ -1047,12 +1047,12 @@ def build_FhiAimsMainFileSimpleMatcher():
     # first define function to build subMatcher for normal case and scalar ZORA
     def build_eigenvaluesGroupSubMatcher(addStr):
         """Builds the SimpleMatcher to parse the normal and the scalar ZORA eigenvalues in aims.
-    
+
         Args:
             addStr: String that is appended to the metadata names.
-    
+
         Returns:
-            SimpleMatcher that parses eigenvalues with metadata according to addStr. 
+            SimpleMatcher that parses eigenvalues with metadata according to addStr.
         """
         # submatcher for eigenvalue list
         EigenvaluesListSubMatcher =  SM (name = 'EigenvaluesLists',
@@ -1118,15 +1118,15 @@ def build_FhiAimsMainFileSimpleMatcher():
     EigenvaluesGroupSubMatcherZORA = build_eigenvaluesGroupSubMatcher('_ZORA')
     ########################################
     # submatcher for pertubative GW eigenvalues
-    # first define function to build subMatcher 
+    # first define function to build subMatcher
     def build_GWeigenvaluesGroupSubMatcher(addStr):
         """Builds the SimpleMatcher to parse the perturbative GW eigenvalues in aims.
-    
+
         Args:
             addStr: String that is appended to the metadata names.
-    
+
         Returns:
-            SimpleMatcher that parses eigenvalues with metadata according to addStr. 
+            SimpleMatcher that parses eigenvalues with metadata according to addStr.
         """
         # submatcher for eigenvalue list
         GWEigenvaluesListSubMatcher = SM (name = 'perturbativeGW_EigenvaluesLists',
@@ -1135,7 +1135,7 @@ def build_FhiAimsMainFileSimpleMatcher():
             subMatchers = [
             SM (startReStr = r"\s*[0-9]+\s+(?P<fhi_aims_eigenvalue_occupation%s>[0-9.eEdD]+)\s+(?P<fhi_aims_eigenvalue_ks_GroundState__eV>[-+0-9.eEdD]+)\s+"
                               "(?P<fhi_aims_eigenvalue_ExactExchange_perturbativeGW__eV>[-+0-9.eEdD]+)\s+(?P<fhi_aims_eigenvalue_ks_ExchangeCorrelation__eV>[-+0-9.eEdD]+)\s+"
-                              "(?P<fhi_aims_eigenvalue_correlation_perturbativeGW__eV>[-+0-9.eEdD]+)\s+(?P<fhi_aims_eigenvalue_quasiParticle_energy__eV>[-+0-9.eEdD]+)" % (1 * (addStr,)), 
+                              "(?P<fhi_aims_eigenvalue_correlation_perturbativeGW__eV>[-+0-9.eEdD]+)\s+(?P<fhi_aims_eigenvalue_quasiParticle_energy__eV>[-+0-9.eEdD]+)" % (1 * (addStr,)),
             adHoc = lambda parser: parser.superContext.setStartingPointCalculation(parser),
             repeats = True)
             ])
@@ -1315,31 +1315,31 @@ def build_FhiAimsMainFileSimpleMatcher():
         SM (r"\s*\|\s*Highest occupied state\s*:\s*[-+0-9.]+ *eV"),
         SM (r"\s*\|\s*Energy difference\s*:\s*[-+0-9.]+ *eV")
         ])
-    ########################################                                    
-    # submatcher for Tkatchenko-Scheffler van der Waals 
+    ########################################
+    # submatcher for Tkatchenko-Scheffler van der Waals
     TS_VanDerWaalsSubMatcher = SM (name = 'TS_VanDerWaals',
         startReStr = r"\s*Evaluating non-empirical van der Waals correction",
         sections = ['fhi_aims_section_vdW_TS'],
         repeats = True,
-        subMatchers = [ 
-            SM (startReStr = r"\s*\|\s*Atom\s*[0-9]:\s*[a-zA-Z]+",                       
-                repeats = True,                                                 
-                forwardMatch = True,                                            
-                subMatchers = [                                                 
+        subMatchers = [
+            SM (startReStr = r"\s*\|\s*Atom\s*[0-9]:\s*[a-zA-Z]+",
+                repeats = True,
+                forwardMatch = True,
+                subMatchers = [
                 SM (r"\s*\|\s*Atom\s*[0-9]:\s*(?P<fhi_aims_atom_type_vdW>[a-zA-Z]+)", repeats = True),
                 SM (r"\s*\|\s*Hirshfeld charge\s*:\s*(?P<fhi_aims_hirschfeld_charge>[-+0-9.]+)", repeats = True),
                 SM (r"\s*\|\s*Free atom volume\s*:\s*(?P<fhi_aims_free_atom_volume>[-+0-9.]+)", repeats = True),
                 SM (r"\s*\|\s*Hirshfeld volume\s*:\s*(?P<fhi_aims_hirschfeld_volume>[-+0-9.]+)", repeats = True)
                 ]),
-            SM (r"\s*\|\s*van der Waals energy corr.\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<fhi_aims_vdW_energy_corr_TS__eV>[-+0-9.eEdD]+) *eV")  
+            SM (r"\s*\|\s*van der Waals energy corr.\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<fhi_aims_vdW_energy_corr_TS__eV>[-+0-9.eEdD]+) *eV")
         ])
-    ########################################                                    
-    # submatcher for total energy components during SCF interation              
-    ScgwEnergyScfSubMatcher = SM (name = 'ScgwEnergyScfSubMatcher',                     
-        startReStr = r"\s*\---\s*GW Total Energy Calculation",                            
+    ########################################
+    # submatcher for total energy components during SCF interation
+    ScgwEnergyScfSubMatcher = SM (name = 'ScgwEnergyScfSubMatcher',
+        startReStr = r"\s*\---\s*GW Total Energy Calculation",
         sections = ['section_scf_iteration'],
         repeats = True,
-        subMatchers = [                                                         
+        subMatchers = [
         SM (r"\s*\|\s*Galitskii-Migdal Total Energy\s*:\s*(?P<fhi_aims_scgw_galitskii_migdal_total_energy__eV>[-+0-9.eEdD]+) *eV"),
         SM (r"\s*\|\s*GW Kinetic Energy\s*:\s*(?P<fhi_aims_scgw_kinetic_energy__eV>[-+0-9.eEdD]+) *eV"),
         SM (r"\s*\|\s*Hartree energy from GW density\s*:\s*(?P<fhi_aims_scgw_hartree_energy_sum_eigenvalues_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
@@ -1347,7 +1347,7 @@ def build_FhiAimsMainFileSimpleMatcher():
         SM (r"\s*\|\s*RPA correlation Energy\s*:\s*(?P<fhi_aims_scgw_rpa_correlation_energy__eV>[-+0-9.eEdD]+) *eV"),
         SM (r"\s*\|\s*Sigle Particle Energy\s*:\s*(?P<fhi_aims_single_particle_energy__eV>[-+0-9.eEdD]+) *eV"),
         SM (r"\s*\|\s*Fit accuracy for G\(w\)\s*(?P<fhi_aims_poles_fit_accuracy>[-+0-9.eEdD]+)")
-        ])    
+        ])
     ########################################
     # return main Parser
     return SM (name = 'Root',
@@ -1553,9 +1553,9 @@ def build_FhiAimsMainFileSimpleMatcher():
                     # TS van der Waals
                     TS_VanDerWaalsSubMatcher,
                     # self-consistent GW
-                    ScgwEnergyScfSubMatcher, 
+                    ScgwEnergyScfSubMatcher,
                     # perturbative GW
-                    GWEigenvaluesGroupSubMatcher 
+                    GWEigenvaluesGroupSubMatcher
                     ]), # END SingleConfigurationCalculation
                 # parse updated geometry for relaxation
                 geometryRelaxationSubMatcher,
@@ -1583,7 +1583,7 @@ def get_cachingLevelForMetaName(metaInfoEnv):
         metaInfoEnv: metadata which is an object of the class InfoKindEnv in nomadcore.local_meta_info.py.
 
     Returns:
-        Dictionary with metaname as key and caching level as value. 
+        Dictionary with metaname as key and caching level as value.
     """
     # manually adjust caching of metadata
     cachingLevelForMetaName = {
@@ -1606,7 +1606,7 @@ def get_cachingLevelForMetaName(metaInfoEnv):
         if (   (name.startswith('fhi_aims_controlIn_') and not name.startswith('fhi_aims_controlIn_basis_func_')
                 and not name.startswith('fhi_aims_controlIn_species_'))
             or (name.startswith('fhi_aims_controlInOut_') and not name.startswith('fhi_aims_controlInOut_basis_func_')
-	        and not name.startswith('fhi_aims_controlInOut_species_'))
+                and not name.startswith('fhi_aims_controlInOut_species_'))
             or name.startswith('fhi_aims_geometry_')
             or name.startswith('fhi_aims_eigenvalue_')
             or name.startswith('fhi_aims_section_eigenvalues_')
@@ -1638,4 +1638,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
