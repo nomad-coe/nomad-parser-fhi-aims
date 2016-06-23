@@ -10,7 +10,7 @@ testing:
     - git submodule foreach git checkout master
     - git submodule foreach git pull
     - sbt fhiAims/test
-    - export PYTHON2EXE=/labEnv3/bin/python
+    - export PYTHONEXE=/labEnv/bin/python
     - sbt fhiAims/test
   only:
     - master
