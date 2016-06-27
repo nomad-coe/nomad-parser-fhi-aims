@@ -72,6 +72,7 @@ class FhiAimsParserContext(object):
         self.band_segm_start_end = None
         # start with -1 since zeroth iteration is the initialization
         self.scfIterNr = -1
+        self.singleConfCalcs = []
         self.scfConvergence = False
         self.geoConvergence = None
         self.parsedControlInFile = False
@@ -210,6 +211,20 @@ class FhiAimsParserContext(object):
                 backend.superBackend.addValue(k, v[-1])
         # reset all variables
         self.initialize_values()
+        # frame sequence
+        if self.geoConvergence:
+            sampling_method = "geometry_optimization"
+        elif len(self.singleConfCalcs) > 1:
+            pass # to do
+        else:
+            return
+        samplingGIndex = backend.openSection("section_sampling_method")
+        backend.addValue("sampling_method", sampling_method)
+        backend.closeSection("section_sampling_method", samplingGIndex)
+        frameSequenceGIndex = backend.openSection("section_frame_sequence")
+        backend.addValue("frame_sequence_to_sampling_ref", samplingGIndex)
+        backend.addArrayValues("frame_sequence_local_frames_ref", np.asarray(self.singleConfCalcs))
+        backend.closeSection("section_frame_sequence", frameSequenceGIndex)
 
     def onClose_fhi_aims_section_MD_detect(self, backend, gIndex, section):
         """Trigger called when fhi_aims_section_MD_detect is closed.
@@ -410,6 +425,9 @@ class FhiAimsParserContext(object):
         if self.periodicCalc and self.MD and self.scfIterNr > -1:
             backend.addArrayValues('simulation_cell', self.MDUnitCell)
             backend.addArrayValues('configuration_periodic_dimensions', np.asarray([True, True, True]))
+
+    def onOpen_section_single_configuration_calculation(self, backend, gIndex, section):
+        self.singleConfCalcs.append(gIndex)
 
     def onClose_section_single_configuration_calculation(self, backend, gIndex, section):
         """Trigger called when section_single_configuration_calculation is closed.
