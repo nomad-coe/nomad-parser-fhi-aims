@@ -470,8 +470,8 @@ class FhiAimsParserContext(object):
             # need to transpose array since its shape is [number_of_atoms,3] in the metadata
             backend.addArrayValues('atom_forces_free_raw', np.transpose(np.asarray(self.forces_raw)))
         # write the references to section_method and section_system
-        #backend.addValue('single_configuration_to_calculation_method_ref', self.secMethodIndex)
-        #backend.addValue('single_configuration_calculation_to_system_description_ref', self.secSystemDescriptionIndex)
+        backend.addValue('single_configuration_to_calculation_method_ref', self.secMethodIndex)
+        backend.addValue('single_configuration_calculation_to_system_ref', self.secSystemDescriptionIndex)
         # get reference to current section_single_configuration_calculation if DOS was found in there
         if self.dosFound:
             self.dosRefSingleConfigurationCalculation = gIndex
