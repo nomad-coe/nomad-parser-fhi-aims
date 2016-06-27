@@ -218,6 +218,10 @@ class FhiAimsParserContext(object):
         """
         self.MD = True
 
+    def onOpen_section_method(self, backend, gIndex, section):
+        # keep track of the latest method section
+        self.secMethodIndex = gIndex
+
     def onClose_section_method(self, backend, gIndex, section):
         """Trigger called when section_method is closed.
 
@@ -232,8 +236,6 @@ class FhiAimsParserContext(object):
         However, this also bypasses the checking of validity of the metadata name by the backend.
         The scala part will check the validity nevertheless.
         """
-        # keep track of the latest method section
-        self.secMethodIndex = gIndex
         # check if control.in keywords were found or verbatim_writeout is false
         verbatim_writeout = True
         counter = 0
@@ -351,13 +353,15 @@ class FhiAimsParserContext(object):
             else:
                 logger.error("The shape %s of array band_segm_start and the shape %s of array band_segm_end are inconsistent." % (band_segm_start.shape, band_segm_end.shape))
 
+    def onOpen_section_system(self, backend, gIndex, section):
+        # keep track of the latest system description section
+        self.secSystemDescriptionIndex = gIndex
+
     def onClose_section_system(self, backend, gIndex, section):
         """Trigger called when section_system is closed.
 
         Writes atomic positions, atom labels and lattice vectors.
         """
-        # keep track of the latest system description section
-        self.secSystemDescriptionIndex = gIndex
         # Write atomic geometry in the case of MD only if there has been SCF iterations
         # because the atomic geometry together with the velocities are repeated after the finished SCF cycle.
         if not self.MD or self.scfIterNr > -1:
