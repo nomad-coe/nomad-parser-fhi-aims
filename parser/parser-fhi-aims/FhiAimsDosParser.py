@@ -1,4 +1,3 @@
-from builtins import map
 from builtins import object
 import setup_paths
 import numpy as np
@@ -60,7 +59,7 @@ class FhiAimsDosParserContext(object):
         if section['fhi_aims_dos_value_string'] is not None:
             for string in section['fhi_aims_dos_value_string']:
                 strings = string.split()
-                dos_values.append(map(float, strings))
+                dos_values.append([float(x) for x in strings])
         if dos_values:
             # need to transpose array since its shape is [number_of_spin_channels,n_dos_values] in the metadata
             self.dos_values = np.transpose(np.asarray(dos_values))

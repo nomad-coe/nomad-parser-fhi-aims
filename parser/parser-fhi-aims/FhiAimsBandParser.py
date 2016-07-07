@@ -1,4 +1,3 @@
-from builtins import map
 from builtins import object
 import setup_paths
 import numpy as np
@@ -74,10 +73,10 @@ class FhiAimsBandParserContext(object):
             for string in section['fhi_aims_band_occupations_eigenvalue_string']:
                 strings = string.split()
                 # first number is occupation and then every second one
-                band_occupations.append(map(float, strings[0::2]))
+                band_occupations.append([float(x) for x in strings[0::2]])
                 # second number is eigenvalue and then every second one
                 # convert units
-                band_energies.append(map(self.converter, map(float, strings[1::2])))
+                band_energies.append([self.converter(float(x)) for x in strings[1::2]])
 
         if band_occupations:
             # do not need to transpose array since its shape is [n_k_points,n_eigen_values] in the metadata
