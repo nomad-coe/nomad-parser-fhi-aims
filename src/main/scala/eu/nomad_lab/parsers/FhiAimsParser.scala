@@ -12,7 +12,7 @@ object FhiAimsParser extends SimpleExternalParserGenerator(
     ("name" -> jn.JString("FhiAimsParser")) ::
       ("parserId" -> jn.JString("FhiAimsParser" + lab.FhiAimsVersionInfo.version)) ::
       ("versionInfo" -> jn.JObject(
-        ("nomadCoreVersionInfo" -> jn.JObject(lab.NomadCoreVersionInfo.toMap.map {
+        ("nomadCoreVersion" -> jn.JObject(lab.NomadCoreVersionInfo.toMap.map {
           case (k, v) => k -> jn.JString(v.toString)
         }(breakOut): List[(String, jn.JString)])) ::
           (lab.FhiAimsVersionInfo.toMap.map {
