@@ -48,24 +48,24 @@ def write_controlIn(backend, metaInfoEnv, valuesDict, writeXC, location, logger)
     # hybrid_xc_coeff is only written for hybrid functionals.
     # verbatim_writeout is only needed to detect if the control.in is written in the main file of aims.
     exclude_list = [
-                    'fhi_aims_controlIn_k2',
-                    'fhi_aims_controlIn_k3',
-                    'fhi_aims_controlIn_relativistic_threshold',
-                    'fhi_aims_controlIn_xc',
-                    'fhi_aims_controlIn_hse_omega',
-                    'fhi_aims_controlIn_hse_unit',
-                    'fhi_aims_controlIn_hybrid_xc_coeff',
-                    'fhi_aims_controlIn_verbatim_writeout',
+                    'x_fhi_aims_controlIn_k2',
+                    'x_fhi_aims_controlIn_k3',
+                    'x_fhi_aims_controlIn_relativistic_threshold',
+                    'x_fhi_aims_controlIn_xc',
+                    'x_fhi_aims_controlIn_hse_omega',
+                    'x_fhi_aims_controlIn_hse_unit',
+                    'x_fhi_aims_controlIn_hybrid_xc_coeff',
+                    'x_fhi_aims_controlIn_verbatim_writeout',
                    ]
     # write settings
     for k,v in valuesDict.items():
-        if k.startswith('fhi_aims_controlIn_'):
+        if k.startswith('x_fhi_aims_controlIn_'):
             if k in exclude_list:
                 continue
             # write k_krid
-            elif k == 'fhi_aims_controlIn_k1':
-                write_k_grid(backend, 'fhi_aims_controlIn_k', valuesDict)
-            elif k == 'fhi_aims_controlIn_relativistic':
+            elif k == 'x_fhi_aims_controlIn_k1':
+                write_k_grid(backend, 'x_fhi_aims_controlIn_k', valuesDict)
+            elif k == 'x_fhi_aims_controlIn_relativistic':
                 # check for scalar ZORA setting and convert to one common name
                 if re.match(r"\s*zora\s+scalar", v[-1], re.IGNORECASE):
                     backend.superBackend.addValue(k, 'zora scalar')
@@ -87,7 +87,7 @@ def write_controlIn(backend, metaInfoEnv, valuesDict, writeXC, location, logger)
     if writeXC:
         write_xc_functional(backend = backend,
             metaInfoEnv = metaInfoEnv,
-            metaNameStart = 'fhi_aims_controlIn',
+            metaNameStart = 'x_fhi_aims_controlIn',
             valuesDict = valuesDict,
             location = 'control.in',
             logger = logger)
@@ -168,12 +168,12 @@ def write_xc_functional(backend, metaInfoEnv, metaNameStart, valuesDict, locatio
     # descritpion for omega of HSE06
     xcOmegaDescr = '$\\omega$ in m^-1'
     # distinguish between control.in and the aims output from the parsed control.in
-    if metaNameStart == 'fhi_aims_controlIn':
+    if metaNameStart == 'x_fhi_aims_controlIn':
         hseFunc = 'hse06'
         # functionals where hybrid_xc_coeff is written
         writeHybridCoeff = ['b3lyp', 'hse03', 'hse06', 'pbe0', 'pbesol0']
         xcWrite = False
-    elif metaNameStart == 'fhi_aims_controlInOut':
+    elif metaNameStart == 'x_fhi_aims_controlInOut':
         hseFunc = 'HSE-functional'
         # functionals where hybrid_xc_coeff is written
         writeHybridCoeff = ['hybrid B3LYP functional', 'HSE', 'HSE-functional', 'hybrid-PBE0 functionals', 'hybrid-PBEsol0 functionals']

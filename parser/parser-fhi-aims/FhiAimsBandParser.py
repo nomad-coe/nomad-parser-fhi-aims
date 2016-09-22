@@ -60,7 +60,7 @@ class FhiAimsBandParserContext(object):
         # extract k-points
         band_k = []
         for i in ['1', '2', '3']:
-            ki = section['fhi_aims_band_k' + i]
+            ki = section['x_fhi_aims_band_k' + i]
             if ki is not None:
                 band_k.append(ki)
         if band_k:
@@ -69,8 +69,8 @@ class FhiAimsBandParserContext(object):
         # extract occupations and eigenvalues
         band_occupations = []
         band_energies = []
-        if section['fhi_aims_band_occupations_eigenvalue_string'] is not None:
-            for string in section['fhi_aims_band_occupations_eigenvalue_string']:
+        if section['x_fhi_aims_band_occupations_eigenvalue_string'] is not None:
+            for string in section['x_fhi_aims_band_occupations_eigenvalue_string']:
                 strings = string.split()
                 # first number is occupation and then every second one
                 band_occupations.append([float(x) for x in strings[0::2]])
@@ -121,7 +121,7 @@ def build_FhiAimsBandFileSimpleMatcher():
                 forwardMatch = True,
                 weak = True,
                 subMatchers = [
-                SM (r"\s*[0-9]+\s+(?P<fhi_aims_band_k1>[-+0-9.]+)\s+(?P<fhi_aims_band_k2>[-+0-9.]+)\s+(?P<fhi_aims_band_k3>[-+0-9.]+)\s+(?P<fhi_aims_band_occupations_eigenvalue_string>[-+0-9.\s]+)", repeats = True)
+                SM (r"\s*[0-9]+\s+(?P<x_fhi_aims_band_k1>[-+0-9.]+)\s+(?P<x_fhi_aims_band_k2>[-+0-9.]+)\s+(?P<x_fhi_aims_band_k3>[-+0-9.]+)\s+(?P<x_fhi_aims_band_occupations_eigenvalue_string>[-+0-9.\s]+)", repeats = True)
                 ])
             ])
         ])
@@ -145,7 +145,7 @@ def get_cachingLevelForMetaName(metaInfoEnv, CachingLvl):
                               }
     # Set all band metadata to Cache as they need post-processsing.
     for name in metaInfoEnv.infoKinds:
-        if name.startswith('fhi_aims_band_'):
+        if name.startswith('x_fhi_aims_band_'):
             cachingLevelForMetaName[name] = CachingLevel.Cache
     return cachingLevelForMetaName
 

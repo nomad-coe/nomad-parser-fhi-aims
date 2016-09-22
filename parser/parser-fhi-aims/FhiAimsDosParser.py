@@ -51,13 +51,13 @@ class FhiAimsDosParserContext(object):
         Store the parsed values and write them if writeMetaData is True.
         """
         # extract energies
-        dos_energies = section['fhi_aims_dos_energy']
+        dos_energies = section['x_fhi_aims_dos_energy']
         if dos_energies is not None:
             self.dos_energies = np.asarray(dos_energies)
         # extract dos values
         dos_values = []
-        if section['fhi_aims_dos_value_string'] is not None:
-            for string in section['fhi_aims_dos_value_string']:
+        if section['x_fhi_aims_dos_value_string'] is not None:
+            for string in section['x_fhi_aims_dos_value_string']:
                 strings = string.split()
                 dos_values.append([float(x) for x in strings])
         if dos_values:
@@ -95,7 +95,7 @@ def build_FhiAimsDosFileSimpleMatcher():
                     startReStr = r"#\s*Energy \(eV\)\s*.*",
                     sections = ['section_dos'],
                     subMatchers = [
-                    SM (r"\s*(?P<fhi_aims_dos_energy__eV>[-+0-9.]+)\s+(?P<fhi_aims_dos_value_string>[-+0-9.\s]+)", repeats = True)
+                    SM (r"\s*(?P<x_fhi_aims_dos_energy__eV>[-+0-9.]+)\s+(?P<x_fhi_aims_dos_value_string>[-+0-9.\s]+)", repeats = True)
                     ])
                 ])
             ])
@@ -120,7 +120,7 @@ def get_cachingLevelForMetaName(metaInfoEnv, CachingLvl):
                               }
     # Set all dos metadata to Cache as they need post-processsing.
     for name in metaInfoEnv.infoKinds:
-        if name.startswith('fhi_aims_dos_'):
+        if name.startswith('x_fhi_aims_dos_'):
             cachingLevelForMetaName[name] = CachingLevel.Cache
     return cachingLevelForMetaName
 
