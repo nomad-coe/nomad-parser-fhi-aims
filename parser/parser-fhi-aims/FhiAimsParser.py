@@ -64,6 +64,10 @@ class FhiAimsParserContext(object):
         """
         self.secMethodIndex = None
         self.secSystemDescriptionIndex = None
+        self.inputMethodIndex = None
+        self.mainMethodIndex = None
+        self.mainCalcIndex = None
+        self.vdWMethodIndex = None
         self.maxSpinChannel = 0
         self.scalarZORA = False
         self.periodicCalc = False
@@ -210,7 +214,12 @@ class FhiAimsParserContext(object):
                 backend.superBackend.addValue(k, v[-1])
         # reset all variables
         self.initialize_values()
-        # frame sequence
+        # check for geometry optimization convergence
+        if section['x_fhi_aims_geometry_optimization_converged'] is not None:
+            if section['x_fhi_aims_geometry_optimization_converged'][-1] == 'is converged':
+                self.geoConvergence = True
+            else:
+                self.geoConvergence = False
         if self.geoConvergence:
             sampling_method = "geometry_optimization"
         elif len(self.singleConfCalcs) > 1:
@@ -235,9 +244,56 @@ class FhiAimsParserContext(object):
     def onOpen_section_method(self, backend, gIndex, section):
         # keep track of the latest method section
         self.secMethodIndex = gIndex
+        if self.inputMethodIndex is None:
+            self.inputMethodIndex = gIndex
+        else:
+            backend.openNonOverlappingSection("section_method_to_method_refs")
+            backend.addValue("method_to_method_kind", "core_settings")
+            backend.addValue("method_to_method_ref", self.inputMethodIndex)
+            backend.closeNonOverlappingSection("section_method_to_method_refs")
+        if self.mainMethodIndex is None:
+            self.mainMethodIndex = gIndex
 
     def onClose_section_method(self, backend, gIndex, section):
         """Trigger called when section_method is closed.
+        """
+        ## input method
+        if gIndex == self.inputMethodIndex:
+            self.closingInputMethodSection(backend, gIndex, section)
+        if section["electronic_structure_method"]:
+            m = section["electronic_structure_method"][0]
+            if m == "DFT":
+                self.closingDFTMethodSection(backend, gIndex, section)
+            elif m == "G0W0":
+                self.closingG0W0MethodSection(backend, gIndex, section)
+            elif m == "scGW":
+                self.closingScGWMethodSection(backend, gIndex, section)
+            else:
+                backend.pwarn("unexpected electronic structure method value %s" % m)
+        elif section["van_der_Waals_method"]:
+            self.closingVdWMethodSection(backend, gIndex, section)
+        else:
+            backend.pwarn("unexpected section_method %s" % section)
+
+    def closingDFTMethodSection(self, backend, gIndex, section):
+        """Called when section_method that contains the DFT calculation is closed."""
+        self.mainMethodIndex = gIndex
+        self.vdWMethodIndex = None
+
+    def closingG0W0MethodSection(self, backend, gIndex, section):
+        """Called when section_method that should contain the G0W0 is closed."""
+        pass
+
+    def closingScGWMethodSection(self, backend, gIndex, section):
+        """Called when section_method that should contain the scGW is closed."""
+        pass
+
+    def closingVdWMethodSection(self, backend, gIndex, section):
+        """Called when section_method that should contain the vdW is closed."""
+        self.vdWMethodIndex = gIndex
+
+    def closingInputMethodSection(self, backend, gIndex, section):
+        """Called when section_method that should contain the main input is closed.
 
         Write the keywords from control.in and the aims output from the parsed control.in, which belong to section_method.
         Write the last occurrence of a keyword/setting, i.e. [-1], since aims uses the last occurrence of a keyword.
@@ -412,12 +468,13 @@ class FhiAimsParserContext(object):
                 if uci is not None:
                     unit_cell.append(uci)
             if unit_cell:
+                unit_cell = np.transpose(unit_cell)
                 # from metadata: "The first index is x,y,z and the second index the lattice vector."
                 # => unit_cell has already the right format
                 if self.MD:
-                    self.MDUnitCell = np.asarray(unit_cell)
+                    self.MDUnitCell = unit_cell
                 else:
-                    backend.addArrayValues('simulation_cell', np.asarray(unit_cell))
+                    backend.addArrayValues('simulation_cell', unit_cell)
                     backend.addArrayValues('configuration_periodic_dimensions', np.asarray([True, True, True]))
                 self.periodicCalc = True
         # write stored unit cell in case of MD
@@ -426,6 +483,9 @@ class FhiAimsParserContext(object):
             backend.addArrayValues('configuration_periodic_dimensions', np.asarray([True, True, True]))
 
     def onOpen_section_single_configuration_calculation(self, backend, gIndex, section):
+        # write the references to section_method and section_system
+        backend.addValue('single_configuration_to_calculation_method_ref', self.secMethodIndex)
+        backend.addValue('single_configuration_calculation_to_system_ref', self.secSystemDescriptionIndex)
         self.singleConfCalcs.append(gIndex)
 
     def onClose_section_single_configuration_calculation(self, backend, gIndex, section):
@@ -442,16 +502,11 @@ class FhiAimsParserContext(object):
         # write SCF convergence and reset
         backend.addValue('single_configuration_calculation_converged', self.scfConvergence)
         self.scfConvergence = False
-        # check for geometry optimization convergence
-        if section['x_fhi_aims_geometry_optimization_converged'] is not None:
-            if section['x_fhi_aims_geometry_optimization_converged'][-1] == 'is converged':
-                self.geoConvergence = True
-            else:
-                self.geoConvergence = False
         # start with -1 since zeroth iteration is the initialization
         self.scfIterNr = -1
         # write eigenvalues if found
         if self.eigenvalues_occupation and self.eigenvalues_values:
+
             occ = np.asarray(self.eigenvalues_occupation)
             ev = np.asarray(self.eigenvalues_values)
             # check if there is the same number of spin channels
@@ -490,14 +545,12 @@ class FhiAimsParserContext(object):
         if self.forces_raw:
             # need to transpose array since its shape is [number_of_atoms,3] in the metadata
             backend.addArrayValues('atom_forces_free_raw', np.transpose(np.asarray(self.forces_raw)))
-        # write the references to section_method and section_system
-        backend.addValue('single_configuration_to_calculation_method_ref', self.secMethodIndex)
-        backend.addValue('single_configuration_calculation_to_system_ref', self.secSystemDescriptionIndex)
         # get reference to current section_single_configuration_calculation if DOS was found in there
         if self.dosFound:
             self.dosRefSingleConfigurationCalculation = gIndex
             self.dosFound = False
         self.lastCalculationGIndex = gIndex
+
     def onClose_x_fhi_aims_section_eigenvalues_ZORA(self, backend, gIndex, section):
         """Trigger called when fhi_aims_section_eigenvalues_ZORA is closed.
 
@@ -1157,12 +1210,13 @@ def build_FhiAimsMainFileSimpleMatcher():
             SM (startReStr = r"\s*[0-9]+\s+(?P<x_fhi_aims_eigenvalue_occupation%s>[0-9.eEdD]+)\s+(?P<x_fhi_aims_eigenvalue_ks_GroundState__eV>[-+0-9.eEdD]+)\s+"
                               "(?P<x_fhi_aims_eigenvalue_ExactExchange_perturbativeGW__eV>[-+0-9.eEdD]+)\s+(?P<x_fhi_aims_eigenvalue_ks_ExchangeCorrelation__eV>[-+0-9.eEdD]+)\s+"
                               "(?P<x_fhi_aims_eigenvalue_correlation_perturbativeGW__eV>[-+0-9.eEdD]+)\s+(?P<x_fhi_aims_eigenvalue_quasiParticle_energy__eV>[-+0-9.eEdD]+)" % (1 * (addStr,)),
-            adHoc = lambda parser: parser.superContext.setStartingPointCalculation(parser),
             repeats = True)
             ])
         return SM (name = 'perturbativeGW_EigenvaluesGroup',
             startReStr = r"\s*GW quasiparticle calculation starts ...",
-            sections = ['x_fhi_aims_section_eigenvalues_group%s' % addStr],
+            sections = ['section_method', 'section_single_configuration_calculation', 'x_fhi_aims_section_eigenvalues_group%s' % addStr],
+            adHoc = lambda parser: parser.superContext.setStartingPointCalculation(parser),
+            fixedStartValues = { 'electronic_structure_method': 'G0W0' },
             subMatchers = [
             # non-spin-polarized, non-periodic
             SM (name = 'GW_EigenvaluesNoSpinNonPeriodic',
@@ -1340,8 +1394,9 @@ def build_FhiAimsMainFileSimpleMatcher():
     # submatcher for Tkatchenko-Scheffler van der Waals
     TS_VanDerWaalsSubMatcher = SM (name = 'TS_VanDerWaals',
         startReStr = r"\s*Evaluating non-empirical van der Waals correction",
-        sections = ['x_fhi_aims_section_vdW_TS'],
+        sections = ['section_method', 'section_single_configuration_calculation', 'x_fhi_aims_section_vdW_TS'],
         repeats = True,
+        fixedStartValues = { "van_der_Waals_method": "TS" },
         subMatchers = [
             SM (startReStr = r"\s*\|\s*Atom\s*[0-9]:\s*[a-zA-Z]+",
                 repeats = True,
@@ -1356,9 +1411,14 @@ def build_FhiAimsMainFileSimpleMatcher():
         ])
     ########################################
     # submatcher for total energy components during SCF interation
-    ScgwEnergyScfSubMatcher = SM (name = 'ScgwEnergyScfSubMatcher',
+    ScgwEnergyScfSubMatcher = SM(name = "Self consistent  GW",
+      startReStr = r"\s*Self-Consistent GW calculation starts\s*\.\.\.\s*",
+      sections = ['section_method', 'section_single_configuration_calculation'],
+      fixedStartValues = { 'electronic_structure_method': "scGW" },
+      subMatchers = [
+        SM (name = 'ScgwEnergyScfSubMatcher',
         startReStr = r"\s*\---\s*GW Total Energy Calculation",
-        sections = ['section_scf_iteration'],
+                                  sections = ['section_scf_iteration'],
         repeats = True,
         subMatchers = [
         SM (r"\s*\|\s*Galitskii-Migdal Total Energy\s*:\s*(?P<x_fhi_aims_scgw_galitskii_migdal_total_energy__eV>[-+0-9.eEdD]+) *eV"),
@@ -1369,6 +1429,7 @@ def build_FhiAimsMainFileSimpleMatcher():
         SM (r"\s*\|\s*Sigle Particle Energy\s*:\s*(?P<x_fhi_aims_single_particle_energy__eV>[-+0-9.eEdD]+) *eV"),
         SM (r"\s*\|\s*Fit accuracy for G\(w\)\s*(?P<x_fhi_aims_poles_fit_accuracy>[-+0-9.eEdD]+)")
         ])
+      ])
     ########################################
     # return main Parser
     return SM (name = 'Root',
@@ -1449,7 +1510,8 @@ def build_FhiAimsMainFileSimpleMatcher():
                     startReStr = r"\s*Begin self-consistency loop: (?:I|Re-i)nitialization\.",
                     repeats = True,
                     forwardMatch = True,
-                    sections = ['section_single_configuration_calculation'],
+                    sections = ['section_method','section_single_configuration_calculation'],
+                    fixedStartValues = { 'electronic_structure_method': 'DFT' },
                     subMatchers = [
                     # initialization of SCF loop, SCF iteration 0
                     SM (name = 'ScfInitialization',
@@ -1570,14 +1632,14 @@ def build_FhiAimsMainFileSimpleMatcher():
                     # perturbative DOS
                     perturbDosSubMatcher,
                     # band structure
-                    bandStructureSubMatcher,
-                    # TS van der Waals
-                    TS_VanDerWaalsSubMatcher,
-                    # self-consistent GW
-                    ScgwEnergyScfSubMatcher,
-                    # perturbative GW
-                    GWEigenvaluesGroupSubMatcher
+                    bandStructureSubMatcher
                     ]), # END SingleConfigurationCalculation
+                # TS van der Waals
+                TS_VanDerWaalsSubMatcher,
+                # self-consistent GW
+                ScgwEnergyScfSubMatcher,
+                # perturbative GW
+                GWEigenvaluesGroupSubMatcher,
                 # parse updated geometry for relaxation
                 geometryRelaxationSubMatcher,
                 ]), # END SingleConfigurationCalculationWithSystemDescription
