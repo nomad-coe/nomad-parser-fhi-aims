@@ -148,12 +148,12 @@ def build_FhiAimsControlInKeywordsSimpleMatchers():
                 SM(r"\s*basis_dep_cutoff\s+(?P<x_fhi_aims_controlIn_basis_dep_cutoff>[+-0-9.dDeE]+)\s"),
                 SM(r"\s*radial_base\s+(?P<x_fhi_aims_controlIn_radial_base1>[+-0-9.dDeE]+)\s*(?P<x_fhi_aims_controlIn_radial_base2>[-+0-9.dDeE]+)\s*"),
                 SM(r"\s*radial_multiplier\s+(?P<x_fhi_aims_controlIn_radial_multiplier>[0-9]+)\s*"),
-                SM(name = "angular_grids"
-                   startRe = r"\s*angular_grids\s+(?P<x_fhi_aims_controlIn_angular_grids_method>specified|auto)\s*"),
-                endReStr = r"\s*outer_grid\s+\s*(?P<x_fhi_aims_controlIn_outer_grid>[0-9]+)\s*",
-                subMatchers = [
-                    SM(r"\s*division\s*(?P<x_fhi_aims_controlIn_division1>[-+0-9.eEdD]+)\s*(?P<x_fhi_aims_controlIn_division2>[-+0-9.eEdD]+)\s*"),
-                ]),
+                SM(name = "angular_grids",
+                   startReStr = r"\s*angular_grids\s+(?P<x_fhi_aims_controlIn_angular_grids_method>specified|auto)\s*",
+                   endReStr = r"\s*outer_grid\s+\s*(?P<x_fhi_aims_controlIn_outer_grid>[0-9]+)\s*",
+                   subMatchers = [
+                       SM(r"\s*division\s*(?P<x_fhi_aims_controlIn_division1>[-+0-9.eEdD]+)\s*(?P<x_fhi_aims_controlIn_division2>[-+0-9.eEdD]+)\s*"),
+                   ]),
 	        SM (r"^\s*(?P<x_fhi_aims_controlIn_basis_func_type>gaussian|hydro|valence|ion_occ|ionic|confined)"
                     "\s*(?P<x_fhi_aims_controlIn_basis_func_n>[0-9]+)"
                     "\s+(?P<x_fhi_aims_controlIn_basis_func_l>[spdefghijklm])"
