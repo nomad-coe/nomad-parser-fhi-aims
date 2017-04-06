@@ -217,7 +217,7 @@ def get_cachingLevelForMetaName(metaInfoEnv, CachingLvl):
         metaInfo = metaInfoEnv.infoKinds[name]
         if (name.startswith('x_fhi_aims_controlIn_') and
             metaInfo.kindStr == "type_document_content" and
-            "x_fhi_aims_controlIn_method" in metaInfo.superNames):
+            ("x_fhi_aims_controlIn_method" in metaInfo.superNames or "x_fhi_aims_controlIn_run" in metaInfo.superNames)):
             cachingLevelForMetaName[name] = CachingLevel.Cache
     return cachingLevelForMetaName
 
