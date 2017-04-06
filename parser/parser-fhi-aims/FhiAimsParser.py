@@ -914,7 +914,7 @@ def build_FhiAimsMainFileSimpleMatcher():
             # define some basis set specific SMs
             SM (r"\s*Reading configuration options for species\s*(?P<x_fhi_aims_controlInOut_species_name>[a-zA-Z]+)", repeats=True,
             #SM (r"\s*Reading configuration options for species\s*(?P<atom_type_name>[a-zA-Z]+)", repeats=True,
-                sections = ["x_fhi_aims_section_controlInOut_atom_species",'section_atom_type'],
+                sections = ['section_atom_type',"x_fhi_aims_section_controlInOut_atom_species"],
                 subFlags = SM.SubFlags.Unordered,
                 subMatchers = [
                    SM (r"\s*\|\s*Found\s*request\s*to\s*include\s*pure\s*gaussian\s*fns.\s*:"
@@ -932,6 +932,8 @@ def build_FhiAimsMainFileSimpleMatcher():
                     r"\s*",repeats = True),
                    SM(r"\s*\|\s*Found cutoff potl. onset \[A\], width \[A\], scale factor :"
                     r"\s*(?P<x_fhi_aims_controlInOut_species_cut_pot__angstrom>[.0-9]+)"
+                    r"\s+(?P<x_fhi_aims_controlInOut_species_cut_pot_width__angstrom>[.0-9]+)"
+                    r"\s*(?P<x_fhi_aims_controlInOut_species_cut_pot_scale>[.0-9]+)"
                     r"\s*",repeats = True),
                 # Parsing for Gaussian basis starts
                    SM(r"\s*\|\s*Found\s*"
