@@ -45,3 +45,42 @@ object FhiAimsParser extends SimpleExternalParserGenerator(
   ) ++ DefaultPythonInterpreter.commonDirMapping(),
   metaInfoEnv = Some(lab.meta.KnownMetaInfoEnvs.fhiAims)
 )
+
+object FhiAimsControlInParser extends SimpleExternalParserGenerator(
+  name = "FhiAimsControlInParser",
+  parserInfo = jn.JObject(
+    ("name" -> jn.JString("FhiAimsControlInParser")) ::
+      ("parserId" -> jn.JString("FhiAimsControlInParser" + lab.FhiAimsVersionInfo.version)) ::
+      ("versionInfo" -> jn.JObject(
+        ("nomadCoreVersion" -> jn.JObject(lab.NomadCoreVersionInfo.toMap.map {
+          case (k, v) => k -> jn.JString(v.toString)
+        }(breakOut): List[(String, jn.JString)])) ::
+          (lab.FhiAimsVersionInfo.toMap.map {
+            case (key, value) =>
+              (key -> jn.JString(value.toString))
+          }(breakOut): List[(String, jn.JString)])
+      )) :: Nil
+  ),
+  mainFileTypes = Seq("text/.*"),
+  mainFileRe = """\s*species\s+[A-Z][a-z]*\s*\n?.*\s*\n?.*\s*\n?.*\s*\n?.*\s*\n?\s*nucleus\s+[0-9]+""".r,
+  cmd = Seq(DefaultPythonInterpreter.pythonExe(), "${envDir}/parsers/fhi-aims/parser/parser-fhi-aims/FhiAimsControlInParser.py",
+    "--uri", "${mainFileUri}", "${mainFilePath}"),
+  resList = Seq(
+    "parser-fhi-aims/FhiAimsParser.py",
+    "parser-fhi-aims/FhiAimsCommon.py",
+    "parser-fhi-aims/FhiAimsControlInParser.py",
+    "parser-fhi-aims/FhiAimsBandParser.py",
+    "parser-fhi-aims/FhiAimsDosParser.py",
+    "parser-fhi-aims/setup_paths.py",
+    "nomad_meta_info/public.nomadmetainfo.json",
+    "nomad_meta_info/common.nomadmetainfo.json",
+    "nomad_meta_info/meta_types.nomadmetainfo.json",
+    "nomad_meta_info/fhi_aims.nomadmetainfo.json"
+  ) ++ DefaultPythonInterpreter.commonFiles(),
+  dirMap = Map(
+    "parser-fhi-aims" -> "parsers/fhi-aims/parser/parser-fhi-aims",
+    "nomad_meta_info" -> "nomad-meta-info/meta_info/nomad_meta_info",
+    "python" -> "python-common/common/python/nomadcore"
+  ) ++ DefaultPythonInterpreter.commonDirMapping(),
+  metaInfoEnv = Some(lab.meta.KnownMetaInfoEnvs.fhiAims)
+)
