@@ -1687,11 +1687,13 @@ def get_cachingLevelForMetaName(metaInfoEnv):
     # Set all eigenvalue related metadata to Cache.
     # Set all forces related metadata to Cache.
     for name in metaInfoEnv.infoKinds:
-
-        if (   (name.startswith('x_fhi_aims_controlIn_') and not name.startswith('x_fhi_aims_controlIn_basis_func_')
-                and not name.startswith('x_fhi_aims_controlIn_species_'))
-            or (name.startswith('x_fhi_aims_controlInOut_') and not name.startswith('x_fhi_aims_controlInOut_basis_func_')
-                and not name.startswith('x_fhi_aims_controlInOut_species_'))
+        metaInfo = metaInfoEnv.infoKinds[name]
+        if (name.startswith('x_fhi_aims_controlIn_') and
+            metaInfo.kindStr == "type_document_content" and
+            "x_fhi_aims_controlIn_method" in metaInfo.superNames or
+            name.startswith('x_fhi_aims_controlInOut_') and
+            metaInfo.kindStr == "type_document_content" and
+            "x_fhi_aims_controlInOut_method" in metaInfo.superNames
             or name.startswith('x_fhi_aims_geometry_')
             or name.startswith('x_fhi_aims_eigenvalue_')
             or name.startswith('x_fhi_aims_section_eigenvalues_')

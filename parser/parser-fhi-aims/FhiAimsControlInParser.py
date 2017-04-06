@@ -158,11 +158,14 @@ def build_FhiAimsControlInKeywordsSimpleMatchers():
                     "\s*(?P<x_fhi_aims_controlIn_basis_func_n>[0-9]+)"
                     "\s+(?P<x_fhi_aims_controlIn_basis_func_l>[spdefghijklm])"
                     "\s+(?P<x_fhi_aims_controlIn_basis_func_radius>[.0-9]+)",
-                    repeats = True),
+                    repeats = True,
+                    sections = ["x_fhi_aims_section_controlIn_basis_func"]
+                ),
 	        SM (r"^\s*(?P<x_fhi_aims_controlIn_basis_func_type>gaussian|hydro|valence|ion_occ|ionic|confined)"
                     "\s*(?P<x_fhi_aims_controlIn_basis_func_n>[0-9]+)"
                     "\s*(?P<x_fhi_aims_controlIn_basis_func_l>[spdefghijklm])\s*auto",
-                    repeats = True)
+                    repeats = True,
+                    sections = ["x_fhi_aims_section_controlIn_basis_func"])
             ])
         ]
 
@@ -211,8 +214,10 @@ def get_cachingLevelForMetaName(metaInfoEnv, CachingLvl):
     # Set all controlIn metadata to Cache to capture multiple occurrences of keywords and
     # their last value is then written by the onClose routine in the FhiAimsControlInParserContext.
     for name in metaInfoEnv.infoKinds:
-        if (name.startswith('x_fhi_aims_controlIn_') and not name.startswith('x_fhi_aims_controlIn_basis_')
-            and not name.startswith('x_fhi_aims_controlIn_species_')):
+        metaInfo = metaInfoEnv.infoKinds[name]
+        if (name.startswith('x_fhi_aims_controlIn_') and
+            metaInfo.kindStr == "type_document_content" and
+            "x_fhi_aims_controlIn_method" in metaInfo.superNames):
             cachingLevelForMetaName[name] = CachingLevel.Cache
     return cachingLevelForMetaName
 
