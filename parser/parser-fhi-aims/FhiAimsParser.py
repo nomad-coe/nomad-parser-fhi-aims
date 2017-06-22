@@ -912,7 +912,7 @@ def build_FhiAimsMainFileSimpleMatcher():
             SM (r"\s*XC: Running (?P<x_fhi_aims_controlInOut_xc>[-_a-zA-Z0-9\s()]+) \.\.\.", repeats = True),
             SM (r"\s*(?P<x_fhi_aims_controlInOut_xc>Hartree-Fock) calculation starts \.\.\.\.\.\.", repeats = True),
             # define some basis set specific SMs
-            SM (r"\s*Reading configuration options for species\s*(?P<x_fhi_aims_controlInOut_species_name>[a-zA-Z]+)", repeats=True,
+            SM ('SPECIES',r"\s*Reading configuration options for species\s*(?P<x_fhi_aims_controlInOut_species_name>[a-zA-Z]+)", repeats=True,
             #SM (r"\s*Reading configuration options for species\s*(?P<atom_type_name>[a-zA-Z]+)", repeats=True,
                 sections = ['section_atom_type',"x_fhi_aims_section_controlInOut_atom_species"],
                 subFlags = SM.SubFlags.Unordered,
@@ -936,7 +936,7 @@ def build_FhiAimsMainFileSimpleMatcher():
                     r"\s*(?P<x_fhi_aims_controlInOut_species_cut_pot_scale>[.0-9]+)"
                     r"\s*",repeats = True),
                 # Parsing for Gaussian basis starts
-                   SM(r"\s*\|\s*Found\s*"
+                   SM('Gaussian',r"\s*\|\s*Found\s*"
                     #r"(?P<basis_set_atom_centered_unique_name>[-_a-zA-Z0-9\s]+"
                     r"(?P<x_fhi_aims_controlInOut_basis_func_type>[-_a-zA-Z0-9\s]+"
                     #r"(?P<basis_set_atom_centered_unique_name>[-_a-zA-Z0-9\s]+"
@@ -950,7 +950,7 @@ def build_FhiAimsMainFileSimpleMatcher():
                    subMatchers = [
 
                            SM(r"\s*\|\s*alpha\s*=\s*"
-                            r"(?P<x_fhi_aims_controlInOut_basis_func_gauss_alpha>[-+0-9.eEdD]+)"
+                              r"(?P<x_fhi_aims_controlInOut_basis_func_gauss_alpha>[-+]?(?:[0-9]+\.?|\.[0-9]+)[-+0-9eEdD]+)"
                             r"\s*weight\s*=\s*"
                             r"(?P<x_fhi_aims_controlInOut_basis_func_gauss_weight>[-+0-9.eEdD]+)",
                            repeats = True,
