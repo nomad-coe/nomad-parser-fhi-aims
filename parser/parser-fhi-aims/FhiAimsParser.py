@@ -1469,8 +1469,9 @@ def build_FhiAimsMainFileSimpleMatcher():
                     ]) # END nParallelTasks
                 ]), # END ProgramHeader
             # parse control and geometry
-            SM (name = 'SectionMethod',
-                startReStr = r"\s*Parsing control\.in* \.",
+
+            SM (name = 'SectionMethodNoVerbatin',
+                startReStr = r"\s*Parsing control\.in *(?:\.\.\.|\(first pass over file, find array dimensions only\)\.)",
  #               startReStr = r"\s*Parsing control\.in \(first pass over file, find array dimensions only\)\.",
                 sections = ['section_method'],
                 subMatchers = [
