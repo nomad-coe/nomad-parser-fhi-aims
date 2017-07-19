@@ -27,6 +27,7 @@ object FhiAimsParser extends SimpleExternalParserGenerator(
   cmd = Seq(DefaultPythonInterpreter.pythonExe(), "${envDir}/parsers/fhi-aims/parser/parser-fhi-aims/fhiaimsparser/FhiAimsParser.py",
     "--uri", "${mainFileUri}", "${mainFilePath}"),
   resList = Seq(
+    "parser-fhi-aims/fhiaimsparser/__init__.py",
     "parser-fhi-aims/fhiaimsparser/FhiAimsParser.py",
     "parser-fhi-aims/fhiaimsparser/FhiAimsCommon.py",
     "parser-fhi-aims/fhiaimsparser/FhiAimsControlInParser.py",
@@ -66,6 +67,7 @@ object FhiAimsControlInParser extends SimpleExternalParserGenerator(
   cmd = Seq(DefaultPythonInterpreter.pythonExe(), "${envDir}/parsers/fhi-aims/parser/parser-fhi-aims/fhiaimsparser/FhiAimsControlInParser.py",
     "--uri", "${mainFileUri}", "${mainFilePath}"),
   resList = Seq(
+    "parser-fhi-aims/fhiaimsparser/__init__.py",
     "parser-fhi-aims/fhiaimsparser/FhiAimsParser.py",
     "parser-fhi-aims/fhiaimsparser/FhiAimsCommon.py",
     "parser-fhi-aims/fhiaimsparser/FhiAimsControlInParser.py",

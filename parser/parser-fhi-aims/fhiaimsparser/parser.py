@@ -31,6 +31,14 @@ class FHIaimsParser(ParserInterface):
             self.parser_context.main_file,
             self.parser_context)
 
+    @staticmethod
+    def get_mainfile_regex():
+        regex_str = (
+            "\s*Invoking FHI-aims \.\.\.\n"
+            "\s*Version "
+        )
+        return regex_str
+
     def get_metainfo_filename(self):
         return "fhi_aims.nomadmetainfo.json"
 
