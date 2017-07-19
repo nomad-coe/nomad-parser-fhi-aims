@@ -1,28 +1,54 @@
-# FHI-aims Parser
-This is the parser for [FHI-aims](https://aimsclub.fhi-berlin.mpg.de).
-It is part of the [NOMAD Laboratory](http://nomad-lab.eu).
-The official version lives at:
+This is the main repository of the [NOMAD](http://nomad-lab.eu) parser for
+[FHI-aims](https://aimsclub.fhi-berlin.mpg.de).
 
-    git@gitlab.mpcdf.mpg.de:nomad-lab/parser-fhi-aims.git
+# Example
+```python
+    from fhiaimsparser import FHIaimsParser
+    import matplotlib.pyplot as mpl
 
-You can browse it at:
+    # 1. Initialize a parser by giving a path to the FHI-aims output file and a list of
+    # default units
+    path = "path/to/main.file"
+    default_units = ["eV"]
+    parser = FHIaimsParser(path, default_units=default_units)
 
-    https://gitlab.rzg.mpg.de/nomad-lab/parser-fhi-aims
+    # 2. Parse
+    results = parser.parse()
 
-It relies on having the nomad-meta-info and the python-common repositories one level higher.
-The simplest way to have this is to check out nomad-lab-base recursively:
+    # 3. Query the results with using the id's created specifically for NOMAD.
+    scf_energies = results["energy_total_scf_iteration"]
+    mpl.plot(scf_energies)
+    mpl.show()
+```
 
-    git clone --recursive git@gitlab.mpcdf.mpg.de:nomad-lab/nomad-lab-base.git
+# Installation
+The code is python>=2.7 and python>=3.4 compatible. First download and install
+the nomadcore package:
 
-This parser will be in the directory parsers/fhi-aims of this repository.
+```sh
+git clone https://gitlab.mpcdf.mpg.de/nomad-lab/python-common.git
+cd python-common
+pip install -r requirements.txt
+pip install -e .
+```
 
-# Running and Testing the Parser
-## Requirements
-The required python packages can be installed with (see [python-common](https://gitlab.rzg.mpg.de/nomad-lab/python-common)):
+Then download the metainfo definitions to the same folder where the
+'python-common' folder was cloned:
 
-    pip install -r nomad-lab-base/python-common/requirements.txt
+```sh
+git clone https://gitlab.mpcdf.mpg.de/nomad-lab/nomad-meta-info.git
+```
 
-## Usage
+Finally download and install the parser:
+
+```sh
+git clone https://gitlab.mpcdf.mpg.de/nomad-lab/parser-cp2k.git
+cd parser-cp2k
+pip install -e .
+```
+
+# Advanced
+## Command-line Based Usage
 FHI-aims output files can be parsed with:
 
     python FhiAimsParser.py [path/toFile]
@@ -35,5 +61,8 @@ Yon can accessed the help for the available command line arguments with:
 Example output files of FHI-aims can be found in the directory test/examples.
 More details about the calculations and files are explained in a README in this directory.
 
-# Documentation of Code
-The [google style guide](https://google.github.io/styleguide/pyguide.html?showone=Comments#Comments) provides a good template on how the code should be documented. This makes it easier to follow the logic of the parser.
+## Documentation of Code
+The [google style
+guide](https://google.github.io/styleguide/pyguide.html?showone=Comments#Comments)
+provides a good template on how the code should be documented. This makes it
+easier to follow the logic of the parser.

@@ -1,0 +1,5 @@
+parser/parser-fhi-aims/fhiaimsparser.egg-info/PKG-INFO
+parser/parser-fhi-aims/fhiaimsparser.egg-info/SOURCES.txt
+parser/parser-fhi-aims/fhiaimsparser.egg-info/dependency_links.txt
+parser/parser-fhi-aims/fhiaimsparser.egg-info/requires.txt
+parser/parser-fhi-aims/fhiaimsparser.egg-info/top_level.txt

@@ -1736,6 +1736,11 @@ def get_cachingLevelForMetaName(metaInfoEnv):
             cachingLevelForMetaName[name] = CachingLevel.Cache
     return cachingLevelForMetaName
 
+
+def getParserInfo():
+    return {'name': 'fhi-aims-parser', 'version': '1.0'}
+
+
 def main():
     """Main function.
 
@@ -1747,7 +1752,7 @@ def main():
     metaInfoPath = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../../../nomad-meta-info/meta_info/nomad_meta_info/fhi_aims.nomadmetainfo.json"))
     metaInfoEnv = get_metaInfo(metaInfoPath)
     # set parser info
-    parserInfo = {'name':'fhi-aims-parser', 'version': '1.0'}
+    parserInfo = getParserInfo()
     # get caching level for metadata
     cachingLevelForMetaName = get_cachingLevelForMetaName(metaInfoEnv)
     # start parsing
