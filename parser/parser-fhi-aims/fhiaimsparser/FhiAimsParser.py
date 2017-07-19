@@ -1,13 +1,17 @@
+from __future__ import absolute_import
 from builtins import map
 from builtins import range
 from builtins import object
-import setup_paths
+try:
+    import setup_paths
+except ImportError:
+    pass
 import numpy as np
 import nomadcore.ActivateLogging
 from nomadcore.caching_backend import CachingLevel
 from nomadcore.simple_parser import AncillaryParser, mainFunction
 from nomadcore.simple_parser import SimpleMatcher as SM
-from FhiAimsCommon import get_metaInfo, write_controlIn, write_k_grid, write_xc_functional
+from fhiaimsparser.FhiAimsCommon import get_metaInfo, write_controlIn, write_k_grid, write_xc_functional
 from fhiaimsparser import FhiAimsControlInParser
 from fhiaimsparser import FhiAimsBandParser
 from fhiaimsparser import FhiAimsDosParser

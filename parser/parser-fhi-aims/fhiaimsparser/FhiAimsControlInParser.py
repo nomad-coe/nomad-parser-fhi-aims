@@ -1,11 +1,15 @@
+from __future__ import absolute_import
 from builtins import object
-import setup_paths
+try:
+    import setup_paths
+except ImportError:
+    pass
 import numpy as np
 import nomadcore.ActivateLogging
 from nomadcore.caching_backend import CachingLevel
 from nomadcore.simple_parser import mainFunction
 from nomadcore.simple_parser import SimpleMatcher as SM
-from FhiAimsCommon import get_metaInfo, write_controlIn, write_k_grid, write_xc_functional
+from fhiaimsparser.FhiAimsCommon import get_metaInfo, write_controlIn, write_k_grid, write_xc_functional
 import logging, os, re, sys
 
 ############################################################
@@ -61,7 +65,7 @@ class FhiAimsControlInParserContext(object):
         else:
             self.sectionRun = section
 
-   
+
     def onClose_section_method(self, backend, gIndex, section):
         """Trigger called when fhi_aims_section_controlIn_file is closed.
 
@@ -75,7 +79,7 @@ class FhiAimsControlInParserContext(object):
             logger = logger)
 
     def onClose_x_fhi_aims_section_controlIn_basis_set(self, backend, gIndex, section):
-        """doc"""                                                               
+        """doc"""
         #logger.warning("Free-atom basis for %s: basis_func_type: %s n = %s l = %s radius = %s", section["x_fhi_aims_controlIn_species_name"], section["x_fhi_aims_controlIn_basis_func_type"], section["x_fhi_aims_controlIn_basis_func_n"], section["x_fhi_aims_controlIn_basis_func_l"], section["x_fhi_aims_controlIn_basis_func_radius"])
 
 def build_FhiAimsControlInKeywordsSimpleMatchers():
@@ -85,7 +89,7 @@ def build_FhiAimsControlInKeywordsSimpleMatchers():
     which allows nice formating of nested SimpleMatchers in python.
 
     Returns:
-       List of SimpleMatchers that parses control.in keywords of FHI-aims. 
+       List of SimpleMatchers that parses control.in keywords of FHI-aims.
     """
     # Now follows the list to match the keywords from the control.in.
     # Explicitly add ^ to ensure that the keyword is not within a comment.
@@ -176,7 +180,7 @@ def build_FhiAimsControlInFileSimpleMatcher():
     which allows nice formating of nested SimpleMatchers in python.
 
     Returns:
-       SimpleMatcher that parses control.in file of FHI-aims. 
+       SimpleMatcher that parses control.in file of FHI-aims.
     """
     return SM (name = 'Root1',
         startReStr = "",
@@ -204,7 +208,7 @@ def get_cachingLevelForMetaName(metaInfoEnv, CachingLvl):
             without opening new sections.
 
     Returns:
-        Dictionary with metaname as key and caching level as value. 
+        Dictionary with metaname as key and caching level as value.
     """
     # manually adjust caching of metadata
     cachingLevelForMetaName = {
@@ -248,4 +252,3 @@ def main(CachingLvl):
 
 if __name__ == "__main__":
     main(CachingLevel.Forward)
-

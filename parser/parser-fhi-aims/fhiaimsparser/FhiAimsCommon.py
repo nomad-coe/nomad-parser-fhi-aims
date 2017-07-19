@@ -1,4 +1,8 @@
-import setup_paths
+from __future__ import absolute_import
+try:
+    import setup_paths
+except ImportError:
+    pass
 import numpy as np
 from nomadcore.local_meta_info import loadJsonFile, InfoKindEl
 from nomadcore.unit_conversion.unit_conversion import convert_unit
@@ -253,4 +257,3 @@ def write_xc_functional(backend, metaInfoEnv, metaNameStart, valuesDict, locatio
                             logger.error("The dictionary for xc functional '%s' does not have the key 'name'. Please correct the dictionary xcDict in %s." % (xc[-1], os.path.basename(__file__)))
                 else:
                     logger.error("The xc functional '%s' could not be converted for the metadata. Please add it to the dictionary xcDict in %s." % (xc[-1], os.path.basename(__file__)))
-

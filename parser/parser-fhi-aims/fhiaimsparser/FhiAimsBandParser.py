@@ -1,12 +1,16 @@
+from __future__ import absolute_import
 from builtins import object
-import setup_paths
+try:
+    import setup_paths
+except ImportError:
+    pass
 import numpy as np
 import nomadcore.ActivateLogging
 from nomadcore.caching_backend import CachingLevel
 from nomadcore.simple_parser import mainFunction
 from nomadcore.simple_parser import SimpleMatcher as SM
 from nomadcore.unit_conversion.unit_conversion import convert_unit_function
-from FhiAimsCommon import get_metaInfo
+from fhiaimsparser.FhiAimsCommon import get_metaInfo
 import logging, os, re, sys
 
 ############################################################
@@ -101,7 +105,7 @@ def build_FhiAimsBandFileSimpleMatcher():
     which allows nice formating of nested SimpleMatchers in python.
 
     Returns:
-       SimpleMatcher that parses band.out file of FHI-aims. 
+       SimpleMatcher that parses band.out file of FHI-aims.
     """
     return SM (name = 'Root1',
         startReStr = "",
@@ -135,7 +139,7 @@ def get_cachingLevelForMetaName(metaInfoEnv, CachingLvl):
             This allows to run the parser without opening new sections.
 
     Returns:
-        Dictionary with metaname as key and caching level as value. 
+        Dictionary with metaname as key and caching level as value.
     """
     # manually adjust caching of metadata
     cachingLevelForMetaName = {
@@ -176,4 +180,3 @@ def main(CachingLvl):
 
 if __name__ == "__main__":
     main(CachingLevel.Forward)
-
