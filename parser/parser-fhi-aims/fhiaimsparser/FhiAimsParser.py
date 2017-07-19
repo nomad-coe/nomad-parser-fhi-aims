@@ -8,9 +8,9 @@ from nomadcore.caching_backend import CachingLevel
 from nomadcore.simple_parser import AncillaryParser, mainFunction
 from nomadcore.simple_parser import SimpleMatcher as SM
 from FhiAimsCommon import get_metaInfo, write_controlIn, write_k_grid, write_xc_functional
-import FhiAimsControlInParser
-import FhiAimsBandParser
-import FhiAimsDosParser
+from fhiaimsparser import FhiAimsControlInParser
+from fhiaimsparser import FhiAimsBandParser
+from fhiaimsparser import FhiAimsDosParser
 import logging, os, re, sys
 
 
@@ -1749,7 +1749,7 @@ def main():
     # get main file description
     FhiAimsMainFileSimpleMatcher = build_FhiAimsMainFileSimpleMatcher()
     # loading metadata from nomad-meta-info/meta_info/nomad_meta_info/fhi_aims.nomadmetainfo.json
-    metaInfoPath = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../../../nomad-meta-info/meta_info/nomad_meta_info/fhi_aims.nomadmetainfo.json"))
+    metaInfoPath = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../../../../nomad-meta-info/meta_info/nomad_meta_info/fhi_aims.nomadmetainfo.json"))
     metaInfoEnv = get_metaInfo(metaInfoPath)
     # set parser info
     parserInfo = getParserInfo()

@@ -7,6 +7,7 @@ syntax: glob
 #*.off
 *.old
 *.pyc
+__pycache__/
 *.bk
 *.swp
 .DS_Store
@@ -50,3 +51,6 @@ TAGS
 
 lib/
 env/
+
+# Setuptools install folder
+parser/parser-fhi-aims/fhiaimsparser.egg-info/
