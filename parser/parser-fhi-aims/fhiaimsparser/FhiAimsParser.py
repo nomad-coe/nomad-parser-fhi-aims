@@ -481,10 +481,18 @@ class FhiAimsParserContext(object):
                     backend.addArrayValues('simulation_cell', unit_cell)
                     backend.addArrayValues('configuration_periodic_dimensions', np.asarray([True, True, True]))
                 self.periodicCalc = True
+            # If unit cell information was not set, then this calculation is non-periodic.
+            else:
+                backend.addArrayValues('configuration_periodic_dimensions', np.asarray([False, False, False]))
+                self.periodicCalc = False
+
         # write stored unit cell in case of MD
-        if self.periodicCalc and self.MD and self.scfIterNr > -1:
-            backend.addArrayValues('simulation_cell', self.MDUnitCell)
-            backend.addArrayValues('configuration_periodic_dimensions', np.asarray([True, True, True]))
+        if self.MD and self.scfIterNr > -1:
+            if self.periodicCalc:
+                backend.addArrayValues('simulation_cell', self.MDUnitCell)
+                backend.addArrayValues('configuration_periodic_dimensions', np.asarray([True, True, True]))
+            else:
+                backend.addArrayValues('configuration_periodic_dimensions', np.asarray([False, False, False]))
 
     def onOpen_section_single_configuration_calculation(self, backend, gIndex, section):
         # write the references to section_method and section_system
