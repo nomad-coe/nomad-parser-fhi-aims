@@ -1,0 +1,208 @@
+################################################################################
+#
+#  FHI-aims code project
+#  VB, Fritz-Haber Institut, 2007
+#
+#  Suggested "safe" defaults for C atom (to be pasted into control.in file)
+#
+################################################################################
+  species        C
+   include_min_basis   false         
+   pure_gauss          true          
+   cut_pot             6.0  2.5  1.0 
+   l_hartree           8             
+   basis_dep_cutoff    0.d0          
+   radial_base         100 7.0       
+   radial_multiplier   8             
+   angular_grids auto                
+   angular             1202          
+   angular_acc         1.0e-08       
+   angular_min         110           
+   basis_acc           1.0e-5        
+#     global species definitions
+    nucleus             6
+    mass                12.0107
+#
+#
+#
+################################################################################
+#
+#  Definition of "minimal" basis
+#
+################################################################################
+#     valence basis states
+    valence      2  s   2.
+    valence      2  p   2.
+#     ion occupancy
+    ion_occ      2  s   1.
+    ion_occ      2  p   1.
+################################################################################
+#
+#  Suggested additional basis functions. For production calculations, 
+#  uncomment them one after another (the most important basis functions are
+#  listed first).
+#
+#  Constructed for dimers: 1.0 A, 1.25 A, 1.5 A, 2.0 A, 3.0 A
+#
+################################################################################
+#  "First tier" - improvements: -1214.57 meV to -155.61 meV
+#  "Second tier" - improvements: -67.75 meV to -5.23 meV
+#  "Third tier" - improvements: -2.43 meV to -0.60 meV
+#  "Fourth tier" - improvements: -0.39 meV to -0.18 meV
+#  Further basis functions - improvements: -0.08 meV and below
+# C def2-TZVP
+ gaussian 0 6
+     13575.3496820            0.0002225  
+      2035.2333680            0.0017233  
+       463.2256236            0.0089256  
+       131.2001960            0.0357280  
+        42.8530159            0.1107626  
+        15.5841858            0.2429563  
+ gaussian 0 2
+         6.2067139            0.4144026  
+         2.5764897            0.2374497  
+ gaussian 0 1 0.57696339419
+ gaussian 0 1 0.22972831358
+  gaussian           0          1   0.095164 
+ gaussian 1 4
+        34.6972322            0.0053334  
+         7.9582623            0.0358641  
+         2.3780827            0.1421587  
+         0.8143321            0.3427047  
+ gaussian 1 1 0.28887547253
+ gaussian 1 1 0.10056823671
+ gaussian 2 1 1.09700000
+ gaussian 2 1 0.31800000
+ gaussian 3 1 0.76100000
+################################################################################
+#
+#  FHI-aims code project
+#  VB, Fritz-Haber Institut, 2007
+#
+#  Suggested "safe" defaults for O atom (to be pasted into control.in file)
+#
+################################################################################
+  species        O
+   include_min_basis   false         
+   pure_gauss          true          
+   cut_pot             6.0  2.5  1.0 
+   l_hartree           8             
+   basis_dep_cutoff    0.d0          
+   radial_base         100 7.0       
+   radial_multiplier   8             
+   angular_grids auto                
+   angular             1202          
+   angular_acc         1.0e-08       
+   angular_min         110           
+   basis_acc           1.0e-5        
+#     global species definitions
+    nucleus             8
+    mass                15.9994
+#
+#
+#
+################################################################################
+#
+#  Definition of "minimal" basis
+#
+################################################################################
+#     valence basis states
+    valence      2  s   2.
+    valence      2  p   4.
+#     ion occupancy
+    ion_occ      2  s   1.
+    ion_occ      2  p   3.
+################################################################################
+#
+#  Suggested additional basis functions. For production calculations, 
+#  uncomment them one after another (the most important basis functions are
+#  listed first).
+#
+#  Constructed for dimers: 1.0 A, 1.208 A, 1.5 A, 2.0 A, 3.0 A
+#
+################################################################################
+#  "First tier" - improvements: -699.05 meV to -159.38 meV
+#  "Second tier" - improvements: -49.91 meV to -5.39 meV
+#  "Third tier" - improvements: -2.83 meV to -0.50 meV
+#  "Fourth tier" - improvements: -0.40 meV to -0.12 meV
+# Further basis functions - -0.08 meV and below
+# O def2-TZVP
+ gaussian 0 6
+     27032.3826310            0.0002173  
+      4052.3871392            0.0016839  
+       922.3272271            0.0087396  
+       261.2407099            0.0352400  
+        85.3546414            0.1115352  
+        31.0350352            0.2558895  
+ gaussian 0 2
+        12.2608607            0.3976873  
+         4.9987076            0.2462785  
+ gaussian 0 1 1.1703108158
+ gaussian 0 1 0.46474740994
+ gaussian 0 1 0.18504536357
+ gaussian 1 4
+        63.2749548            0.0060685  
+        14.6270494            0.0419126  
+         4.4501223            0.1615384  
+         1.5275800            0.3570695  
+ gaussian 1 1 0.52935117943
+ gaussian 1 1 0.17478421270
+ gaussian 2 1 2.31400000
+ gaussian 2 1 0.64500000
+ gaussian 3 1 1.42800000
+################################################################################
+#
+#  FHI-aims code project
+#  VB, Fritz-Haber Institut, 2007
+#
+#  Suggested "safe" defaults for H atom (to be pasted into control.in file)
+#
+################################################################################
+  species        H
+   include_min_basis   false         
+   pure_gauss          true          
+   cut_pot             6.0  2.5  1.0 
+   l_hartree           8             
+   basis_dep_cutoff    0.d0          
+   radial_base         100 7.0       
+   radial_multiplier   8             
+   angular_grids auto                
+   angular             1202          
+   angular_acc         1.0e-08       
+   angular_min         110           
+   basis_acc           1.0e-5        
+#     global species definitions
+    nucleus             1
+    mass                1.00794
+#
+#
+#     
+################################################################################
+#
+#  Definition of "minimal" basis
+#
+################################################################################
+#     valence basis states
+    valence      1  s   1.
+#     ion occupancy
+    ion_occ      1  s   0.5
+################################################################################
+#
+#  Suggested additional basis functions. For production calculations, 
+#  uncomment them one after another (the most important basis functions are
+#  listed first).
+#
+#  Basis constructed for dimers: 0.5 A, 0.7 A, 1.0 A, 1.5 A, 2.5 A
+#
+################################################################################
+#  "First tier" - improvements: -1014.90 meV to -62.69 meV
+#  "Second tier" - improvements: -12.89 meV to -1.83 meV
+#  "Third tier" - improvements: -0.25 meV to -0.12 meV
+# H def2-TZVP
+ gaussian 0 3
+        34.0613410            0.0060252  
+         5.1235746            0.0450211  
+         1.1646626            0.2018973  
+ gaussian 0 1 0.32723041
+ gaussian 0 1 0.10307241
+ gaussian 1 1 0.8000000

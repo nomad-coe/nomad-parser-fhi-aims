@@ -1,14 +1,7 @@
 """
-This is a module for unit testing the BigDFT parser. The unit tests are run with
-a custom backend that outputs the results directly into native python object for
-easier and faster analysis.
-
-Each property that has an enumerable list of different possible options is
-assigned a new test class, that should ideally test through all the options.
-
-The properties that can have non-enumerable values will be tested only for one
-specific case inside a test class that is designed for a certain type of run
-(MD, optimization, QM/MM, etc.)
+This is a module that defines unit tests for the parser. The unit tests are run
+with a custom backend that outputs the results directly into native python
+object for easier and faster testing.
 """
 import os
 import unittest
@@ -94,11 +87,38 @@ class TestMolecule(unittest.TestCase):
         result = self.results["configuration_periodic_dimensions"]
         self.assertTrue(np.array_equal(result, np.array([False, False, False])))
 
+
+#===============================================================================
+class TestG0W0(unittest.TestCase):
+    """Tests that the parser can handle G0W0 calculations.
+    """
+    @classmethod
+    def setUpClass(cls):
+        cls.results = get_results("molecule/output.dat")
+
+    def test_program_name(self):
+        result = self.results["program_name"]
+        self.assertEqual(result, "FHI-aims")
+
+    def test_program_basis_set(self):
+        result = self.results["program_basis_set_type"]
+        self.assertEqual(result, "numeric AOs")
+
+    def test_electronic_structure_method(self):
+        result = self.results["electronic_structure_method"]
+        self.assertEqual(result, "G0W0")
+
+    def test_configuration_periodic_dimensions(self):
+        result = self.results["configuration_periodic_dimensions"]
+        self.assertTrue(np.array_equal(result, np.array([False, False, False])))
+
+
 #===============================================================================
 if __name__ == '__main__':
     suites = []
     suites.append(unittest.TestLoader().loadTestsFromTestCase(TestCrystal))
     suites.append(unittest.TestLoader().loadTestsFromTestCase(TestMolecule))
+    suites.append(unittest.TestLoader().loadTestsFromTestCase(TestG0W0))
 
     alltests = unittest.TestSuite(suites)
     unittest.TextTestRunner(verbosity=0).run(alltests)
