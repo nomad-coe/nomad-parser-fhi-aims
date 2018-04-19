@@ -36,6 +36,10 @@ class FhiAimsDosParserContext(object):
             writeMetaData: Deteremines if metadata is written or stored in class attributes.
         """
         self.writeMetaData = writeMetaData
+        # unit cell volume is necessary for unit-conversion compliant with
+        # NOMAD-metaInfo
+        # unit_cell_volume is set by the 'main' FhiAimsParser before calling us
+        self.unit_cell_volume = None
 
     def startedParsing(self, fInName, parser):
         """Function is called when the parsing starts and the compiled parser is obtained.

@@ -77,6 +77,7 @@ class FhiAimsParserContext(object):
         self.periodicCalc = False
         self.MD = False
         self.MDUnitCell = None
+        self.unit_cell_volume = None
         self.band_segm_start_end = None
         # start with -1 since zeroth iteration is the initialization
         self.scfIterNr = -1
@@ -481,6 +482,8 @@ class FhiAimsParserContext(object):
                     backend.addArrayValues('simulation_cell', unit_cell)
                     backend.addArrayValues('configuration_periodic_dimensions', np.asarray([True, True, True]))
                 self.periodicCalc = True
+                # save the unit cell volume for DOS normalization
+                self.unit_cell_volume = np.abs(np.linalg.det(unit_cell))
             # If unit cell information was not set, then this calculation is non-periodic.
             else:
                 backend.addArrayValues('configuration_periodic_dimensions', np.asarray([False, False, False]))
@@ -632,6 +635,9 @@ class FhiAimsParserContext(object):
                 # construct parser for DOS file if not present
                 if self.dosSuperContext is None or self.dosParser is None:
                     self.compile_dos_parser()
+                # forward the unit cell volume to the DOS parser for
+                # normalization
+                self.dosSuperContext.unit_cell_volume = self.unit_cell_volume
                 # parse DOS file
                 self.dosParser.parseFile(fIn)
                 # set flag that DOS was parsed successfully and store values
@@ -713,6 +719,9 @@ class FhiAimsParserContext(object):
                     fName = os.path.normpath(os.path.join(dirName, dFile))
                     try:
                         with open(fName) as fIn:
+                            # forward the unit cell volume to the DOS parser
+                            # for normalization
+                            self.dosSuperContext.unit_cell_volume = self.unit_cell_volume
                             # parse DOS file
                             self.dosParser.parseFile(fIn)
                             # extract values
