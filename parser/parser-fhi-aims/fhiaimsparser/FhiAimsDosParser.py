@@ -9,6 +9,7 @@ import nomadcore.ActivateLogging
 from nomadcore.caching_backend import CachingLevel
 from nomadcore.simple_parser import mainFunction
 from nomadcore.simple_parser import SimpleMatcher as SM
+from nomadcore.unit_conversion.unit_conversion import convert_unit
 from fhiaimsparser.FhiAimsCommon import get_metaInfo
 import logging, os, re, sys
 
@@ -71,6 +72,13 @@ class FhiAimsDosParserContext(object):
         if dos_values:
             # need to transpose array since its shape is [number_of_spin_channels,n_dos_values] in the metadata
             self.dos_values = np.transpose(np.asarray(dos_values))
+            # FHI-AIMS provides DOS in units of 1/(eV*unit_cell_volume)
+            # http://materials-mine.com/tutorials/AIMS/FHI-aims.071914.pdf, page 239
+            # NOMAD units are 1/(J*cell)
+            #   convert to 1/J
+            self.dos_values = convert_unit(self.dos_values, '1/eV', '1/J')
+            #   convert to 1/cell
+            self.dos_values *= self.unit_cell_volume
         # write metadata only if values were found for both quantities
         if self.writeMetaData:
             if dos_energies is not None and dos_values:
