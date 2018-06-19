@@ -535,7 +535,10 @@ class FhiAimsParserContext(object):
                     backend.addArrayValues('eigenvalues_occupation', occ)
                     backend.addArrayValues('eigenvalues_values', ev)
                     if kpt is not None:
-                        backend.addArrayValues('eigenvalues_kpoints', kpt)
+                        for ispin in range(1,kpt.shape[0]):
+                            if not all(abs(kpt[ispin]-kpt[0])<1.0e-6):
+                                raise Exception("k point coordinates of various spin channels differ")
+                        backend.addArrayValues('eigenvalues_kpoints', kpt[0])
                     backend.closeSection('section_eigenvalues', gIndexTmp)
                 else:
                     logger.warning("Found %d spin channels for eigenvalue kpoints but %d for eigenvalues in single configuration calculation %d." % (len(kpt), len(ev), gIndex))
