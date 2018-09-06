@@ -1,11 +1,11 @@
 # Copyright 2015-2018 Franz Knuth, Fawzi Mohamed, Wael Chibani, Ankit Kariryaa, Lauri Himanen, Danio Brambila
-# 
+#
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
 #   You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 #   Unless required by applicable law or agreed to in writing, software
 #   distributed under the License is distributed on an "AS IS" BASIS,
 #   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -27,7 +27,7 @@ class FHIaimsParser(ParserInterface):
             default_units=None, metainfo_units=None, debug=False,
             log_level=logging.ERROR, store=True):
         super(FHIaimsParser, self).__init__(
-            main_file, metainfo_to_keep, backend, default_units,
+            metainfo_to_keep, backend, default_units,
             metainfo_units, debug, log_level, store)
 
     def setup_version(self):
@@ -41,9 +41,7 @@ class FHIaimsParser(ParserInterface):
         self.parser_context.file_service.set_file_id(filename, "output")
 
         # Setup the correct main parser possibly based on the version
-        self.main_parser = FHIaimsMainParser(
-            self.parser_context.main_file,
-            self.parser_context)
+        self.main_parser = FHIaimsMainParser(self.parser_context)
 
     @staticmethod
     def get_mainfile_regex():
@@ -63,10 +61,10 @@ class FHIaimsParser(ParserInterface):
 class FHIaimsMainParser(MainHierarchicalParser):
     """The main parser class that is called for all run types.
     """
-    def __init__(self, filepath, parser_context):
+    def __init__(self, parser_context):
         """
         """
-        super(FHIaimsMainParser, self).__init__(filepath, parser_context)
+        super(FHIaimsMainParser, self).__init__(parser_context)
         self.root_matcher = build_FhiAimsMainFileSimpleMatcher()
         self.caching_levels = get_cachingLevelForMetaName(
             parser_context.metainfo_env)
