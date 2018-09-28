@@ -18,11 +18,12 @@ from nomadcore.baseclasses import ParserInterface, MainHierarchicalParser
 
 from fhiaimsparser.FhiAimsParser import FhiAimsParserContext, build_FhiAimsMainFileSimpleMatcher, get_cachingLevelForMetaName, getParserInfo
 
+
 class FHIaimsParser(ParserInterface):
     """This class provides an object-oriented access to the parser.
     """
     def __init__(
-            self, main_file, metainfo_to_keep=None, backend=None,
+            self, metainfo_to_keep=None, backend=None,
             default_units=None, metainfo_units=None, debug=False,
             log_level=logging.ERROR, store=True):
         super(FHIaimsParser, self).__init__(
