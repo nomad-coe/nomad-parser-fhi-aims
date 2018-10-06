@@ -91,8 +91,9 @@ class FhiAimsDosParserContext(object):
             # NOMAD units are 1/(J*cell)
             #   convert to 1/J
             self.dos_values = convert_unit(self.dos_values, '1/eV', '1/J')
-            #   convert to 1/cell
-            self.dos_values *= self.unit_cell_volume
+            #  do not convert to 1/cell, as dos_values is also supposed to be over the whole
+            #  cell, the notation in FHI-aims tutorial is a bit misleading
+            #self.dos_values *= self.unit_cell_volume
         # write metadata only if values were found for both quantities
         if self.writeMetaData:
             if dos_energies is not None and dos_values:
