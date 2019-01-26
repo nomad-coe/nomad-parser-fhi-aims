@@ -66,14 +66,14 @@ def write_controlIn(backend, metaInfoEnv, valuesDict, writeXC, location, logger)
     # hybrid_xc_coeff is only written for hybrid functionals.
     # verbatim_writeout is only needed to detect if the control.in is written in the main file of aims.
     exclude_list = [
-                    'x_fhi_aims_controlIn_k2',
-                    'x_fhi_aims_controlIn_k3',
-                    'x_fhi_aims_controlIn_relativistic_threshold',
-                    'x_fhi_aims_controlIn_xc',
-                    'x_fhi_aims_controlIn_hse_omega',
-                    'x_fhi_aims_controlIn_hse_unit',
-                    'x_fhi_aims_controlIn_hybrid_xc_coeff',
-                    'x_fhi_aims_controlIn_verbatim_writeout',
+                    'x_fhi_aims_controlin_k2',
+                    'x_fhi_aims_controlin_k3',
+                    'x_fhi_aims_controlin_relativistic_threshold',
+                    'x_fhi_aims_controlin_xc',
+                    'x_fhi_aims_controlin_hse_omega',
+                    'x_fhi_aims_controlin_hse_unit',
+                    'x_fhi_aims_controlin_hybrid_xc_coeff',
+                    'x_fhi_aims_controlin_verbatim_writeout',
                    ]
     # write settings
     for k,v in valuesDict.items():
@@ -81,9 +81,9 @@ def write_controlIn(backend, metaInfoEnv, valuesDict, writeXC, location, logger)
             if k in exclude_list:
                 continue
             # write k_krid
-            elif k == 'x_fhi_aims_controlIn_k1':
+            elif k == 'x_fhi_aims_controlin_k1':
                 write_k_grid(backend, 'x_fhi_aims_controlIn_k', valuesDict)
-            elif k == 'x_fhi_aims_controlIn_relativistic':
+            elif k == 'x_fhi_aims_controlin_relativistic':
                 # check for scalar ZORA setting and convert to one common name
                 if re.match(r"\s*zora\s+scalar", v[-1], re.IGNORECASE):
                     backend.superBackend.addValue(k, 'zora scalar')
@@ -241,12 +241,12 @@ def write_xc_functional(backend, metaInfoEnv, metaNameStart, valuesDict, locatio
                     for xcItem in xcList:
                         xcName = xcItem.get('name')
                         if xcName is not None:
-                            # write section and and XC_functional_name
-                            gIndexTmp = backend.openSection('section_XC_functionals')
-                            backend.addValue('XC_functional_name', xcName)
-                            # write hybrid_xc_coeff for B3LYP and HSE03 into XC_functional_parameters
+                            # write section and and xc_functional_name
+                            gIndexTmp = backend.openSection('section_xc_functionals')
+                            backend.addValue('xc_functional_name', xcName)
+                            # write hybrid_xc_coeff for B3LYP and HSE03 into xc_functional_parameters
                             if hybridCoeff is not None and xc[-1] in ['hybrid B3LYP functional', 'HSE']:
-                                backend.addValue('XC_functional_parameters', {xcHybridCoeffDescr: hybridCoeff[-1]})
+                                backend.addValue('xc_functional_parameters', {xcHybridCoeffDescr: hybridCoeff[-1]})
                             # write omega and hybrid_xc_coeff for HSE06
                             elif xc[-1] == hseFunc:
                                 # converted value of omega was obtained above
@@ -257,16 +257,16 @@ def write_xc_functional(backend, metaInfoEnv, metaNameStart, valuesDict, locatio
                                 else:
                                     hybrid = 0.25
                                 parameters[xcHybridCoeffDescr] = hybrid
-                                backend.addValue('XC_functional_parameters', parameters)
+                                backend.addValue('xc_functional_parameters', parameters)
                             # adjust weight of functionals that are affected by hybrid_xc_coeff
                             elif hybridCoeff is not None and 'convert' in xcItem:
-                                backend.addValue('XC_functional_weight', xcItem['convert'](hybridCoeff[-1]))
+                                backend.addValue('xc_functional_weight', xcItem['convert'](hybridCoeff[-1]))
                             # write weight if present for current xcItem
                             else:
                                 xcWeight = xcItem.get('weight')
                                 if xcWeight is not None:
-                                    backend.addValue('XC_functional_weight', xcWeight)
-                            backend.closeSection('section_XC_functionals', gIndexTmp)
+                                    backend.addValue('xc_functional_weight', xcWeight)
+                            backend.closeSection('section_xc_functionals', gIndexTmp)
                         else:
                             logger.error("The dictionary for xc functional '%s' does not have the key 'name'. Please correct the dictionary xcDict in %s." % (xc[-1], os.path.basename(__file__)))
                 else:

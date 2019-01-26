@@ -57,21 +57,21 @@ class FhiAimsParserContext(object):
         # dictionary of energy values, which are tracked between SCF iterations and written after convergence
         self.totalEnergyList = {
                                 'energy_sum_eigenvalues': None,
-                                'energy_XC_potential': None,
+                                'energy_xc_potential': None,
                                 'energy_correction_hartree': None,
                                 'energy_correction_entropy': None,
                                 'electronic_kinetic_energy': None,
                                 'energy_electrostatic': None,
                                 'energy_hartree_error': None,
                                 'energy_sum_eigenvalues_per_atom': None,
-                                'energy_total_T0_per_atom': None,
+                                'energy_total_t0_per_atom': None,
                                 'energy_free_per_atom': None,
                                }
         # dictionary for conversion of relativistic treatment in aims to metadata format
         self.relativisticDict = {
                                  'Non-relativistic': '',
-                                 'ZORA': 'scalar_relativistic',
-                                 'on-site free-atom approximation to ZORA': 'scalar_relativistic_atomic_ZORA',
+                                 'ZORA': 'scaled_ZORA',
+                                 'on-site free-atom approximation to ZORA': 'atomic_ZORA',
                                 }
 
     def initialize_values(self):
@@ -249,11 +249,11 @@ class FhiAimsParserContext(object):
         backend.addValue("sampling_method", sampling_method)
         backend.closeSection("section_sampling_method", samplingGIndex)
         frameSequenceGIndex = backend.openSection("section_frame_sequence")
-        backend.addValue("frame_sequence_to_sampling_ref", samplingGIndex)
-        backend.addArrayValues("frame_sequence_local_frames_ref", np.asarray(self.singleConfCalcs))
+        backend.addValue("frame_sequence_to_sampling_method_ref", samplingGIndex)
+        backend.addArrayValues("frame_sequence_to_frames_ref", np.asarray(self.singleConfCalcs))
         backend.closeSection("section_frame_sequence", frameSequenceGIndex)
 
-    def onClose_x_fhi_aims_section_MD_detect(self, backend, gIndex, section):
+    def onClose_x_fhi_aims_section_md_detect(self, backend, gIndex, section):
         """Trigger called when fhi_aims_section_MD_detect is closed.
 
         Detect if a MD run was performed.
@@ -289,7 +289,7 @@ class FhiAimsParserContext(object):
                 self.closingScGWMethodSection(backend, gIndex, section)
             else:
                 backend.pwarn("unexpected electronic structure method value %s" % m)
-        elif section["van_der_Waals_method"]:
+        elif section["van_der_waals_method"]:
             self.closingVdWMethodSection(backend, gIndex, section)
         else:
             backend.pwarn("unexpected section_method %s" % section)
@@ -329,7 +329,7 @@ class FhiAimsParserContext(object):
         verbatim_writeout = True
         counter = 0
         for k,v in section.simpleValues.items():
-            if k == 'x_fhi_aims_controlIn_verbatim_writeout':
+            if k == 'x_fhi_aims_controlin_verbatim_writeout':
                 # only the first letter is important for aims
                 if v[-1][0] in ['f', 'F']:
                     verbatim_writeout = False
@@ -370,12 +370,12 @@ class FhiAimsParserContext(object):
         # hse_omega is only written if HSE was used and converted according to hse_unit which is not written since not needed.
         # hybrid_xc_coeff is only written for hybrid functionals.
         exclude_list = [
-                        'x_fhi_aims_controlInOut_k2',
-                        'x_fhi_aims_controlInOut_k3',
-                        'x_fhi_aims_controlInOut_xc',
-                        'x_fhi_aims_controlInOut_hse_omega',
-                        'x_fhi_aims_controlInOut_hse_unit',
-                        'x_fhi_aims_controlInOut_hybrid_xc_coeff',
+                        'x_fhi_aims_controlinout_k2',
+                        'x_fhi_aims_controlinout_k3',
+                        'x_fhi_aims_controlinout_xc',
+                        'x_fhi_aims_controlinout_hse_omega',
+                        'x_fhi_aims_controlinout_hse_unit',
+                        'x_fhi_aims_controlinout_hybrid_xc_coeff',
                        ]
         # band releated data does not change the calculation and will be processed separatly
         for name in self.metaInfoEnv.infoKinds:
@@ -387,25 +387,25 @@ class FhiAimsParserContext(object):
                 if k in exclude_list:
                     continue
                 # write k_krid
-                elif k == 'x_fhi_aims_controlInOut_k1':
+                elif k == 'x_fhi_aims_controlinout_k1':
                     write_k_grid(backend, 'x_fhi_aims_controlInOut_k', section.simpleValues)
-                elif k == 'x_fhi_aims_controlInOut_relativistic_threshold':
+                elif k == 'x_fhi_aims_controlinout_relativistic_threshold':
                     # write threshold only for scalar ZORA
-                    if section['x_fhi_aims_controlInOut_relativistic'] is not None:
-                        if section['x_fhi_aims_controlInOut_relativistic'][-1] == 'ZORA':
+                    if section['x_fhi_aims_controlinout_relativistic'] is not None:
+                        if section['x_fhi_aims_controlinout_relativistic'][-1] == 'ZORA':
                             backend.superBackend.addValue(k, v[-1])
                 # default writeout
                 else:
                     backend.superBackend.addValue(k, v[-1])
         # detect scalar ZORA
-        if section['x_fhi_aims_controlInOut_relativistic'] is not None:
-            if section['x_fhi_aims_controlInOut_relativistic'][-1] == 'ZORA':
+        if section['x_fhi_aims_controlinout_relativistic'] is not None:
+            if section['x_fhi_aims_controlinout_relativistic'][-1] == 'ZORA':
                 self.scalarZORA = True
         # get number of spin channels
-        if section['x_fhi_aims_controlInOut_number_of_spin_channels'] is not None:
-            self.maxSpinChannel = section['x_fhi_aims_controlInOut_number_of_spin_channels'][-1]
+        if section['x_fhi_aims_controlinout_number_of_spin_channels'] is not None:
+            self.maxSpinChannel = section['x_fhi_aims_controlinout_number_of_spin_channels'][-1]
         # convert relativistic setting to metadata string
-        InOut_relativistic = section['x_fhi_aims_controlInOut_relativistic']
+        InOut_relativistic = section['x_fhi_aims_controlinout_relativistic']
         if InOut_relativistic is not None:
             relativistic = self.relativisticDict.get(InOut_relativistic[-1])
             if relativistic is not None:
@@ -513,7 +513,7 @@ class FhiAimsParserContext(object):
 
     def onOpen_section_single_configuration_calculation(self, backend, gIndex, section):
         # write the references to section_method and section_system
-        backend.addValue('single_configuration_to_calculation_method_ref', self.secMethodIndex)
+        backend.addValue('single_configuration_calculation_to_method_ref', self.secMethodIndex)
         backend.addValue('single_configuration_calculation_to_system_ref', self.secSystemDescriptionIndex)
         self.singleConfCalcs.append(gIndex)
 
@@ -573,18 +573,26 @@ class FhiAimsParserContext(object):
                 forces_free.append(fi)
         if forces_free:
             # need to transpose array since its shape is [number_of_atoms,3] in the metadata
-            backend.addArrayValues('atom_forces_free', np.transpose(np.asarray(forces_free)))
+            fId = backend.openSection('section_atom_forces')
+            backend.addValue('atom_forces_quantity', 'energy_free')
+            backend.addValue('atom_forces_constraints', 'clean')
+            backend.addArrayValues('atom_forces', np.transpose(np.asarray(forces_free)))
+            backend.closeSection('section_atom_forces', fId)
         if self.forces_raw:
             # need to transpose array since its shape is [number_of_atoms,3] in the metadata
-            backend.addArrayValues('atom_forces_free_raw', np.transpose(np.asarray(self.forces_raw)))
+            fId = backend.openSection('section_atom_forces')
+            backend.addValue('atom_forces_quantity', 'energy_free')
+            backend.addValue('atom_forces_constraints', 'raw')
+            backend.addArrayValues('atom_forces', np.transpose(np.asarray(self.forces_raw)))
+            backend.closeSection('section_atom_forces', fId)
         # get reference to current section_single_configuration_calculation if DOS was found in there
         if self.dosFound:
             self.dosRefSingleConfigurationCalculation = gIndex
             self.dosFound = False
         self.lastCalculationGIndex = gIndex
 
-    def onClose_x_fhi_aims_section_eigenvalues_ZORA(self, backend, gIndex, section):
-        """Trigger called when fhi_aims_section_eigenvalues_ZORA is closed.
+    def onClose_x_fhi_aims_section_eigenvalues_zora(self, backend, gIndex, section):
+        """Trigger called when fhi_aims_section_eigenvalues_zora is closed.
 
         Eigenvalues are extracted.
         """
@@ -592,14 +600,14 @@ class FhiAimsParserContext(object):
         self.eigenvalues_occupation = []
         self.eigenvalues_values = []
         self.eigenvalues_kpoints = []
-        self.update_eigenvalues(section, '_ZORA')
+        self.update_eigenvalues(section, '_zora')
 
     def onClose_section_scf_iteration(self, backend, gIndex, section):
         """Trigger called when section_scf_iteration is closed.
 
         Count number of SCF iterations and check for convergence.
         Energy values are tracked (not for scalar ZORA as these values are extracted separatly).
-        Eigenvalues are tracked (not for scalar ZORA, see onClose_x_fhi_aims_section_eigenvalues_ZORA).
+        Eigenvalues are tracked (not for scalar ZORA, see onClose_x_fhi_aims_section_eigenvalues_zora).
 
         The quantitties that are tracked during the SCF cycle are reset to default.
         I.e. scalar values are allowed to be set None, and lists are set to empty.
@@ -929,82 +937,82 @@ def build_FhiAimsMainFileSimpleMatcher():
                 startReStr = r"\s*Plot band\s*[0-9]+",
                 repeats = True,
                 subMatchers = [
-                SM (r"\s*\|\s*begin\s*(?P<x_fhi_aims_controlInOut_band_segment_start1>[-+0-9.]+)\s+(?P<x_fhi_aims_controlInOut_band_segment_start2>[-+0-9.]+)\s+(?P<x_fhi_aims_controlInOut_band_segment_start3>[-+0-9.]+)"),
-                SM (r"\s*\|\s*end\s*(?P<x_fhi_aims_controlInOut_band_segment_end1>[-+0-9.]+)\s+(?P<x_fhi_aims_controlInOut_band_segment_end2>[-+0-9.]+)\s+(?P<x_fhi_aims_controlInOut_band_segment_end3>[-+0-9.]+)"),
+                SM (r"\s*\|\s*begin\s*(?P<x_fhi_aims_controlinout_band_segment_start1>[-+0-9.]+)\s+(?P<x_fhi_aims_controlinout_band_segment_start2>[-+0-9.]+)\s+(?P<x_fhi_aims_controlinout_band_segment_start3>[-+0-9.]+)"),
+                SM (r"\s*\|\s*end\s*(?P<x_fhi_aims_controlinout_band_segment_end1>[-+0-9.]+)\s+(?P<x_fhi_aims_controlinout_band_segment_end2>[-+0-9.]+)\s+(?P<x_fhi_aims_controlinout_band_segment_end3>[-+0-9.]+)"),
                 SM (r"\s*\|\s*number of points:\s*[0-9]+"),
                 ]),
             # only the first character is important for aims
-            SM (r"\s*hse_unit: Unit for the HSE06 hybrid functional screening parameter set to (?P<x_fhi_aims_controlInOut_hse_unit>[a-zA-Z])[a-zA-Z]*\^\(-1\)\.", repeats = True),
-            SM (r"\s*hybrid_xc_coeff: Mixing coefficient for hybrid-functional exact exchange modified to\s*(?P<x_fhi_aims_controlInOut_hybrid_xc_coeff>[0-9.]+)\s*\.", repeats = True),
-            SM (r"^\s*Found k-point grid:\s+(?P<x_fhi_aims_controlInOut_k1>[0-9]+)\s+(?P<x_fhi_aims_controlInOut_k2>[0-9]+)\s+(?P<x_fhi_aims_controlInOut_k3>[0-9]+)", repeats = True),
+            SM (r"\s*hse_unit: Unit for the HSE06 hybrid functional screening parameter set to (?P<x_fhi_aims_controlinout_hse_unit>[a-zA-Z])[a-zA-Z]*\^\(-1\)\.", repeats = True),
+            SM (r"\s*hybrid_xc_coeff: Mixing coefficient for hybrid-functional exact exchange modified to\s*(?P<x_fhi_aims_controlinout_hybrid_xc_coeff>[0-9.]+)\s*\.", repeats = True),
+            SM (r"^\s*Found k-point grid:\s+(?P<x_fhi_aims_controlinout_k1>[0-9]+)\s+(?P<x_fhi_aims_controlinout_k2>[0-9]+)\s+(?P<x_fhi_aims_controlinout_k3>[0-9]+)", repeats = True),
             # section fhi_aims_section_MD_detect is just used to detect already in the methods section if a MD run was perfomed
-            SM (r"\s*Molecular dynamics time step =\s*(?P<x_fhi_aims_controlInOut_MD_time_step__ps>[0-9.]+) *ps", repeats = True, sections = ['x_fhi_aims_section_MD_detect']),
-            SM (r"\s*Scalar relativistic treatment of kinetic energy: (?P<x_fhi_aims_controlInOut_relativistic>[-a-zA-Z\s]+)\.", repeats = True),
-            SM (r"\s*(?P<x_fhi_aims_controlInOut_relativistic>Non-relativistic) treatment of kinetic energy\.", repeats = True),
-            SM (r"\s*Threshold value for ZORA:\s*(?P<x_fhi_aims_controlInOut_relativistic_threshold>[-+0-9.eEdD]+)", repeats = True),
+            SM (r"\s*Molecular dynamics time step =\s*(?P<x_fhi_aims_controlinout_md_time_step__ps>[0-9.]+) *ps", repeats = True, sections = ['x_fhi_aims_section_md_detect']),
+            SM (r"\s*Scalar relativistic treatment of kinetic energy: (?P<x_fhi_aims_controlinout_relativistic>[-a-zA-Z\s]+)\.", repeats = True),
+            SM (r"\s*(?P<x_fhi_aims_controlinout_relativistic>Non-relativistic) treatment of kinetic energy\.", repeats = True),
+            SM (r"\s*Threshold value for ZORA:\s*(?P<x_fhi_aims_controlinout_relativistic_threshold>[-+0-9.eEdD]+)", repeats = True),
             # need several regualar expressions to capture all possible output messages of the xc functional
-            SM (r"\s*XC: Using (?P<x_fhi_aims_controlInOut_xc>[-_a-zA-Z0-9\s()]+)(?:\.| NOTE)", repeats = True),
-            SM (r"\s*XC: Using (?P<x_fhi_aims_controlInOut_xc>HSE-functional) with OMEGA =\s*(?P<x_fhi_aims_controlInOut_hse_omega>[-+0-9.eEdD]+)\s*<units>\.", repeats = True),
-            SM (r"\s*XC: Using (?P<x_fhi_aims_controlInOut_xc>Hybrid M11 gradient-corrected functionals) with OMEGA =\s*[-+0-9.eEdD]+", repeats = True),
-            SM (r"\s*XC:\s*(?P<x_fhi_aims_controlInOut_xc>HSE) with OMEGA_PBE =\s*[-+0-9.eEdD]+", repeats = True),
-            SM (r"\s*XC: Running (?P<x_fhi_aims_controlInOut_xc>[-_a-zA-Z0-9\s()]+) \.\.\.", repeats = True),
-            SM (r"\s*(?P<x_fhi_aims_controlInOut_xc>Hartree-Fock) calculation starts \.\.\.\.\.\.", repeats = True),
+            SM (r"\s*XC: Using (?P<x_fhi_aims_controlinout_xc>[-_a-zA-Z0-9\s()]+)(?:\.| NOTE)", repeats = True),
+            SM (r"\s*XC: Using (?P<x_fhi_aims_controlinout_xc>HSE-functional) with OMEGA =\s*(?P<x_fhi_aims_controlinout_hse_omega>[-+0-9.eEdD]+)\s*<units>\.", repeats = True),
+            SM (r"\s*XC: Using (?P<x_fhi_aims_controlinout_xc>Hybrid M11 gradient-corrected functionals) with OMEGA =\s*[-+0-9.eEdD]+", repeats = True),
+            SM (r"\s*XC:\s*(?P<x_fhi_aims_controlinout_xc>HSE) with OMEGA_PBE =\s*[-+0-9.eEdD]+", repeats = True),
+            SM (r"\s*XC: Running (?P<x_fhi_aims_controlinout_xc>[-_a-zA-Z0-9\s()]+) \.\.\.", repeats = True),
+            SM (r"\s*(?P<x_fhi_aims_controlinout_xc>Hartree-Fock) calculation starts \.\.\.\.\.\.", repeats = True),
             # define some basis set specific SMs
-            SM (r"\s*Reading configuration options for species\s*(?P<x_fhi_aims_controlInOut_species_name>[a-zA-Z]+)", repeats=True,
+            SM (r"\s*Reading configuration options for species\s*(?P<x_fhi_aims_controlinout_species_name>[a-zA-Z]+)", repeats=True,
             #SM (r"\s*Reading configuration options for species\s*(?P<atom_type_name>[a-zA-Z]+)", repeats=True,
-                sections = ['section_atom_type',"x_fhi_aims_section_controlInOut_atom_species"],
+                sections = ['section_atom_type',"x_fhi_aims_section_controlinout_atom_species"],
                 subFlags = SM.SubFlags.Unordered,
                 subMatchers = [
                    SM (r"\s*\|\s*Found\s*request\s*to\s*include\s*pure\s*gaussian\s*fns.\s*:"
-                       r"\s+(?P<x_fhi_aims_controlInOut_pure_gaussian>[A-Z]+)"
+                       r"\s+(?P<x_fhi_aims_controlinout_pure_gaussian>[A-Z]+)"
                        r"\s*", repeats = True),
-                       #r"\s+(?P<x_fhi_aims_controlInOut_pure_gaussian>[A-Z]+)"
+                       #r"\s+(?P<x_fhi_aims_controlinout_pure_gaussian>[A-Z]+)"
                        #r"\s*", repeats = True),
                    SM(startReStr = r"\s*\|\s*Found nuclear charge :"
-                    #"\s*(?P<x_fhi_aims_controlInOut_species_charge>[.0-9]+\S)\s*",
+                    #"\s*(?P<x_fhi_aims_controlinout_species_charge>[.0-9]+\S)\s*",
                     r"\s*(?P<atom_type_charge>[.0-9]+\S)\s*",
                    repeats = True),
                    SM(r"\s*\|\s*Found atomic mass :"
-                    #"\s*(?P<x_fhi_aims_controlInOut_species_mass__amu>[.0-9]+)"
+                    #"\s*(?P<x_fhi_aims_controlinout_species_mass__amu>[.0-9]+)"
                     r"\s*(?P<atom_type_mass__amu>[.0-9]+)"
                     r"\s*",repeats = True),
                    SM(r"\s*\|\s*Found cutoff potl. onset \[A\], width \[A\], scale factor :"
-                    r"\s*(?P<x_fhi_aims_controlInOut_species_cut_pot__angstrom>[.0-9]+)"
-                    r"\s+(?P<x_fhi_aims_controlInOut_species_cut_pot_width__angstrom>[.0-9]+)"
-                    r"\s*(?P<x_fhi_aims_controlInOut_species_cut_pot_scale>[.0-9]+)"
+                    r"\s*(?P<x_fhi_aims_controlinout_species_cut_pot__angstrom>[.0-9]+)"
+                    r"\s+(?P<x_fhi_aims_controlinout_species_cut_pot_width__angstrom>[.0-9]+)"
+                    r"\s*(?P<x_fhi_aims_controlinout_species_cut_pot_scale>[.0-9]+)"
                     r"\s*",repeats = True),
                 # Parsing for Gaussian basis starts
                    SM(r"\s*\|\s*Found\s*"
                     #r"(?P<basis_set_atom_centered_unique_name>[-_a-zA-Z0-9\s]+"
-                    r"(?P<x_fhi_aims_controlInOut_basis_func_type>[-_a-zA-Z0-9\s]+"
+                    r"(?P<x_fhi_aims_controlinout_basis_func_type>[-_a-zA-Z0-9\s]+"
                     #r"(?P<basis_set_atom_centered_unique_name>[-_a-zA-Z0-9\s]+"
                     r"\S)\s*(?:basis function)\s*:\s*L\s*=\s*"
-                    r"(?P<x_fhi_aims_controlInOut_basis_func_gauss_l>[0-9]+)"
-                    r"\s*,\s*(?P<x_fhi_aims_controlInOut_basis_func_gauss_N>[0-9]+)",
+                    r"(?P<x_fhi_aims_controlinout_basis_func_gauss_l>[0-9]+)"
+                    r"\s*,\s*(?P<x_fhi_aims_controlinout_basis_func_gauss_n>[0-9]+)",
                    repeats = True,
-                   #sections = ["x_fhi_aims_section_controlInOut_basis_func"],
-                   sections = ["x_fhi_aims_section_controlInOut_basis_func",
+                   #sections = ["x_fhi_aims_section_controlinout_basis_func"],
+                   sections = ["x_fhi_aims_section_controlinout_basis_func",
                                r"section_basis_set_atom_centered"],
                    subMatchers = [
 
                            SM(r"\s*\|\s*alpha\s*=\s*"
-                              r"(?P<x_fhi_aims_controlInOut_basis_func_gauss_alpha>[-+]?(?:[0-9]+\.?|\.[0-9]+)[-+0-9eEdD]+)"
+                              r"(?P<x_fhi_aims_controlinout_basis_func_gauss_alpha>[-+]?(?:[0-9]+\.?|\.[0-9]+)[-+0-9eEdD]+)"
                             r"\s*weight\s*=\s*"
-                            r"(?P<x_fhi_aims_controlInOut_basis_func_gauss_weight>[-+0-9.eEdD]+)",
+                            r"(?P<x_fhi_aims_controlinout_basis_func_gauss_weight>[-+0-9.eEdD]+)",
                            repeats = True,
-                           sections = ["x_fhi_aims_section_controlInOut_basis_func"])
+                           sections = ["x_fhi_aims_section_controlinout_basis_func"])
                    ]),
 
                    SM(r"\s*\|\s*Found\s*"
                     #r"(?P<basis_set_atom_centered_unique_name>[-_a-zA-Z0-9\s]+"
-                    r"(?P<x_fhi_aims_controlInOut_basis_func_type>[-_a-zA-Z0-9\s]+"
+                    r"(?P<x_fhi_aims_controlinout_basis_func_type>[-_a-zA-Z0-9\s]+"
                     #r"(?P<basis_set_atom_centered_unique_name>[-_a-zA-Z0-9\s]+"
                     r"\S)\s*(?:basis function)\s*:\s*"
-                    r"(?P<x_fhi_aims_controlInOut_basis_func_gauss_l>[0-9]+)"
-                    r"\s*(?P<x_fhi_aims_controlInOut_basis_func_primitive_gauss_alpha>[-+0-9.eEdD]+)",
+                    r"(?P<x_fhi_aims_controlinout_basis_func_gauss_l>[0-9]+)"
+                    r"\s*(?P<x_fhi_aims_controlinout_basis_func_primitive_gauss_alpha>[-+0-9.eEdD]+)",
                    repeats = True,
-                   #sections = ["x_fhi_aims_section_controlInOut_basis_func"]),
-                   sections = ["x_fhi_aims_section_controlInOut_basis_func",
+                   #sections = ["x_fhi_aims_section_controlinout_basis_func"]),
+                   sections = ["x_fhi_aims_section_controlinout_basis_func",
                                "section_basis_set_atom_centered"]),
                 # Parsing for Gaussian basis ends
 
@@ -1014,30 +1022,30 @@ def build_FhiAimsMainFileSimpleMatcher():
                       subMatchers = [
                 # In FHI-aims for a valence or ion_occ basis function the last digit refers to their occupation
                          SM(r"\s*\|\s*Found\s*"
-                           "(?P<x_fhi_aims_controlInOut_basis_func_type>[-_a-zA-Z0-9\s]+"
+                           "(?P<x_fhi_aims_controlinout_basis_func_type>[-_a-zA-Z0-9\s]+"
                            #r"(?P<basis_set_atom_centered_unique_name>[-_a-zA-Z0-9\s]+"
                            r"\S)\s*(?:shell)\s*:\s*"
-                           r"(?P<x_fhi_aims_controlInOut_basis_func_n>[0-9]+)"
-                           r"\s+(?P<x_fhi_aims_controlInOut_basis_func_l>[a-zA-Z])"
-                           r"\s+(?P<x_fhi_aims_controlInOut_basis_func_occ>[.0-9]+)",
+                           r"(?P<x_fhi_aims_controlinout_basis_func_n>[0-9]+)"
+                           r"\s+(?P<x_fhi_aims_controlinout_basis_func_l>[a-zA-Z])"
+                           r"\s+(?P<x_fhi_aims_controlinout_basis_func_occ>[.0-9]+)",
                            repeats = True,
-                           #sections = ["x_fhi_aims_section_controlInOut_basis_func"]),
-                           sections = ["x_fhi_aims_section_controlInOut_basis_func",
+                           #sections = ["x_fhi_aims_section_controlinout_basis_func"]),
+                           sections = ["x_fhi_aims_section_controlinout_basis_func",
                                        "section_basis_set_atom_centered"]),
                 # In FHI-aims for a hydrogenic basis function the last digit refers to the effective nuclear charge
                          SM (startReStr = r"\s*\|\s*Found hydrogenic basis",
                             forwardMatch = True,
                             subMatchers = [
                               SM(r"\s*\|\s*Found\s*"
-                               "(?P<x_fhi_aims_controlInOut_basis_func_type>[-_a-zA-Z0-9\s]+"
+                               "(?P<x_fhi_aims_controlinout_basis_func_type>[-_a-zA-Z0-9\s]+"
                                #"(?P<basis_set_atom_centered_unique_name>[-_a-zA-Z0-9\s]+"
                                "\S)\s*(?:function)\s*:\s*"
-                               "(?P<x_fhi_aims_controlInOut_basis_func_n>[0-9]+)"
-                               "\s+(?P<x_fhi_aims_controlInOut_basis_func_l>[a-zA-Z])"
-                               "\s+(?P<x_fhi_aims_controlInOut_basis_func_eff_charge>[.0-9]+)",
+                               "(?P<x_fhi_aims_controlinout_basis_func_n>[0-9]+)"
+                               "\s+(?P<x_fhi_aims_controlinout_basis_func_l>[a-zA-Z])"
+                               "\s+(?P<x_fhi_aims_controlinout_basis_func_eff_charge>[.0-9]+)",
                                repeats = True,
-                               #sections = ["x_fhi_aims_section_controlInOut_basis_func"])
-                               sections = ["x_fhi_aims_section_controlInOut_basis_func",
+                               #sections = ["x_fhi_aims_section_controlinout_basis_func"])
+                               sections = ["x_fhi_aims_section_controlinout_basis_func",
                                            "section_basis_set_atom_centered"])
                              ]),
                 # In FHI-aims for a ionic basis function the last digit is equal to the cut-off radius
@@ -1045,14 +1053,14 @@ def build_FhiAimsMainFileSimpleMatcher():
                             forwardMatch = True,
                             subMatchers = [
                               SM(r"\s*\|\s*Found\s*"
-                               #"(?P<x_fhi_aims_controlInOut_basis_func_type>[-_a-zA-Z0-9\s]+"
+                               #"(?P<x_fhi_aims_controlinout_basis_func_type>[-_a-zA-Z0-9\s]+"
                                "(?P<basis_set_atom_centered_unique_name>[-_a-zA-Z0-9\s]+"
                                "\S)\s*(?:function)\s*:\s*"
-                               "(?P<x_fhi_aims_controlInOut_basis_func_n>[0-9]+)"
-                               "\s+(?P<x_fhi_aims_controlInOut_basis_func_l>[a-zA-Z])",
+                               "(?P<x_fhi_aims_controlinout_basis_func_n>[0-9]+)"
+                               "\s+(?P<x_fhi_aims_controlinout_basis_func_l>[a-zA-Z])",
                               repeats = True,
-                               #sections = ["x_fhi_aims_section_controlInOut_basis_func"])
-                               sections = ["x_fhi_aims_section_controlInOut_basis_func",
+                               #sections = ["x_fhi_aims_section_controlinout_basis_func"])
+                               sections = ["x_fhi_aims_section_controlinout_basis_func",
                                            "section_basis_set_atom_centered"])
                              ])
                     ])
@@ -1229,7 +1237,7 @@ def build_FhiAimsMainFileSimpleMatcher():
             ])
     # now construct the two subMatchers
     EigenvaluesGroupSubMatcher = build_eigenvaluesGroupSubMatcher('')
-    EigenvaluesGroupSubMatcherZORA = build_eigenvaluesGroupSubMatcher('_ZORA')
+    EigenvaluesGroupSubMatcherZORA = build_eigenvaluesGroupSubMatcher('_zora')
     ########################################
     # submatcher for pertubative GW eigenvalues
     # first define function to build subMatcher
@@ -1247,9 +1255,9 @@ def build_FhiAimsMainFileSimpleMatcher():
             startReStr = r"\s*state\s+occ_num\s+e_gs\s+e_x\^ex\s+e_xc\^gs\s+e_c\^nloc\s+e_qp",
             sections = ['x_fhi_aims_section_eigenvalues_list%s' % addStr],
             subMatchers = [
-            SM (startReStr = r"\s*[0-9]+\s+(?P<x_fhi_aims_eigenvalue_occupation%s>[0-9.eEdD]+)\s+(?P<x_fhi_aims_eigenvalue_ks_GroundState__eV>[-+0-9.eEdD]+)\s+"
-                              "(?P<x_fhi_aims_eigenvalue_ExactExchange_perturbativeGW__eV>[-+0-9.eEdD]+)\s+(?P<x_fhi_aims_eigenvalue_ks_ExchangeCorrelation__eV>[-+0-9.eEdD]+)\s+"
-                              "(?P<x_fhi_aims_eigenvalue_correlation_perturbativeGW__eV>[-+0-9.eEdD]+)\s+(?P<x_fhi_aims_eigenvalue_quasiParticle_energy__eV>[-+0-9.eEdD]+)" % (1 * (addStr,)),
+            SM (startReStr = r"\s*[0-9]+\s+(?P<x_fhi_aims_eigenvalue_occupation%s>[0-9.eEdD]+)\s+(?P<x_fhi_aims_eigenvalue_ks_groundstate__eV>[-+0-9.eEdD]+)\s+"
+                              "(?P<x_fhi_aims_eigenvalue_exactexchange_perturbativegw__eV>[-+0-9.eEdD]+)\s+(?P<x_fhi_aims_eigenvalue_ks_exchangecorrelation__eV>[-+0-9.eEdD]+)\s+"
+                              "(?P<x_fhi_aims_eigenvalue_correlation_perturbativegw__eV>[-+0-9.eEdD]+)\s+(?P<x_fhi_aims_eigenvalue_quasiparticle_energy__eV>[-+0-9.eEdD]+)" % (1 * (addStr,)),
             repeats = True)
             ])
         return SM (name = 'perturbativeGW_EigenvaluesGroup',
@@ -1270,7 +1278,7 @@ def build_FhiAimsMainFileSimpleMatcher():
                 ]), # END EigenvaluesNoSpinNonPeriodic
             ])
     # now construct the two subMatchers
-    GWEigenvaluesGroupSubMatcher = build_GWeigenvaluesGroupSubMatcher('_perturbativeGW')
+    GWEigenvaluesGroupSubMatcher = build_GWeigenvaluesGroupSubMatcher('_perturbativegw')
 
     ########################################
     # submatcher for total energy components during SCF interation
@@ -1278,14 +1286,14 @@ def build_FhiAimsMainFileSimpleMatcher():
         startReStr = r"\s*Total energy components:",
         subMatchers = [
         SM (r"\s*\|\s*Sum of eigenvalues\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_sum_eigenvalues_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
-        SM (r"\s*\|\s*XC energy correction\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_XC_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
-        SM (r"\s*\|\s*XC potential correction\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_XC_potential_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
+        SM (r"\s*\|\s*XC energy correction\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_xc_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
+        SM (r"\s*\|\s*XC potential correction\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_xc_potential_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
         SM (r"\s*\|\s*Free-atom electrostatic energy\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<x_fhi_aims_energy_electrostatic_free_atom_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
         SM (r"\s*\|\s*Hartree energy correction\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_correction_hartree_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
         SM (r"\s*\|\s*Entropy correction\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_correction_entropy_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
         SM (r"\s*\|\s*-{20}-*", weak = True),
         SM (r"\s*\|\s*Total energy\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_total_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
-        SM (r"\s*\|\s*Total energy, T -> 0\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_total_T0_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
+        SM (r"\s*\|\s*Total energy, T -> 0\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_total_t0_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
         SM (r"\s*\|\s*Electronic free energy\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_free_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
         SM (r"\s*Derived energy quantities:"),
         SM (r"\s*\|\s*Kinetic energy\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<electronic_kinetic_energy_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
@@ -1293,7 +1301,7 @@ def build_FhiAimsMainFileSimpleMatcher():
         SM (r"\s*\|\s*Energy correction for multipole"),
         SM (r"\s*\|\s*error in Hartree potential\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_hartree_error_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
         SM (r"\s*\|\s*Sum of eigenvalues per atom\s*:\s*(?P<energy_sum_eigenvalues_per_atom_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
-        SM (r"\s*\|\s*Total energy \(T->0\) per atom\s*:\s*(?P<energy_total_T0_per_atom_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
+        SM (r"\s*\|\s*Total energy \(T->0\) per atom\s*:\s*(?P<energy_total_t0_per_atom_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
         SM (r"\s*\|\s*Electronic free energy per atom\s*:\s*(?P<energy_free_per_atom_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
         ])
     ########################################
@@ -1303,7 +1311,7 @@ def build_FhiAimsMainFileSimpleMatcher():
         subMatchers = [
         SM (r"\s*\|\s*Sum of eigenvalues\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_sum_eigenvalues__eV>[-+0-9.eEdD]+) *eV"),
         SM (r"\s*\|\s*XC energy correction\s*:\s*[-+0-9.eEdD]+ *Ha\s+[-+0-9.eEdD]+ *eV"),
-        SM (r"\s*\|\s*XC potential correction\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_XC_potential__eV>[-+0-9.eEdD]+) *eV"),
+        SM (r"\s*\|\s*XC potential correction\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_xc_potential__eV>[-+0-9.eEdD]+) *eV"),
         SM (r"\s*\|\s*Free-atom electrostatic energy\s*:\s*[-+0-9.eEdD]+ *Ha\s+[-+0-9.eEdD]+ *eV"),
         SM (r"\s*\|\s*Hartree energy correction\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_correction_hartree__eV>[-+0-9.eEdD]+) *eV"),
         SM (r"\s*\|\s*Entropy correction\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_correction_entropy__eV>[-+0-9.eEdD]+) *eV"),
@@ -1317,7 +1325,7 @@ def build_FhiAimsMainFileSimpleMatcher():
         SM (r"\s*\|\s*Energy correction for multipole"),
         SM (r"\s*\|\s*error in Hartree potential\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_hartree_error__eV>[-+0-9.eEdD]+) *eV"),
         SM (r"\s*\|\s*Sum of eigenvalues per atom\s*:\s*(?P<energy_sum_eigenvalues_per_atom__eV>[-+0-9.eEdD]+) *eV"),
-        SM (r"\s*\|\s*Total energy \(T->0\) per atom\s*:\s*(?P<energy_total_T0_per_atom__eV>[-+0-9.eEdD]+) *eV"),
+        SM (r"\s*\|\s*Total energy \(T->0\) per atom\s*:\s*(?P<energy_total_t0_per_atom__eV>[-+0-9.eEdD]+) *eV"),
         SM (r"\s*\|\s*Electronic free energy per atom\s*:\s*(?P<energy_free_per_atom__eV>[-+0-9.eEdD]+) *eV"),
         ])
     ########################################
@@ -1434,20 +1442,20 @@ def build_FhiAimsMainFileSimpleMatcher():
     # submatcher for Tkatchenko-Scheffler van der Waals
     TS_VanDerWaalsSubMatcher = SM (name = 'TS_VanDerWaals',
         startReStr = r"\s*Evaluating non-empirical van der Waals correction",
-        sections = ['section_method', 'section_single_configuration_calculation', 'x_fhi_aims_section_vdW_TS'],
+        sections = ['section_method', 'section_single_configuration_calculation', 'x_fhi_aims_section_vdw_ts'],
         repeats = True,
-        fixedStartValues = { "van_der_Waals_method": "TS" },
+        fixedStartValues = { "van_der_waals_method": "TS" },
         subMatchers = [
             SM (startReStr = r"\s*\|\s*Atom\s*[0-9]:\s*[a-zA-Z]+",
                 repeats = True,
                 forwardMatch = True,
                 subMatchers = [
-                SM (r"\s*\|\s*Atom\s*[0-9]:\s*(?P<x_fhi_aims_atom_type_vdW>[a-zA-Z]+)", repeats = True),
+                SM (r"\s*\|\s*Atom\s*[0-9]:\s*(?P<x_fhi_aims_atom_type_vdw>[a-zA-Z]+)", repeats = True),
                 SM (r"\s*\|\s*Hirshfeld charge\s*:\s*(?P<x_fhi_aims_hirschfeld_charge>[-+0-9.]+)", repeats = True),
                 SM (r"\s*\|\s*Free atom volume\s*:\s*(?P<x_fhi_aims_free_atom_volume>[-+0-9.]+)", repeats = True),
                 SM (r"\s*\|\s*Hirshfeld volume\s*:\s*(?P<x_fhi_aims_hirschfeld_volume>[-+0-9.]+)", repeats = True)
                 ]),
-            SM (r"\s*\|\s*van der Waals energy corr.\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<x_fhi_aims_vdW_energy_corr_TS__eV>[-+0-9.eEdD]+) *eV")
+            SM (r"\s*\|\s*van der Waals energy corr.\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<x_fhi_aims_vdw_energy_corr_ts__eV>[-+0-9.eEdD]+) *eV")
         ])
     ########################################
     # submatcher for total energy components during SCF interation
@@ -1533,7 +1541,7 @@ def build_FhiAimsMainFileSimpleMatcher():
                         SM (r"\s*\|\s*Max\. angular integration grid size\s*:\s*[0-9]+"),
                         SM (r"\s*\|\s*Max\. angular grid division number\s*:\s*[0-9]+"),
                         SM (r"\s*\|\s*Radial grid for Hartree potential\s*:\s*[0-9]+"),
-                        SM (r"\s*\|\s*Number of spin channels\s*:\s*(?P<x_fhi_aims_controlInOut_number_of_spin_channels>[0-9]+)")
+                        SM (r"\s*\|\s*Number of spin channels\s*:\s*(?P<x_fhi_aims_controlinout_number_of_spin_channels>[0-9]+)")
                     ]), # END ArraySizeParameters
                 # parse settings writeout of aims
                 controlInOutSubMatcher,
@@ -1650,7 +1658,7 @@ def build_FhiAimsMainFileSimpleMatcher():
                         SM (name = 'EigenvaluesListsZORA',
                             startReStr = r"\s*Writing Kohn-Sham eigenvalues\.",
                             forwardMatch = True,
-                            sections = ['x_fhi_aims_section_eigenvalues_ZORA'],
+                            sections = ['x_fhi_aims_section_eigenvalues_zora'],
                             subMatchers = [
                             EigenvaluesGroupSubMatcherZORA
                             ]), # END EigenvaluesListsZORA
@@ -1661,7 +1669,7 @@ def build_FhiAimsMainFileSimpleMatcher():
                         startReStr = r"\s*Energy and forces in a compact form:",
                         subMatchers = [
                         SM (r"\s*\|\s*Total energy uncorrected\s*:\s*(?P<energy_total__eV>[-+0-9.eEdD]+) *eV"),
-                        SM (r"\s*\|\s*Total energy corrected\s*:\s*(?P<energy_total_T0__eV>[-+0-9.eEdD]+) *eV"),
+                        SM (r"\s*\|\s*Total energy corrected\s*:\s*(?P<energy_total_t0__eV>[-+0-9.eEdD]+) *eV"),
                         SM (r"\s*\|\s*Electronic free energy\s*:\s*(?P<energy_free__eV>[-+0-9.eEdD]+) *eV"),
                         SM (name = 'ForcesSummary',
                             startReStr = r"\s*Total atomic forces \(.*\) \[eV/Ang\]:",
@@ -1678,14 +1686,14 @@ def build_FhiAimsMainFileSimpleMatcher():
                         endReStr = r"\s*End decomposition of the XC Energy",
                         subMatchers = [
                         SM (r"\s*-{20}-*", weak = True),
-                        SM (r"\s*Hartree-Fock part\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_hartree_fock_X_scaled__eV>[-+0-9.eEdD]+) *eV"),
+                        SM (r"\s*Hartree-Fock part\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_hartree_fock_x_scaled__eV>[-+0-9.eEdD]+) *eV"),
                         SM (r"\s*-{20}-*", weak = True),
-                        SM (r"\s*X Energy\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_X__eV>[-+0-9.eEdD]+) *eV"),
-                        SM (r"\s*C Energy GGA\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_C__eV>[-+0-9.eEdD]+) *eV"),
-                        SM (r"\s*Total XC Energy\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_XC_functional__eV>[-+0-9.eEdD]+) *eV"),
+                        SM (r"\s*X Energy\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_x__eV>[-+0-9.eEdD]+) *eV"),
+                        SM (r"\s*C Energy GGA\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_c__eV>[-+0-9.eEdD]+) *eV"),
+                        SM (r"\s*Total XC Energy\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_xc_functional__eV>[-+0-9.eEdD]+) *eV"),
                         SM (r"\s*LDA X and C from self-consistent density"),
-                        SM (r"\s*X Energy LDA\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<x_fhi_aims_energy_X_LDA__eV>[-+0-9.eEdD]+) *eV"),
-                        SM (r"\s*C Energy LDA\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<x_fhi_aims_energy_C_LDA__eV>[-+0-9.eEdD]+) *eV"),
+                        SM (r"\s*X Energy LDA\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<x_fhi_aims_energy_x_lda__eV>[-+0-9.eEdD]+) *eV"),
+                        SM (r"\s*C Energy LDA\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<x_fhi_aims_energy_c_lda__eV>[-+0-9.eEdD]+) *eV"),
                         SM (r"\s*-{20}-*", weak = True),
                         ]), # END DecompositionXCEnergy
                     # calculation was not converged
@@ -1747,7 +1755,7 @@ def get_cachingLevelForMetaName(metaInfoEnv):
                                'x_fhi_aims_atom_projected_dos_file': CachingLevel.Cache,
                                'x_fhi_aims_band_segment': CachingLevel.Cache,
                                'x_fhi_aims_geometry_optimization_converged': CachingLevel.Cache,
-                               'x_fhi_aims_section_MD_detect': CachingLevel.Ignore,
+                               'x_fhi_aims_section_md_detect': CachingLevel.Ignore,
                                'x_fhi_aims_single_configuration_calculation_converged': CachingLevel.Cache,
                                'x_fhi_aims_species_projected_dos_file': CachingLevel.Cache,
                                'x_fhi_aims_species_projected_dos_species_label': CachingLevel.Cache,
@@ -1762,10 +1770,10 @@ def get_cachingLevelForMetaName(metaInfoEnv):
         metaInfo = metaInfoEnv.infoKinds[name]
         if (name.startswith('x_fhi_aims_controlIn_') and
             metaInfo.kindStr == "type_document_content" and
-            ("x_fhi_aims_controlIn_method" in metaInfo.superNames or "x_fhi_aims_controlIn_run" in metaInfo.superNames) or
+            ("x_fhi_aims_controlin_method" in metaInfo.superNames or "x_fhi_aims_controlin_run" in metaInfo.superNames) or
             name.startswith('x_fhi_aims_controlInOut_') and
             metaInfo.kindStr == "type_document_content" and
-            "x_fhi_aims_controlInOut_method" in metaInfo.superNames
+            "x_fhi_aims_controlinout_method" in metaInfo.superNames
             or name.startswith('x_fhi_aims_geometry_')
             or name.startswith('x_fhi_aims_eigenvalue_')
             or name.startswith('x_fhi_aims_section_eigenvalues_')

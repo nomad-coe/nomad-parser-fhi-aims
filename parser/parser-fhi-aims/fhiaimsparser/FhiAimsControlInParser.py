@@ -94,7 +94,7 @@ class FhiAimsControlInParserContext(object):
 
     def onClose_x_fhi_aims_section_controlIn_basis_set(self, backend, gIndex, section):
         """doc"""
-        #logger.warning("Free-atom basis for %s: basis_func_type: %s n = %s l = %s radius = %s", section["x_fhi_aims_controlIn_species_name"], section["x_fhi_aims_controlIn_basis_func_type"], section["x_fhi_aims_controlIn_basis_func_n"], section["x_fhi_aims_controlIn_basis_func_l"], section["x_fhi_aims_controlIn_basis_func_radius"])
+        #logger.warning("Free-atom basis for %s: basis_func_type: %s n = %s l = %s radius = %s", section["x_fhi_aims_controlin_species_name"], section["x_fhi_aims_controlin_basis_func_type"], section["x_fhi_aims_controlin_basis_func_n"], section["x_fhi_aims_controlin_basis_func_l"], section["x_fhi_aims_controlin_basis_func_radius"])
 
 def build_FhiAimsControlInKeywordsSimpleMatchers():
     """Builds the list of SimpleMatchers to parse the control.in keywords of FHI-aims.
@@ -111,79 +111,79 @@ def build_FhiAimsControlInKeywordsSimpleMatchers():
     # List the matchers in alphabetical order according to keyword name.
     #
     return [
-        SM (r"^\s*charge\s+(?P<x_fhi_aims_controlIn_charge>[-+0-9.eEdD]+)", repeats = True),
+        SM (r"^\s*charge\s+(?P<x_fhi_aims_controlin_charge>[-+0-9.eEdD]+)", repeats = True),
         # only the first character is important for aims
-        SM (r"^\s*hse_unit\s+(?P<x_fhi_aims_controlIn_hse_unit>[a-zA-Z])[-_a-zA-Z0-9]+", repeats = True),
-        SM (r"^\s*hybrid_xc_coeff\s+(?P<x_fhi_aims_controlIn_hybrid_xc_coeff>[-+0-9.eEdD]+)", repeats = True),
-        SM (r"^\s*MD_time_step\s+(?P<x_fhi_aims_controlIn_MD_time_step__ps>[-+0-9.eEdD]+)", repeats = True),
-        SM (r"^\s*k_grid\s+(?P<x_fhi_aims_controlIn_k1>[0-9]+)\s+(?P<x_fhi_aims_controlIn_k2>[0-9]+)\s+(?P<x_fhi_aims_controlIn_k3>[0-9]+)", repeats = True),
+        SM (r"^\s*hse_unit\s+(?P<x_fhi_aims_controlin_hse_unit>[a-zA-Z])[-_a-zA-Z0-9]+", repeats = True),
+        SM (r"^\s*hybrid_xc_coeff\s+(?P<x_fhi_aims_controlin_hybrid_xc_coeff>[-+0-9.eEdD]+)", repeats = True),
+        SM (r"^\s*MD_time_step\s+(?P<x_fhi_aims_controlin_md_time_step__ps>[-+0-9.eEdD]+)", repeats = True),
+        SM (r"^\s*k_grid\s+(?P<x_fhi_aims_controlin_k1>[0-9]+)\s+(?P<x_fhi_aims_controlin_k2>[0-9]+)\s+(?P<x_fhi_aims_controlin_k3>[0-9]+)", repeats = True),
         # need to distinguish different cases
         SM (r"^\s*occupation_type\s+",
             forwardMatch = True,
             repeats = True,
             subMatchers = [
-            SM (r"^\s*occupation_type\s+(?P<x_fhi_aims_controlIn_occupation_type>[-_a-zA-Z]+)\s+(?P<x_fhi_aims_controlIn_occupation_width>[-+0-9.eEdD]+)\s+(?P<x_fhi_aims_controlIn_occupation_order>[0-9]+)"),
-            SM (r"^\s*occupation_type\s+(?P<x_fhi_aims_controlIn_occupation_type>[-_a-zA-Z]+)\s+(?P<x_fhi_aims_controlIn_occupation_width>[-+0-9.eEdD]+)")
+            SM (r"^\s*occupation_type\s+(?P<x_fhi_aims_controlin_occupation_type>[-_a-zA-Z]+)\s+(?P<x_fhi_aims_controlin_occupation_width>[-+0-9.eEdD]+)\s+(?P<x_fhi_aims_controlin_occupation_order>[0-9]+)"),
+            SM (r"^\s*occupation_type\s+(?P<x_fhi_aims_controlin_occupation_type>[-_a-zA-Z]+)\s+(?P<x_fhi_aims_controlin_occupation_width>[-+0-9.eEdD]+)")
             ]),
-        SM (r"^\s*override_relativity\s+\.?(?P<x_fhi_aims_controlIn_override_relativity>[-_a-zA-Z]+)\.?", repeats = True),
+        SM (r"^\s*override_relativity\s+\.?(?P<x_fhi_aims_controlin_override_relativity>[-_a-zA-Z]+)\.?", repeats = True),
         # need to distinguish different cases
         SM (r"^\s*relativistic\s+",
             forwardMatch = True,
             repeats = True,
             subMatchers = [
-            SM (r"^\s*relativistic\s+(?P<x_fhi_aims_controlIn_relativistic>[-_a-zA-Z]+\s+[-_a-zA-Z]+)\s+(?P<x_fhi_aims_controlIn_relativistic_threshold>[-+0-9.eEdD]+)"),
-            SM (r"^\s*relativistic\s+(?P<x_fhi_aims_controlIn_relativistic>[-_a-zA-Z]+)")
+            SM (r"^\s*relativistic\s+(?P<x_fhi_aims_controlin_relativistic>[-_a-zA-Z]+\s+[-_a-zA-Z]+)\s+(?P<x_fhi_aims_controlin_relativistic_threshold>[-+0-9.eEdD]+)"),
+            SM (r"^\s*relativistic\s+(?P<x_fhi_aims_controlin_relativistic>[-_a-zA-Z]+)")
             ]),
-        SM (r"^\s*sc_accuracy_rho\s+(?P<x_fhi_aims_controlIn_sc_accuracy_rho>[-+0-9.eEdD]+)", repeats = True),
-        SM (r"^\s*sc_accuracy_eev\s+(?P<x_fhi_aims_controlIn_sc_accuracy_eev>[-+0-9.eEdD]+)", repeats = True),
-        SM (r"^\s*sc_accuracy_etot\s+(?P<x_fhi_aims_controlIn_sc_accuracy_etot>[-+0-9.eEdD]+)", repeats = True),
-        SM (r"^\s*sc_accuracy_forces\s+(?P<x_fhi_aims_controlIn_sc_accuracy_forces>[-+0-9.eEdD]+)", repeats = True),
-        SM (r"^\s*sc_accuracy_stress\s+(?P<x_fhi_aims_controlIn_sc_accuracy_stress>[-+0-9.eEdD]+)", repeats = True),
-        SM (r"^\s*sc_iter_limit\s+(?P<x_fhi_aims_controlIn_sc_iter_limit>[0-9]+)", repeats = True),
-        SM (r"^\s*spin\s+(?P<x_fhi_aims_controlIn_spin>[-_a-zA-Z]+)", repeats = True),
-        SM (r"^\s*verbatim_writeout\s+\.?(?P<x_fhi_aims_controlIn_verbatim_writeout>[a-zA-Z]+)\.?", repeats = True),
+        SM (r"^\s*sc_accuracy_rho\s+(?P<x_fhi_aims_controlin_sc_accuracy_rho>[-+0-9.eEdD]+)", repeats = True),
+        SM (r"^\s*sc_accuracy_eev\s+(?P<x_fhi_aims_controlin_sc_accuracy_eev>[-+0-9.eEdD]+)", repeats = True),
+        SM (r"^\s*sc_accuracy_etot\s+(?P<x_fhi_aims_controlin_sc_accuracy_etot>[-+0-9.eEdD]+)", repeats = True),
+        SM (r"^\s*sc_accuracy_forces\s+(?P<x_fhi_aims_controlin_sc_accuracy_forces>[-+0-9.eEdD]+)", repeats = True),
+        SM (r"^\s*sc_accuracy_stress\s+(?P<x_fhi_aims_controlin_sc_accuracy_stress>[-+0-9.eEdD]+)", repeats = True),
+        SM (r"^\s*sc_iter_limit\s+(?P<x_fhi_aims_controlin_sc_iter_limit>[0-9]+)", repeats = True),
+        SM (r"^\s*spin\s+(?P<x_fhi_aims_controlin_spin>[-_a-zA-Z]+)", repeats = True),
+        SM (r"^\s*verbatim_writeout\s+\.?(?P<x_fhi_aims_controlin_verbatim_writeout>[a-zA-Z]+)\.?", repeats = True),
         # need to distinguish two cases: just the name of the xc functional or name plus number (e.g. for HSE functional)
         SM (r"^\s*xc\s+",
             forwardMatch = True,
             repeats = True,
             subMatchers = [
-            SM (r"^\s*xc\s+(?P<x_fhi_aims_controlIn_xc>[-_a-zA-Z0-9]+)\s+(?P<x_fhi_aims_controlIn_hse_omega>[-+0-9.eEdD]+)"),
-            SM (r"^\s*xc\s+(?P<x_fhi_aims_controlIn_xc>[-_a-zA-Z0-9]+)")
+            SM (r"^\s*xc\s+(?P<x_fhi_aims_controlin_xc>[-_a-zA-Z0-9]+)\s+(?P<x_fhi_aims_controlin_hse_omega>[-+0-9.eEdD]+)"),
+            SM (r"^\s*xc\s+(?P<x_fhi_aims_controlin_xc>[-_a-zA-Z0-9]+)")
             ]),
 
 
  #       SM (r"\s*\#\s*Definition of \"minimal\" basis", repeats=True,
-        SM (r"^\s*species\s*(?P<x_fhi_aims_controlIn_species_name>[a-zA-Z]+)",
+        SM (r"^\s*species\s*(?P<x_fhi_aims_controlin_species_name>[a-zA-Z]+)",
         #SM (r"^\s*division", repeats=True,
-            sections = ["x_fhi_aims_section_controlIn_basis_set"],
+            sections = ["x_fhi_aims_section_controlin_basis_set"],
             repeats=True,
             subFlags = SM.SubFlags.Unordered,
             subMatchers = [
-                SM(r"\s*nucleus\s+(?P<x_fhi_aims_controlIn_nucleus>[0-9.]+)\s*"),
-                SM(r"\s*mass\s+(?P<x_fhi_aims_controlIn_mass>[0-9.]+)\s*"),
-                SM(r"\s*l_hartree\s+(?P<x_fhi_aims_controlIn_l_hartree>[0-9]+)\s*"),
-                SM(r"\s*cut_pot\s+(?P<x_fhi_aims_controlIn_cut_pot1>[0-9.]+)\s+(?P<x_fhi_aims_controlIn_cut_pot2>[0-9.]+)\s+(?P<x_fhi_aims_controlIn_cut_pot3>[0-9.]+)\s*"),
-                SM(r"\s*basis_dep_cutoff\s+(?P<x_fhi_aims_controlIn_basis_dep_cutoff>[-+0-9.dDeE]+)\s"),
-                SM(r"\s*radial_base\s+(?P<x_fhi_aims_controlIn_radial_base1>[0-9]+)\s+(?P<x_fhi_aims_controlIn_radial_base2>[-+0-9.dDeE]+)\s*"),
-                SM(r"\s*radial_multiplier\s+(?P<x_fhi_aims_controlIn_radial_multiplier>[0-9]+)\s*"),
+                SM(r"\s*nucleus\s+(?P<x_fhi_aims_controlin_nucleus>[0-9.]+)\s*"),
+                SM(r"\s*mass\s+(?P<x_fhi_aims_controlin_mass>[0-9.]+)\s*"),
+                SM(r"\s*l_hartree\s+(?P<x_fhi_aims_controlin_l_hartree>[0-9]+)\s*"),
+                SM(r"\s*cut_pot\s+(?P<x_fhi_aims_controlin_cut_pot1>[0-9.]+)\s+(?P<x_fhi_aims_controlin_cut_pot2>[0-9.]+)\s+(?P<x_fhi_aims_controlin_cut_pot3>[0-9.]+)\s*"),
+                SM(r"\s*basis_dep_cutoff\s+(?P<x_fhi_aims_controlin_basis_dep_cutoff>[-+0-9.dDeE]+)\s"),
+                SM(r"\s*radial_base\s+(?P<x_fhi_aims_controlin_radial_base1>[0-9]+)\s+(?P<x_fhi_aims_controlin_radial_base2>[-+0-9.dDeE]+)\s*"),
+                SM(r"\s*radial_multiplier\s+(?P<x_fhi_aims_controlin_radial_multiplier>[0-9]+)\s*"),
                 SM(name = "angular_grids",
-                   startReStr = r"\s*angular_grids\s+(?P<x_fhi_aims_controlIn_angular_grids_method>specified|auto)\s*",
-                   endReStr = r"\s*outer_grid\s+\s*(?P<x_fhi_aims_controlIn_outer_grid>[0-9]+)\s*",
+                   startReStr = r"\s*angular_grids\s+(?P<x_fhi_aims_controlin_angular_grids_method>specified|auto)\s*",
+                   endReStr = r"\s*outer_grid\s+\s*(?P<x_fhi_aims_controlin_outer_grid>[0-9]+)\s*",
                    subMatchers = [
-                       SM(r"\s*division\s*(?P<x_fhi_aims_controlIn_division1>[-+0-9.eEdD]+)\s*(?P<x_fhi_aims_controlIn_division2>[-+0-9.eEdD]+)\s*", repeats = True),
+                       SM(r"\s*division\s*(?P<x_fhi_aims_controlin_division1>[-+0-9.eEdD]+)\s*(?P<x_fhi_aims_controlin_division2>[-+0-9.eEdD]+)\s*", repeats = True),
                    ]),
-	        SM (r"^\s*(?P<x_fhi_aims_controlIn_basis_func_type>gaussian|hydro|valence|ion_occ|ionic|confined)"
-                    "\s*(?P<x_fhi_aims_controlIn_basis_func_n>[0-9]+)"
-                    "\s+(?P<x_fhi_aims_controlIn_basis_func_l>[spdefghijklm])"
-                    "\s+(?P<x_fhi_aims_controlIn_basis_func_radius>[.0-9]+)",
+	        SM (r"^\s*(?P<x_fhi_aims_controlin_basis_func_type>gaussian|hydro|valence|ion_occ|ionic|confined)"
+                    "\s*(?P<x_fhi_aims_controlin_basis_func_n>[0-9]+)"
+                    "\s+(?P<x_fhi_aims_controlin_basis_func_l>[spdefghijklm])"
+                    "\s+(?P<x_fhi_aims_controlin_basis_func_radius>[.0-9]+)",
                     repeats = True,
-                    sections = ["x_fhi_aims_section_controlIn_basis_func"]
+                    sections = ["x_fhi_aims_section_controlin_basis_func"]
                 ),
-	        SM (r"^\s*(?P<x_fhi_aims_controlIn_basis_func_type>gaussian|hydro|valence|ion_occ|ionic|confined)"
-                    "\s*(?P<x_fhi_aims_controlIn_basis_func_n>[0-9]+)"
-                    "\s*(?P<x_fhi_aims_controlIn_basis_func_l>[spdefghijklm])\s*auto",
+	        SM (r"^\s*(?P<x_fhi_aims_controlin_basis_func_type>gaussian|hydro|valence|ion_occ|ionic|confined)"
+                    "\s*(?P<x_fhi_aims_controlin_basis_func_n>[0-9]+)"
+                    "\s*(?P<x_fhi_aims_controlin_basis_func_l>[spdefghijklm])\s*auto",
                     repeats = True,
-                    sections = ["x_fhi_aims_section_controlIn_basis_func"])
+                    sections = ["x_fhi_aims_section_controlin_basis_func"])
             ])
         ]
 
@@ -235,7 +235,7 @@ def get_cachingLevelForMetaName(metaInfoEnv, CachingLvl):
         metaInfo = metaInfoEnv.infoKinds[name]
         if (name.startswith('x_fhi_aims_controlIn_') and
             metaInfo.kindStr == "type_document_content" and
-            ("x_fhi_aims_controlIn_method" in metaInfo.superNames or "x_fhi_aims_controlIn_run" in metaInfo.superNames)):
+            ("x_fhi_aims_controlin_method" in metaInfo.superNames or "x_fhi_aims_controlin_run" in metaInfo.superNames)):
             cachingLevelForMetaName[name] = CachingLevel.Cache
     return cachingLevelForMetaName
 

@@ -53,7 +53,7 @@ object FhiAimsParser extends SimpleExternalParserGenerator(
     "parser-fhi-aims/fhiaimsparser/setup_paths.py",
     "nomad_meta_info/public.nomadmetainfo.json",
     "nomad_meta_info/common.nomadmetainfo.json",
-    "nomad_meta_info/meta_types.nomadmetainfo.json",
+    "nomad_meta_info/meta.nomadmetainfo.json",
     "nomad_meta_info/fhi_aims.nomadmetainfo.json"
   ) ++ DefaultPythonInterpreter.commonFiles(),
   dirMap = Map(
@@ -94,7 +94,7 @@ object FhiAimsControlInParser extends SimpleExternalParserGenerator(
     "parser-fhi-aims/fhiaimsparser/setup_paths.py",
     "nomad_meta_info/public.nomadmetainfo.json",
     "nomad_meta_info/common.nomadmetainfo.json",
-    "nomad_meta_info/meta_types.nomadmetainfo.json",
+    "nomad_meta_info/meta.nomadmetainfo.json",
     "nomad_meta_info/fhi_aims.nomadmetainfo.json"
   ) ++ DefaultPythonInterpreter.commonFiles(),
   dirMap = Map(
