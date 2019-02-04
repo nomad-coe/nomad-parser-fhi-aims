@@ -43,17 +43,6 @@ class FHIaimsParser(ParserInterface):
         # Setup the correct main parser possibly based on the version
         self.main_parser = FHIaimsMainParser(self.parser_context)
 
-    def setup_logger(self, new_logger):
-        if hasattr(new_logger, 'bind'):
-            # only do this for struct logs
-            super().setup_logger(new_logger)
-            from fhiaimsparser import FhiAimsParser, FhiAimsDosParser, FhiAimsControlInParser, FhiAimsBandParser
-
-            FhiAimsParser.logger = new_logger
-            FhiAimsDosParser.logger = new_logger.bind(legacy_logging='dos')
-            FhiAimsBandParser.logger = new_logger.bind(legacy_logging='band')
-            FhiAimsControlInParser.logger = new_logger.bind(legacy_logging='control_in')
-
     @staticmethod
     def get_mainfile_regex():
         regex_str = (
