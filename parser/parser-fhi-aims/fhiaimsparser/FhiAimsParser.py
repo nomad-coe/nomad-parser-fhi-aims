@@ -945,12 +945,12 @@ def build_FhiAimsMainFileSimpleMatcher():
             SM (r"\s*Molecular dynamics time step =\s*(?P<x_fhi_aims_controlInOut_MD_time_step__ps>[0-9.]+) *ps", repeats = True, sections = ['x_fhi_aims_section_MD_detect']),
             SM (r"\s*Scalar relativistic treatment of kinetic energy: (?P<x_fhi_aims_controlInOut_relativistic>[-a-zA-Z\s]+)\.", repeats = True),
             SM (r"\s*(?P<x_fhi_aims_controlInOut_relativistic>Non-relativistic) treatment of kinetic energy\.", repeats = True),
-            SM (r"\s*Threshold value for ZORA:\s*(?P<x_fhi_aims_controlInOut_relativistic_threshold>[-+0-9.eEdD]+)", repeats = True),
+            SM (r"\s*Threshold value for ZORA:\s*(?P<x_fhi_aims_controlInOut_relativistic_threshold>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?)", repeats = True),
             # need several regualar expressions to capture all possible output messages of the xc functional
             SM (r"\s*XC: Using (?P<x_fhi_aims_controlInOut_xc>[-_a-zA-Z0-9\s()]+)(?:\.| NOTE)", repeats = True),
-            SM (r"\s*XC: Using (?P<x_fhi_aims_controlInOut_xc>HSE-functional) with OMEGA =\s*(?P<x_fhi_aims_controlInOut_hse_omega>[-+0-9.eEdD]+)\s*<units>\.", repeats = True),
-            SM (r"\s*XC: Using (?P<x_fhi_aims_controlInOut_xc>Hybrid M11 gradient-corrected functionals) with OMEGA =\s*[-+0-9.eEdD]+", repeats = True),
-            SM (r"\s*XC:\s*(?P<x_fhi_aims_controlInOut_xc>HSE) with OMEGA_PBE =\s*[-+0-9.eEdD]+", repeats = True),
+            SM (r"\s*XC: Using (?P<x_fhi_aims_controlInOut_xc>HSE-functional) with OMEGA =\s*(?P<x_fhi_aims_controlInOut_hse_omega>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?)\s*<units>\.", repeats = True),
+            SM (r"\s*XC: Using (?P<x_fhi_aims_controlInOut_xc>Hybrid M11 gradient-corrected functionals) with OMEGA =\s*[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?", repeats = True),
+            SM (r"\s*XC:\s*(?P<x_fhi_aims_controlInOut_xc>HSE) with OMEGA_PBE =\s*[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?", repeats = True),
             SM (r"\s*XC: Running (?P<x_fhi_aims_controlInOut_xc>[-_a-zA-Z0-9\s()]+) \.\.\.", repeats = True),
             SM (r"\s*(?P<x_fhi_aims_controlInOut_xc>Hartree-Fock) calculation starts \.\.\.\.\.\.", repeats = True),
             # define some basis set specific SMs
@@ -994,7 +994,7 @@ def build_FhiAimsMainFileSimpleMatcher():
                            SM(r"\s*\|\s*alpha\s*=\s*"
                               r"(?P<x_fhi_aims_controlInOut_basis_func_gauss_alpha>[-+]?(?:[0-9]+\.?|\.[0-9]+)[-+0-9eEdD]+)"
                             r"\s*weight\s*=\s*"
-                            r"(?P<x_fhi_aims_controlInOut_basis_func_gauss_weight>[-+0-9.eEdD]+)",
+                            r"(?P<x_fhi_aims_controlInOut_basis_func_gauss_weight>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?)",
                            repeats = True,
                            sections = ["x_fhi_aims_section_controlInOut_basis_func"])
                    ]),
@@ -1005,7 +1005,7 @@ def build_FhiAimsMainFileSimpleMatcher():
                     #r"(?P<basis_set_atom_centered_unique_name>[-_a-zA-Z0-9\s]+"
                     r"\S)\s*(?:basis function)\s*:\s*"
                     r"(?P<x_fhi_aims_controlInOut_basis_func_gauss_l>[0-9]+)"
-                    r"\s*(?P<x_fhi_aims_controlInOut_basis_func_primitive_gauss_alpha>[-+0-9.eEdD]+)",
+                    r"\s*(?P<x_fhi_aims_controlInOut_basis_func_primitive_gauss_alpha>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?)",
                    repeats = True,
                    #sections = ["x_fhi_aims_section_controlInOut_basis_func"]),
                    sections = ["x_fhi_aims_section_controlInOut_basis_func",
@@ -1086,19 +1086,19 @@ def build_FhiAimsMainFileSimpleMatcher():
                 subFlags = SM.SubFlags.Unordered,
                 subMatchers = [
                 SM (r"^\s*constrain_relaxation\s+(?:x|y|z|\.true\.|\.false\.)", repeats = True),
-                SM (r"^\s*initial_charge\s+[-+0-9.eEdD]+", repeats = True),
-                SM (r"^\s*initial_moment\s+[-+0-9.eEdD]+", repeats = True),
-                SM (r"^\s*velocity\s+[-+0-9.eEdD]+\s+[-+0-9.eEdD]+\s+[-+0-9.eEdD]+", repeats = True)
+                SM (r"^\s*initial_charge\s+[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?", repeats = True),
+                SM (r"^\s*initial_moment\s+[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?", repeats = True),
+                SM (r"^\s*velocity\s+[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?\s+[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?\s+[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?", repeats = True)
                 ]),
-            SM (r"^\s*hessian_block\s+[0-9]+\s+[0-9]+" + 9 * r"\s+[-+0-9.eEdD]+", repeats = True),
-            SM (r"^\s*hessian_block_lv\s+[0-9]+\s+[0-9]+" + 9 * r"\s+[-+0-9.eEdD]+", repeats = True),
-            SM (r"^\s*hessian_block_lv_atom\s+[0-9]+\s+[0-9]+" + 9 * r"\s+[-+0-9.eEdD]+", repeats = True),
+            SM (r"^\s*hessian_block\s+[0-9]+\s+[0-9]+" + 9 * r"\s+[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?", repeats = True),
+            SM (r"^\s*hessian_block_lv\s+[0-9]+\s+[0-9]+" + 9 * r"\s+[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?", repeats = True),
+            SM (r"^\s*hessian_block_lv_atom\s+[0-9]+\s+[0-9]+" + 9 * r"\s+[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?", repeats = True),
             SM (startReStr = r"^\s*lattice_vector\s+[-+0-9.]+\s+[-+0-9.]+\s+[-+0-9.]+",
                 repeats = True,
                 subMatchers = [
                 SM (r"^\s*constrain_relaxation\s+(?:x|y|z|\.true\.|\.false\.)", repeats = True)
                 ]),
-            SM (r"^\s*trust_radius\s+[-+0-9.eEdD]+", repeats = True),
+            SM (r"^\s*trust_radius\s+[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?", repeats = True),
             SM (r"^\s*verbatim_writeout\s+[.a-zA-Z]+")
             ]), # END GeometryInKeywords
         SM (r"\s*-{20}-*", weak = True)
@@ -1177,7 +1177,7 @@ def build_FhiAimsMainFileSimpleMatcher():
             startReStr = r"\s*State\s*Occupation\s*Eigenvalue *\[Ha\]\s*Eigenvalue *\[eV\]",
             sections = ['x_fhi_aims_section_eigenvalues_list%s' % addStr],
             subMatchers = [
-            SM (startReStr = r"\s*[0-9]+\s+(?P<x_fhi_aims_eigenvalue_occupation%s>[0-9.eEdD]+)\s+[-+0-9.eEdD]+\s+(?P<x_fhi_aims_eigenvalue_eigenvalue%s__eV>[-+0-9.eEdD]+)" % (2 * (addStr,)), repeats = True)
+            SM (startReStr = r"\s*[0-9]+\s+(?P<x_fhi_aims_eigenvalue_occupation%s>[0-9.eEdD]+)\s+[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?\s+(?P<x_fhi_aims_eigenvalue_eigenvalue%s__eV>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?)" % (2 * (addStr,)), repeats = True)
             ])
         return SM (name = 'EigenvaluesGroup',
             startReStr = r"\s*Writing Kohn-Sham eigenvalues\.",
@@ -1190,7 +1190,7 @@ def build_FhiAimsMainFileSimpleMatcher():
                 repeats = True,
                 subMatchers = [
                 # periodic
-                SM (startReStr = r"\s*K-point:\s*[0-9]+\s+at\s+(?P<x_fhi_aims_eigenvalue_kpoint1%s>[-+0-9.eEdD]+)\s+(?P<x_fhi_aims_eigenvalue_kpoint2%s>[-+0-9.eEdD]+)\s+(?P<x_fhi_aims_eigenvalue_kpoint3%s>[-+0-9.eEdD]+)\s+\(in units of recip\. lattice\)" % (3 * (addStr,)),
+                SM (startReStr = r"\s*K-point:\s*[0-9]+\s+at\s+(?P<x_fhi_aims_eigenvalue_kpoint1%s>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?)\s+(?P<x_fhi_aims_eigenvalue_kpoint2%s>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?)\s+(?P<x_fhi_aims_eigenvalue_kpoint3%s>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?)\s+\(in units of recip\. lattice\)" % (3 * (addStr,)),
                     repeats = True,
                     subMatchers = [
                     SM (startReStr = r"\s*State\s*Occupation\s*Eigenvalue *\[Ha\]\s*Eigenvalue *\[eV\]",
@@ -1212,7 +1212,7 @@ def build_FhiAimsMainFileSimpleMatcher():
                 sections = ['x_fhi_aims_section_eigenvalues_spin%s' % addStr],
                 forwardMatch = True,
                 subMatchers = [
-                SM (startReStr = r"\s*K-point:\s*[0-9]+\s+at\s+(?P<x_fhi_aims_eigenvalue_kpoint1%s>[-+0-9.eEdD]+)\s+(?P<x_fhi_aims_eigenvalue_kpoint2%s>[-+0-9.eEdD]+)\s+(?P<x_fhi_aims_eigenvalue_kpoint3%s>[-+0-9.eEdD]+)\s+\(in units of recip\. lattice\)" % (3 * (addStr,)),
+                SM (startReStr = r"\s*K-point:\s*[0-9]+\s+at\s+(?P<x_fhi_aims_eigenvalue_kpoint1%s>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?)\s+(?P<x_fhi_aims_eigenvalue_kpoint2%s>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?)\s+(?P<x_fhi_aims_eigenvalue_kpoint3%s>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?)\s+\(in units of recip\. lattice\)" % (3 * (addStr,)),
                     repeats = True,
                     subMatchers = [
                     SM (startReStr = r"\s*State\s*Occupation\s*Eigenvalue *\[Ha\]\s*Eigenvalue *\[eV\]",
@@ -1251,9 +1251,9 @@ def build_FhiAimsMainFileSimpleMatcher():
             startReStr = r"\s*state\s+occ_num\s+e_gs\s+e_x\^ex\s+e_xc\^gs\s+e_c\^nloc\s+e_qp",
             sections = ['x_fhi_aims_section_eigenvalues_list%s' % addStr],
             subMatchers = [
-            SM (startReStr = r"\s*[0-9]+\s+(?P<x_fhi_aims_eigenvalue_occupation%s>[0-9.eEdD]+)\s+(?P<x_fhi_aims_eigenvalue_ks_GroundState__eV>[-+0-9.eEdD]+)\s+"
-                              "(?P<x_fhi_aims_eigenvalue_ExactExchange_perturbativeGW__eV>[-+0-9.eEdD]+)\s+(?P<x_fhi_aims_eigenvalue_ks_ExchangeCorrelation__eV>[-+0-9.eEdD]+)\s+"
-                              "(?P<x_fhi_aims_eigenvalue_correlation_perturbativeGW__eV>[-+0-9.eEdD]+)\s+(?P<x_fhi_aims_eigenvalue_quasiParticle_energy__eV>[-+0-9.eEdD]+)" % (1 * (addStr,)),
+            SM (startReStr = r"\s*[0-9]+\s+(?P<x_fhi_aims_eigenvalue_occupation%s>[0-9.eEdD]+)\s+(?P<x_fhi_aims_eigenvalue_ks_GroundState__eV>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?)\s+"
+                              "(?P<x_fhi_aims_eigenvalue_ExactExchange_perturbativeGW__eV>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?)\s+(?P<x_fhi_aims_eigenvalue_ks_ExchangeCorrelation__eV>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?)\s+"
+                              "(?P<x_fhi_aims_eigenvalue_correlation_perturbativeGW__eV>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?)\s+(?P<x_fhi_aims_eigenvalue_quasiParticle_energy__eV>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?)" % (1 * (addStr,)),
             repeats = True)
             ])
         return SM (name = 'perturbativeGW_EigenvaluesGroup',
@@ -1281,48 +1281,48 @@ def build_FhiAimsMainFileSimpleMatcher():
     TotalEnergyScfSubMatcher = SM (name = 'TotalEnergyScf',
         startReStr = r"\s*Total energy components:",
         subMatchers = [
-        SM (r"\s*\|\s*Sum of eigenvalues\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_sum_eigenvalues_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
-        SM (r"\s*\|\s*XC energy correction\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_XC_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
-        SM (r"\s*\|\s*XC potential correction\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_XC_potential_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
-        SM (r"\s*\|\s*Free-atom electrostatic energy\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<x_fhi_aims_energy_electrostatic_free_atom_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
-        SM (r"\s*\|\s*Hartree energy correction\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_correction_hartree_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
-        SM (r"\s*\|\s*Entropy correction\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_correction_entropy_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
+        SM (r"\s*\|\s*Sum of eigenvalues\s*:\s*[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)? *Ha\s+(?P<energy_sum_eigenvalues_scf_iteration__eV>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?) *eV"),
+        SM (r"\s*\|\s*XC energy correction\s*:\s*[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)? *Ha\s+(?P<energy_XC_scf_iteration__eV>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?) *eV"),
+        SM (r"\s*\|\s*XC potential correction\s*:\s*[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)? *Ha\s+(?P<energy_XC_potential_scf_iteration__eV>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?) *eV"),
+        SM (r"\s*\|\s*Free-atom electrostatic energy\s*:\s*[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)? *Ha\s+(?P<x_fhi_aims_energy_electrostatic_free_atom_scf_iteration__eV>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?) *eV"),
+        SM (r"\s*\|\s*Hartree energy correction\s*:\s*[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)? *Ha\s+(?P<energy_correction_hartree_scf_iteration__eV>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?) *eV"),
+        SM (r"\s*\|\s*Entropy correction\s*:\s*[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)? *Ha\s+(?P<energy_correction_entropy_scf_iteration__eV>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?) *eV"),
         SM (r"\s*\|\s*-{20}-*", weak = True),
-        SM (r"\s*\|\s*Total energy\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_total_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
-        SM (r"\s*\|\s*Total energy, T -> 0\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_total_T0_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
-        SM (r"\s*\|\s*Electronic free energy\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_free_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
+        SM (r"\s*\|\s*Total energy\s*:\s*[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)? *Ha\s+(?P<energy_total_scf_iteration__eV>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?) *eV"),
+        SM (r"\s*\|\s*Total energy, T -> 0\s*:\s*[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)? *Ha\s+(?P<energy_total_T0_scf_iteration__eV>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?) *eV"),
+        SM (r"\s*\|\s*Electronic free energy\s*:\s*[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)? *Ha\s+(?P<energy_free_scf_iteration__eV>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?) *eV"),
         SM (r"\s*Derived energy quantities:"),
-        SM (r"\s*\|\s*Kinetic energy\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<electronic_kinetic_energy_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
-        SM (r"\s*\|\s*Electrostatic energy\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_electrostatic_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
+        SM (r"\s*\|\s*Kinetic energy\s*:\s*[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)? *Ha\s+(?P<electronic_kinetic_energy_scf_iteration__eV>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?) *eV"),
+        SM (r"\s*\|\s*Electrostatic energy\s*:\s*[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)? *Ha\s+(?P<energy_electrostatic_scf_iteration__eV>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?) *eV"),
         SM (r"\s*\|\s*Energy correction for multipole"),
-        SM (r"\s*\|\s*error in Hartree potential\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_hartree_error_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
-        SM (r"\s*\|\s*Sum of eigenvalues per atom\s*:\s*(?P<energy_sum_eigenvalues_per_atom_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
-        SM (r"\s*\|\s*Total energy \(T->0\) per atom\s*:\s*(?P<energy_total_T0_per_atom_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
-        SM (r"\s*\|\s*Electronic free energy per atom\s*:\s*(?P<energy_free_per_atom_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
+        SM (r"\s*\|\s*error in Hartree potential\s*:\s*[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)? *Ha\s+(?P<energy_hartree_error_scf_iteration__eV>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?) *eV"),
+        SM (r"\s*\|\s*Sum of eigenvalues per atom\s*:\s*(?P<energy_sum_eigenvalues_per_atom_scf_iteration__eV>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?) *eV"),
+        SM (r"\s*\|\s*Total energy \(T->0\) per atom\s*:\s*(?P<energy_total_T0_per_atom_scf_iteration__eV>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?) *eV"),
+        SM (r"\s*\|\s*Electronic free energy per atom\s*:\s*(?P<energy_free_per_atom_scf_iteration__eV>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?) *eV"),
         ])
     ########################################
     # submatcher for total energy components in scalar ZORA post-processing
     TotalEnergyZORASubMatcher = SM (name = 'TotalEnergyZORA',
         startReStr = r"\s*Total energy components:",
         subMatchers = [
-        SM (r"\s*\|\s*Sum of eigenvalues\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_sum_eigenvalues__eV>[-+0-9.eEdD]+) *eV"),
-        SM (r"\s*\|\s*XC energy correction\s*:\s*[-+0-9.eEdD]+ *Ha\s+[-+0-9.eEdD]+ *eV"),
-        SM (r"\s*\|\s*XC potential correction\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_XC_potential__eV>[-+0-9.eEdD]+) *eV"),
-        SM (r"\s*\|\s*Free-atom electrostatic energy\s*:\s*[-+0-9.eEdD]+ *Ha\s+[-+0-9.eEdD]+ *eV"),
-        SM (r"\s*\|\s*Hartree energy correction\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_correction_hartree__eV>[-+0-9.eEdD]+) *eV"),
-        SM (r"\s*\|\s*Entropy correction\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_correction_entropy__eV>[-+0-9.eEdD]+) *eV"),
+        SM (r"\s*\|\s*Sum of eigenvalues\s*:\s*[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)? *Ha\s+(?P<energy_sum_eigenvalues__eV>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?) *eV"),
+        SM (r"\s*\|\s*XC energy correction\s*:\s*[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)? *Ha\s+[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)? *eV"),
+        SM (r"\s*\|\s*XC potential correction\s*:\s*[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)? *Ha\s+(?P<energy_XC_potential__eV>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?) *eV"),
+        SM (r"\s*\|\s*Free-atom electrostatic energy\s*:\s*[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)? *Ha\s+[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)? *eV"),
+        SM (r"\s*\|\s*Hartree energy correction\s*:\s*[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)? *Ha\s+(?P<energy_correction_hartree__eV>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?) *eV"),
+        SM (r"\s*\|\s*Entropy correction\s*:\s*[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)? *Ha\s+(?P<energy_correction_entropy__eV>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?) *eV"),
         SM (r"\s*\|\s*-{20}-*", weak = True),
-        SM (r"\s*\|\s*Total energy\s*:\s*[-+0-9.eEdD]+ *Ha\s+[-+0-9.eEdD]+ *eV"),
-        SM (r"\s*\|\s*Total energy, T -> 0\s*:\s*[-+0-9.eEdD]+ *Ha\s+[-+0-9.eEdD]+ *eV"),
-        SM (r"\s*\|\s*Electronic free energy\s*:\s*[-+0-9.eEdD]+ *Ha\s+[-+0-9.eEdD]+ *eV"),
+        SM (r"\s*\|\s*Total energy\s*:\s*[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)? *Ha\s+[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)? *eV"),
+        SM (r"\s*\|\s*Total energy, T -> 0\s*:\s*[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)? *Ha\s+[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)? *eV"),
+        SM (r"\s*\|\s*Electronic free energy\s*:\s*[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)? *Ha\s+[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)? *eV"),
         SM (r"\s*Derived energy quantities:"),
-        SM (r"\s*\|\s*Kinetic energy\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<electronic_kinetic_energy__eV>[-+0-9.eEdD]+) *eV"),
-        SM (r"\s*\|\s*Electrostatic energy\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_electrostatic__eV>[-+0-9.eEdD]+) *eV"),
+        SM (r"\s*\|\s*Kinetic energy\s*:\s*[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)? *Ha\s+(?P<electronic_kinetic_energy__eV>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?) *eV"),
+        SM (r"\s*\|\s*Electrostatic energy\s*:\s*[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)? *Ha\s+(?P<energy_electrostatic__eV>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?) *eV"),
         SM (r"\s*\|\s*Energy correction for multipole"),
-        SM (r"\s*\|\s*error in Hartree potential\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_hartree_error__eV>[-+0-9.eEdD]+) *eV"),
-        SM (r"\s*\|\s*Sum of eigenvalues per atom\s*:\s*(?P<energy_sum_eigenvalues_per_atom__eV>[-+0-9.eEdD]+) *eV"),
-        SM (r"\s*\|\s*Total energy \(T->0\) per atom\s*:\s*(?P<energy_total_T0_per_atom__eV>[-+0-9.eEdD]+) *eV"),
-        SM (r"\s*\|\s*Electronic free energy per atom\s*:\s*(?P<energy_free_per_atom__eV>[-+0-9.eEdD]+) *eV"),
+        SM (r"\s*\|\s*error in Hartree potential\s*:\s*[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)? *Ha\s+(?P<energy_hartree_error__eV>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?) *eV"),
+        SM (r"\s*\|\s*Sum of eigenvalues per atom\s*:\s*(?P<energy_sum_eigenvalues_per_atom__eV>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?) *eV"),
+        SM (r"\s*\|\s*Total energy \(T->0\) per atom\s*:\s*(?P<energy_total_T0_per_atom__eV>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?) *eV"),
+        SM (r"\s*\|\s*Electronic free energy per atom\s*:\s*(?P<energy_free_per_atom__eV>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?) *eV"),
         ])
     ########################################
     # submatcher for geometry relaxation
@@ -1330,7 +1330,7 @@ def build_FhiAimsMainFileSimpleMatcher():
         startReStr = r"\s*Geometry optimization: Attempting to predict improved coordinates\.",
         subMatchers = [
         SM (r"\s*Removing unitary transformations \(pure translations, rotations\) from forces on atoms\."),
-        SM (r"\s*Maximum force component is\s*[-+0-9.eEdD]+ *eV/A\."),
+        SM (r"\s*Maximum force component is\s*[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)? *eV/A\."),
         # output of final structure after relaxation not needed since it is just a repetition of the current geometry
         SM (name =  'FinalStructure',
             startReStr = r"\s*Present geometry (?P<x_fhi_aims_geometry_optimization_converged>is converged)\.",
@@ -1451,7 +1451,7 @@ def build_FhiAimsMainFileSimpleMatcher():
                 SM (r"\s*\|\s*Free atom volume\s*:\s*(?P<x_fhi_aims_free_atom_volume>[-+0-9.]+)", repeats = True),
                 SM (r"\s*\|\s*Hirshfeld volume\s*:\s*(?P<x_fhi_aims_hirschfeld_volume>[-+0-9.]+)", repeats = True)
                 ]),
-            SM (r"\s*\|\s*van der Waals energy corr.\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<x_fhi_aims_vdW_energy_corr_TS__eV>[-+0-9.eEdD]+) *eV")
+            SM (r"\s*\|\s*van der Waals energy corr.\s*:\s*[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)? *Ha\s+(?P<x_fhi_aims_vdW_energy_corr_TS__eV>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?) *eV")
         ])
     ########################################
     # submatcher for total energy components during SCF interation
@@ -1465,13 +1465,13 @@ def build_FhiAimsMainFileSimpleMatcher():
                                   sections = ['section_scf_iteration'],
         repeats = True,
         subMatchers = [
-        SM (r"\s*\|\s*Galitskii-Migdal Total Energy\s*:\s*(?P<x_fhi_aims_scgw_galitskii_migdal_total_energy__eV>[-+0-9.eEdD]+) *eV"),
-        SM (r"\s*\|\s*GW Kinetic Energy\s*:\s*(?P<x_fhi_aims_scgw_kinetic_energy__eV>[-+0-9.eEdD]+) *eV"),
-        SM (r"\s*\|\s*Hartree energy from GW density\s*:\s*(?P<x_fhi_aims_scgw_hartree_energy_sum_eigenvalues_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
-        SM (r"\s*\|\s*GW correlation Energy\s*:\s*(?P<x_fhi_aims_energy_scgw_correlation_energy__eV>[-+0-9.eEdD]+) *eV"),
-        SM (r"\s*\|\s*RPA correlation Energy\s*:\s*(?P<x_fhi_aims_scgw_rpa_correlation_energy__eV>[-+0-9.eEdD]+) *eV"),
-        SM (r"\s*\|\s*Sigle Particle Energy\s*:\s*(?P<x_fhi_aims_single_particle_energy__eV>[-+0-9.eEdD]+) *eV"),
-        SM (r"\s*\|\s*Fit accuracy for G\(w\)\s*(?P<x_fhi_aims_poles_fit_accuracy>[-+0-9.eEdD]+)")
+        SM (r"\s*\|\s*Galitskii-Migdal Total Energy\s*:\s*(?P<x_fhi_aims_scgw_galitskii_migdal_total_energy__eV>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?) *eV"),
+        SM (r"\s*\|\s*GW Kinetic Energy\s*:\s*(?P<x_fhi_aims_scgw_kinetic_energy__eV>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?) *eV"),
+        SM (r"\s*\|\s*Hartree energy from GW density\s*:\s*(?P<x_fhi_aims_scgw_hartree_energy_sum_eigenvalues_scf_iteration__eV>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?) *eV"),
+        SM (r"\s*\|\s*GW correlation Energy\s*:\s*(?P<x_fhi_aims_energy_scgw_correlation_energy__eV>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?) *eV"),
+        SM (r"\s*\|\s*RPA correlation Energy\s*:\s*(?P<x_fhi_aims_scgw_rpa_correlation_energy__eV>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?) *eV"),
+        SM (r"\s*\|\s*Sigle Particle Energy\s*:\s*(?P<x_fhi_aims_single_particle_energy__eV>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?) *eV"),
+        SM (r"\s*\|\s*Fit accuracy for G\(w\)\s*(?P<x_fhi_aims_poles_fit_accuracy>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?)")
         ])
       ])
     ########################################
@@ -1496,10 +1496,10 @@ def build_FhiAimsMainFileSimpleMatcher():
                 subMatchers = [
                 SM (r"\s*Version\s*(?P<program_version>[0-9a-zA-Z_.]+)"),
                 SM (r"\s*Compiled on\s*(?P<x_fhi_aims_program_compilation_date>[0-9/]+)\s*at\s*(?P<x_fhi_aims_program_compilation_time>[0-9:]+)\s*on host\s*(?P<program_compilation_host>[-a-zA-Z0-9._]+)\."),
-                SM (r"\s*Date\s*:\s*(?P<x_fhi_aims_program_execution_date>[-.0-9/]+)\s*,\s*Time\s*:\s*(?P<x_fhi_aims_program_execution_time>[-+0-9.eEdD]+)"),
+                SM (r"\s*Date\s*:\s*(?P<x_fhi_aims_program_execution_date>[-.0-9/]+)\s*,\s*Time\s*:\s*(?P<x_fhi_aims_program_execution_time>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?)"),
                 SM (r"\s*-{20}-*", weak = True),
-                SM (r"\s*Time zero on CPU 1\s*:\s*(?P<time_run_cpu1_start>[-+0-9.eEdD]+) *s?\."),
-                SM (r"\s*Internal wall clock time zero\s*:\s*(?P<time_run_wall_start>[-+0-9.eEdD]+) *s\."),
+                SM (r"\s*Time zero on CPU 1\s*:\s*(?P<time_run_cpu1_start>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?) *s?\."),
+                SM (r"\s*Internal wall clock time zero\s*:\s*(?P<time_run_wall_start>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?) *s\."),
                 SM (name = "nParallelTasks",
                     startReStr = r"\s*Using\s*(?P<x_fhi_aims_number_of_tasks>[0-9]+)\s*parallel tasks\.",
                     sections = ["x_fhi_aims_section_parallel_tasks"],
@@ -1565,7 +1565,7 @@ def build_FhiAimsMainFileSimpleMatcher():
                         startReStr = r"\s*Begin self-consistency loop: (?:I|Re-i)nitialization\.",
                         sections = ['section_scf_iteration'],
                         subMatchers = [
-                        SM (r"\s*Date\s*:\s*(?P<x_fhi_aims_scf_date_start>[-.0-9/]+)\s*,\s*Time\s*:\s*(?P<x_fhi_aims_scf_time_start>[-+0-9.eEdD]+)"),
+                        SM (r"\s*Date\s*:\s*(?P<x_fhi_aims_scf_date_start>[-.0-9/]+)\s*,\s*Time\s*:\s*(?P<x_fhi_aims_scf_time_start>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?)"),
                         SM (r"\s*-{20}-*", weak = True),
                         EigenvaluesGroupSubMatcher,
                         TotalEnergyScfSubMatcher,
@@ -1578,7 +1578,7 @@ def build_FhiAimsMainFileSimpleMatcher():
                         sections = ['section_scf_iteration'],
                         repeats = True,
                         subMatchers = [
-                        SM (r"\s*Date\s*:\s*(?P<x_fhi_aims_scf_date_start>[-.0-9/]+)\s*,\s*Time\s*:\s*(?P<x_fhi_aims_scf_time_start>[-+0-9.eEdD]+)"),
+                        SM (r"\s*Date\s*:\s*(?P<x_fhi_aims_scf_date_start>[-.0-9/]+)\s*,\s*Time\s*:\s*(?P<x_fhi_aims_scf_time_start>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?)"),
                         SM (r"\s*-{20}-*", weak = True),
                         EigenvaluesGroupSubMatcher.copy(), # need copy since SubMatcher already used for ScfInitialization
                         TotalEnergyScfSubMatcher.copy(), # need copy since SubMatcher already used for ScfInitialization
@@ -1586,17 +1586,17 @@ def build_FhiAimsMainFileSimpleMatcher():
                         SM (name = 'RawForces',
                             startReStr = r"\s*atomic forces \[eV/Ang\]:",
                             subMatchers = [
-                            SM (r"\s*Total forces\(\s*[0-9]+\s*\)\s*:\s+(?P<x_fhi_aims_atom_forces_raw_x__eV_angstrom_1>[-+0-9.eEdD]+)\s+(?P<x_fhi_aims_atom_forces_raw_y__eV_angstrom_1>[-+0-9.eEdD]+)\s+(?P<x_fhi_aims_atom_forces_raw_z__eV_angstrom_1>[-+0-9.eEdD]+)", repeats = True)
+                            SM (r"\s*Total forces\(\s*[0-9]+\s*\)\s*:\s+(?P<x_fhi_aims_atom_forces_raw_x__eV_angstrom_1>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?)\s+(?P<x_fhi_aims_atom_forces_raw_y__eV_angstrom_1>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?)\s+(?P<x_fhi_aims_atom_forces_raw_z__eV_angstrom_1>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?)", repeats = True)
                             ]),
                         # SCF convergence info
                         SM (name = 'SCFConvergence',
                             startReStr = r"\s*Self-consistency convergence accuracy:",
                             subMatchers = [
-                            SM (r"\s*\|\s*Change of charge(?:/spin)? density\s*:\s*[-+0-9.eEdD]+\s+[-+0-9.eEdD]*"),
-                            SM (r"\s*\|\s*Change of sum of eigenvalues\s*:\s*[-+0-9.eEdD]+ *eV"),
-                            SM (r"\s*\|\s*Change of total energy\s*:\s*(?P<energy_change_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
-                            SM (r"\s*\|\s*Change of forces\s*:\s*[-+0-9.eEdD]+ *eV/A"),
-                            SM (r"\s*\|\s*Change of analytical stress\s*:\s*[-+0-9.eEdD]+ *eV/A\*\*3")
+                            SM (r"\s*\|\s*Change of charge(?:/spin)? density\s*:\s*[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?\s+[-+0-9.eEdD]*"),
+                            SM (r"\s*\|\s*Change of sum of eigenvalues\s*:\s*[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)? *eV"),
+                            SM (r"\s*\|\s*Change of total energy\s*:\s*(?P<energy_change_scf_iteration__eV>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?) *eV"),
+                            SM (r"\s*\|\s*Change of forces\s*:\s*[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)? *eV/A"),
+                            SM (r"\s*\|\s*Change of analytical stress\s*:\s*[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)? *eV/A\*\*3")
                             ]), # END SCFConvergence
                         # after convergence eigenvalues are printed in the end instead of usually in the beginning
 #                        EigenvaluesGroupSubMatcher.copy(), # need copy since SubMatcher already used for ScfInitialization
@@ -1608,7 +1608,7 @@ def build_FhiAimsMainFileSimpleMatcher():
                         sections = ['section_scf_iteration'],
                         repeats = True,
                         subMatchers = [
-                        SM (r"\s*Date\s*:\s*(?P<x_fhi_aims_scf_date_start>[-.0-9/]+)\s*,\s*Time\s*:\s*(?P<x_fhi_aims_scf_time_start>[-+0-9.eEdD]+)"),
+                        SM (r"\s*Date\s*:\s*(?P<x_fhi_aims_scf_date_start>[-.0-9/]+)\s*,\s*Time\s*:\s*(?P<x_fhi_aims_scf_time_start>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?)"),
                         SM (r"\s*-{20}-*", weak = True),
                         EigenvaluesGroupSubMatcher.copy(), # need copy since SubMatcher already used for ScfInitialization
                         TotalEnergyScfSubMatcher.copy(), # need copy since SubMatcher already used for ScfInitialization
@@ -1616,17 +1616,17 @@ def build_FhiAimsMainFileSimpleMatcher():
                         SM (name = 'RawForces',
                             startReStr = r"\s*atomic forces \[eV/Ang\]:",
                             subMatchers = [
-                            SM (r"\s*Total forces\(\s*[0-9]+\s*\)\s*:\s+(?P<x_fhi_aims_atom_forces_raw_x__eV_angstrom_1>[-+0-9.eEdD]+)\s+(?P<x_fhi_aims_atom_forces_raw_y__eV_angstrom_1>[-+0-9.eEdD]+)\s+(?P<x_fhi_aims_atom_forces_raw_z__eV_angstrom_1>[-+0-9.eEdD]+)", repeats = True)
+                            SM (r"\s*Total forces\(\s*[0-9]+\s*\)\s*:\s+(?P<x_fhi_aims_atom_forces_raw_x__eV_angstrom_1>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?)\s+(?P<x_fhi_aims_atom_forces_raw_y__eV_angstrom_1>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?)\s+(?P<x_fhi_aims_atom_forces_raw_z__eV_angstrom_1>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?)", repeats = True)
                             ]),
                         # SCF convergence info
                         SM (name = 'SCFConvergence',
                             startReStr = r"\s*Self-consistency convergence accuracy:",
                             subMatchers = [
-                            SM (r"\s*\|\s*Change of charge(?:/spin)? density\s*:\s*[-+0-9.eEdD]+\s+[-+0-9.eEdD]*"),
-                            SM (r"\s*\|\s*Change of sum of eigenvalues\s*:\s*[-+0-9.eEdD]+ *eV"),
-                            SM (r"\s*\|\s*Change of total energy\s*:\s*(?P<energy_change_scf_iteration__eV>[-+0-9.eEdD]+) *eV"),
-                            SM (r"\s*\|\s*Change of forces\s*:\s*[-+0-9.eEdD]+ *eV/A"),
-                            SM (r"\s*\|\s*Change of analytical stress\s*:\s*[-+0-9.eEdD]+ *eV/A\*\*3")
+                            SM (r"\s*\|\s*Change of charge(?:/spin)? density\s*:\s*[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?\s+[-+0-9.eEdD]*"),
+                            SM (r"\s*\|\s*Change of sum of eigenvalues\s*:\s*[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)? *eV"),
+                            SM (r"\s*\|\s*Change of total energy\s*:\s*(?P<energy_change_scf_iteration__eV>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?) *eV"),
+                            SM (r"\s*\|\s*Change of forces\s*:\s*[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)? *eV/A"),
+                            SM (r"\s*\|\s*Change of analytical stress\s*:\s*[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)? *eV/A\*\*3")
                             ]), # END SCFConvergence
                         # after convergence eigenvalues are printed in the end instead of usually in the beginning
                         EigenvaluesGroupSubMatcher.copy(), # need copy since SubMatcher already used for ScfInitialization
@@ -1638,7 +1638,7 @@ def build_FhiAimsMainFileSimpleMatcher():
                     SM (name = 'ScfIterationsMDlight',
                         startReStr = r"\s*Convergence:\s*q app.\s*\|\s*density\s*\|\s*eigen \(eV\)\s*\|\s*Etot \(eV\)\s*\|\s*forces \(eV/A\)\s*\|\s*CPU time\s*\|\s*Clock time",
                         subMatchers = [
-                            SM (startReStr =r"\s*SCF\s*[0-9]+\s*:\s*[-+0-9.eEdD]+\s*\|\s*[-+0-9.eEdD]+\s*\|\s*[-+0-9.eEdD]+\s*\|\s*(?P<energy_change_scf_iteration__eV>[-+0-9.eEdD]+)\s*\|\s*[-+0-9.eEdD]+\s*\|\s*[0-9.]+ *s\s*\|\s*[0-9.]+ *s",
+                            SM (startReStr =r"\s*SCF\s*[0-9]+\s*:\s*[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?\s*\|\s*[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?\s*\|\s*[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?\s*\|\s*(?P<energy_change_scf_iteration__eV>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?)\s*\|\s*[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?\s*\|\s*[0-9.]+ *s\s*\|\s*[0-9.]+ *s",
                             sections = ['section_scf_iteration'],
                             repeats = True
                             )
@@ -1648,7 +1648,7 @@ def build_FhiAimsMainFileSimpleMatcher():
                         startReStr = r"\s*Post-processing: scaled ZORA corrections to eigenvalues and total energy.",
                         endReStr = r"\s*End evaluation of scaled ZORA corrections.",
                         subMatchers = [
-                        SM (r"\s*Date\s*:\s*[-.0-9/]+\s*,\s*Time\s*:\s*[-+0-9.eEdD]+"),
+                        SM (r"\s*Date\s*:\s*[-.0-9/]+\s*,\s*Time\s*:\s*[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?"),
                         SM (r"\s*-{20}-*", weak = True),
                         # parse eigenvalues
                         SM (name = 'EigenvaluesListsZORA',
@@ -1664,13 +1664,13 @@ def build_FhiAimsMainFileSimpleMatcher():
                     SM (name = 'EnergyForcesSummary',
                         startReStr = r"\s*Energy and forces in a compact form:",
                         subMatchers = [
-                        SM (r"\s*\|\s*Total energy uncorrected\s*:\s*(?P<energy_total__eV>[-+0-9.eEdD]+) *eV"),
-                        SM (r"\s*\|\s*Total energy corrected\s*:\s*(?P<energy_total_T0__eV>[-+0-9.eEdD]+) *eV"),
-                        SM (r"\s*\|\s*Electronic free energy\s*:\s*(?P<energy_free__eV>[-+0-9.eEdD]+) *eV"),
+                        SM (r"\s*\|\s*Total energy uncorrected\s*:\s*(?P<energy_total__eV>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?) *eV"),
+                        SM (r"\s*\|\s*Total energy corrected\s*:\s*(?P<energy_total_T0__eV>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?) *eV"),
+                        SM (r"\s*\|\s*Electronic free energy\s*:\s*(?P<energy_free__eV>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?) *eV"),
                         SM (name = 'ForcesSummary',
                             startReStr = r"\s*Total atomic forces \(.*\) \[eV/Ang\]:",
                             subMatchers = [
-                            SM (r"\s*\|\s*[0-9]+\s+(?P<x_fhi_aims_atom_forces_free_x__eV_angstrom_1>[-+0-9.eEdD]+)\s+(?P<x_fhi_aims_atom_forces_free_y__eV_angstrom_1>[-+0-9.eEdD]+)\s+(?P<x_fhi_aims_atom_forces_free_z__eV_angstrom_1>[-+0-9.eEdD]+)", repeats = True)
+                            SM (r"\s*\|\s*[0-9]+\s+(?P<x_fhi_aims_atom_forces_free_x__eV_angstrom_1>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?)\s+(?P<x_fhi_aims_atom_forces_free_y__eV_angstrom_1>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?)\s+(?P<x_fhi_aims_atom_forces_free_z__eV_angstrom_1>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?)", repeats = True)
                             ]),
                         SM (r"\s*-{20}-*", weak = True)
                         ]), # END EnergyForcesSummary
@@ -1682,14 +1682,14 @@ def build_FhiAimsMainFileSimpleMatcher():
                         endReStr = r"\s*End decomposition of the XC Energy",
                         subMatchers = [
                         SM (r"\s*-{20}-*", weak = True),
-                        SM (r"\s*Hartree-Fock part\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_hartree_fock_X_scaled__eV>[-+0-9.eEdD]+) *eV"),
+                        SM (r"\s*Hartree-Fock part\s*:\s*[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)? *Ha\s+(?P<energy_hartree_fock_X_scaled__eV>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?) *eV"),
                         SM (r"\s*-{20}-*", weak = True),
-                        SM (r"\s*X Energy\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_X__eV>[-+0-9.eEdD]+) *eV"),
-                        SM (r"\s*C Energy GGA\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_C__eV>[-+0-9.eEdD]+) *eV"),
-                        SM (r"\s*Total XC Energy\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<energy_XC_functional__eV>[-+0-9.eEdD]+) *eV"),
+                        SM (r"\s*X Energy\s*:\s*[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)? *Ha\s+(?P<energy_X__eV>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?) *eV"),
+                        SM (r"\s*C Energy GGA\s*:\s*[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)? *Ha\s+(?P<energy_C__eV>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?) *eV"),
+                        SM (r"\s*Total XC Energy\s*:\s*[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)? *Ha\s+(?P<energy_XC_functional__eV>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?) *eV"),
                         SM (r"\s*LDA X and C from self-consistent density"),
-                        SM (r"\s*X Energy LDA\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<x_fhi_aims_energy_X_LDA__eV>[-+0-9.eEdD]+) *eV"),
-                        SM (r"\s*C Energy LDA\s*:\s*[-+0-9.eEdD]+ *Ha\s+(?P<x_fhi_aims_energy_C_LDA__eV>[-+0-9.eEdD]+) *eV"),
+                        SM (r"\s*X Energy LDA\s*:\s*[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)? *Ha\s+(?P<x_fhi_aims_energy_X_LDA__eV>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?) *eV"),
+                        SM (r"\s*C Energy LDA\s*:\s*[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)? *Ha\s+(?P<x_fhi_aims_energy_C_LDA__eV>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?) *eV"),
                         SM (r"\s*-{20}-*", weak = True),
                         ]), # END DecompositionXCEnergy
                     # calculation was not converged
@@ -1723,7 +1723,7 @@ def build_FhiAimsMainFileSimpleMatcher():
                 ]), # END SingleConfigurationCalculationWithSystemDescription
             SM (r"\s*-{20}-*", weak = True),
             SM (r"\s*Leaving FHI-aims\."),
-            SM (r"\s*Date\s*:\s*[-.0-9/]+\s*,\s*Time\s*:\s*[-+0-9.eEdD]+"),
+            SM (r"\s*Date\s*:\s*[-.0-9/]+\s*,\s*Time\s*:\s*[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?"),
             # summary of computational steps
             SM (name = 'ComputationalSteps',
                 startReStr = r"\s*Computational steps:",
