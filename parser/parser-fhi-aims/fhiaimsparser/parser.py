@@ -14,6 +14,7 @@
 
 import os
 import logging
+import sys
 from nomadcore.baseclasses import ParserInterface, MainHierarchicalParser
 
 from fhiaimsparser.FhiAimsParser import FhiAimsParserContext, build_FhiAimsMainFileSimpleMatcher, get_cachingLevelForMetaName, getParserInfo
@@ -69,3 +70,13 @@ class FHIaimsMainParser(MainHierarchicalParser):
         self.caching_levels = get_cachingLevelForMetaName(
             parser_context.metainfo_env)
         self.super_context = FhiAimsParserContext()
+
+
+def main():
+    parser = FHIaimsParser()
+    results = parser.parse(sys.argv[1])
+    return results
+
+
+if __name__ == "__main__":
+    main()

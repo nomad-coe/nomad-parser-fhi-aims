@@ -29,7 +29,12 @@ def main():
         packages=find_packages('parser/parser-fhi-aims'),
         install_requires=[
             'numpy',
+            'nomadcore'
         ],
+        entry_points='''
+            [console_scripts]
+            nomad-fhiaims-parser=fhiaimsparser.parser:main
+        '''
     )
 
 
