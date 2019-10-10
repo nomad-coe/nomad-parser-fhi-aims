@@ -1,0 +1,2493 @@
+  MPI-parallelism will be employed.
+------------------------------------------------------------
+          Invoking FHI-aims ...
+
+          When using FHI-aims, please cite the following reference:
+
+          Volker Blum, Ralf Gehrke, Felix Hanke, Paula Havu,
+          Ville Havu, Xinguo Ren, Karsten Reuter, and Matthias Scheffler,
+          'Ab Initio Molecular Simulations with Numeric Atom-Centered Orbitals',
+          Computer Physics Communications 180, 2175-2196 (2009)
+
+          For any questions about FHI-aims, please visit the aimsclub website
+          with its forums and wiki. Contributions to both the forums and the
+          wiki are warmly encouraged - they are for you, and everyone is welcome there.
+
+------------------------------------------------------------
+
+
+
+  Date     :  20190906, Time     :  170027.646
+  Time zero on CPU 1             :   0.559380000000000E-01  s.
+  Internal wall clock time zero  :           337021227.646  s.
+
+  FHI-aims created a unique identifier for this run for later identification
+  aims_uuid : C61A2F88-A0EA-4F0B-AA47-A715868B2E26
+
+  Build configuration of the current instance of FHI-aims
+  -------------------------------------------------------
+  FHI-aims version      : 190813
+  Commit number         : d2a9cd159
+  CMake host system     : Linux-4.4.180-94.97-default
+  CMake version         : 3.5.2
+  Fortran compiler      : /mpcdf/soft/SLE_12_SP3/packages/x86_64/intel_parallel_studio/2018.3/compilers_and_libraries_2018.3.222/linux/mpi/bin64/mpiifort (Intel) version 18.0.3.20180410
+  Fortran compiler flags: -O3 -ip -fp-model precise
+  C compiler            : /mpcdf/soft/SLE_12_SP3/packages/haswell/intel/18.0.3/bin/icc (Intel) version 18.0.3.20180410
+  C compiler flags      : -O3
+  C++ compiler          : /mpcdf/soft/SLE_12_SP3/packages/haswell/intel/18.0.3/bin/icpc (Intel) version 18.0.3.20180410
+  C++ compiler flags    : -O3
+  Architecture          : AMD64_AVX
+  Using MPI
+  Using Scalapack
+  Using C files
+  Using LibXC
+  Using SPGlib
+  Using i-PI
+  Linking against: /mpcdf/soft/SLE_12_SP3/packages/x86_64/intel_parallel_studio/2018.3/mkl/lib/intel64/libmkl_intel_lp64.so
+                   /mpcdf/soft/SLE_12_SP3/packages/x86_64/intel_parallel_studio/2018.3/mkl/lib/intel64/libmkl_sequential.so
+                   /mpcdf/soft/SLE_12_SP3/packages/x86_64/intel_parallel_studio/2018.3/mkl/lib/intel64/libmkl_core.so
+                   /mpcdf/soft/SLE_12_SP3/packages/x86_64/intel_parallel_studio/2018.3/mkl/lib/intel64/libmkl_blacs_intelmpi_lp64.so
+                   /mpcdf/soft/SLE_12_SP3/packages/x86_64/intel_parallel_studio/2018.3/mkl/lib/intel64/libmkl_scalapack_lp64.so
+
+  Using       32 parallel tasks.
+  Task        0 on host dra0055 reporting.
+  Task        1 on host dra0055 reporting.
+  Task        2 on host dra0055 reporting.
+  Task        3 on host dra0055 reporting.
+  Task        4 on host dra0055 reporting.
+  Task        5 on host dra0055 reporting.
+  Task        6 on host dra0055 reporting.
+  Task        7 on host dra0055 reporting.
+  Task        8 on host dra0055 reporting.
+  Task        9 on host dra0055 reporting.
+  Task       10 on host dra0055 reporting.
+  Task       11 on host dra0055 reporting.
+  Task       12 on host dra0055 reporting.
+  Task       13 on host dra0055 reporting.
+  Task       14 on host dra0055 reporting.
+  Task       15 on host dra0055 reporting.
+  Task       16 on host dra0055 reporting.
+  Task       17 on host dra0055 reporting.
+  Task       18 on host dra0055 reporting.
+  Task       19 on host dra0055 reporting.
+  Task       20 on host dra0055 reporting.
+  Task       21 on host dra0055 reporting.
+  Task       22 on host dra0055 reporting.
+  Task       23 on host dra0055 reporting.
+  Task       24 on host dra0055 reporting.
+  Task       25 on host dra0055 reporting.
+  Task       26 on host dra0055 reporting.
+  Task       27 on host dra0055 reporting.
+  Task       28 on host dra0055 reporting.
+  Task       29 on host dra0055 reporting.
+  Task       30 on host dra0055 reporting.
+  Task       31 on host dra0055 reporting.
+
+  Performing system and environment tests:
+  | Environment variable OMP_NUM_THREADS correctly set to 1.
+  | Maximum stacksize for task 0: unlimited
+  | Maximum stacksize for task 1: unlimited
+  | Maximum stacksize for task 2: unlimited
+  | Maximum stacksize for task 3: unlimited
+  | Maximum stacksize for task 4: unlimited
+  | Maximum stacksize for task 5: unlimited
+  | Maximum stacksize for task 6: unlimited
+  | Maximum stacksize for task 7: unlimited
+  | Maximum stacksize for task 8: unlimited
+  | Maximum stacksize for task 9: unlimited
+  | Maximum stacksize for task 10: unlimited
+  | Maximum stacksize for task 11: unlimited
+  | Maximum stacksize for task 12: unlimited
+  | Maximum stacksize for task 13: unlimited
+  | Maximum stacksize for task 14: unlimited
+  | Maximum stacksize for task 15: unlimited
+  | Maximum stacksize for task 16: unlimited
+  | Maximum stacksize for task 17: unlimited
+  | Maximum stacksize for task 18: unlimited
+  | Maximum stacksize for task 19: unlimited
+  | Maximum stacksize for task 20: unlimited
+  | Maximum stacksize for task 21: unlimited
+  | Maximum stacksize for task 22: unlimited
+  | Maximum stacksize for task 23: unlimited
+  | Maximum stacksize for task 24: unlimited
+  | Maximum stacksize for task 25: unlimited
+  | Maximum stacksize for task 26: unlimited
+  | Maximum stacksize for task 27: unlimited
+  | Maximum stacksize for task 28: unlimited
+  | Maximum stacksize for task 29: unlimited
+  | Maximum stacksize for task 30: unlimited
+  | Maximum stacksize for task 31: unlimited
+  | Current stacksize for task 0: unlimited
+  | Current stacksize for task 1: unlimited
+  | Current stacksize for task 2: unlimited
+  | Current stacksize for task 3: unlimited
+  | Current stacksize for task 4: unlimited
+  | Current stacksize for task 5: unlimited
+  | Current stacksize for task 6: unlimited
+  | Current stacksize for task 7: unlimited
+  | Current stacksize for task 8: unlimited
+  | Current stacksize for task 9: unlimited
+  | Current stacksize for task 10: unlimited
+  | Current stacksize for task 11: unlimited
+  | Current stacksize for task 12: unlimited
+  | Current stacksize for task 13: unlimited
+  | Current stacksize for task 14: unlimited
+  | Current stacksize for task 15: unlimited
+  | Current stacksize for task 16: unlimited
+  | Current stacksize for task 17: unlimited
+  | Current stacksize for task 18: unlimited
+  | Current stacksize for task 19: unlimited
+  | Current stacksize for task 20: unlimited
+  | Current stacksize for task 21: unlimited
+  | Current stacksize for task 22: unlimited
+  | Current stacksize for task 23: unlimited
+  | Current stacksize for task 24: unlimited
+  | Current stacksize for task 25: unlimited
+  | Current stacksize for task 26: unlimited
+  | Current stacksize for task 27: unlimited
+  | Current stacksize for task 28: unlimited
+  | Current stacksize for task 29: unlimited
+  | Current stacksize for task 30: unlimited
+  | Current stacksize for task 31: unlimited
+  | Checking for scalapack...
+  | Testing pdtran()...
+  | All pdtran() tests passed.
+
+  Obtaining array dimensions for all initial allocations:
+  
+  -----------------------------------------------------------------------
+  Parsing control.in (first pass over file, find array dimensions only).
+  The contents of control.in will be repeated verbatim below
+  unless switched off by setting 'verbatim_writeout .false.' .
+  in the first line of control.in .
+  -----------------------------------------------------------------------
+  
+  #===============================================================================
+  # FHI-aims file: ./control.in
+  # Created using the Atomic Simulation Environment (ASE)
+  # Fri Sep  6 17:00:26 2019
+  #
+  # List of parameters used to initialize the calculator:
+  #     xc : pbesol
+  #     sc_accuracy_rho : 1e-07
+  #     relax_geometry : ltrm 5e-5
+  #     relax_unit_cell : full
+  #     use_symmetric_forces : True
+  #     energy_tolerance : 1
+  #     aggregated_energy_tolerance : 1
+  #     override_illconditioning : True
+  #     basis_threshold : 1e-07
+  #     relativistic : atomic_zora scalar
+  #     output_level : MD_light
+  #     k_grid : [8, 8, 8]
+  #     species_dir : /draco/ptmp/fknoop/working/anharmonicity/morelli.zinkblende/216.AlAs/pbesol.tight/basissets
+  #===============================================================================
+  xc                                 pbesol
+  sc_accuracy_rho                    1e-07
+  relax_geometry                     ltrm 5e-5
+  relax_unit_cell                    full
+  use_symmetric_forces               True
+  energy_tolerance                   1
+  aggregated_energy_tolerance        1
+  override_illconditioning           .true.
+  basis_threshold                    1e-07
+  relativistic                       atomic_zora scalar
+  output_level                       MD_light
+  k_grid                             8 8 8
+  #===============================================================================
+  
+  ################################################################################
+  #
+  #  FHI-aims code project
+  # Volker Blum, Fritz Haber Institute Berlin, 2009
+  #
+  #  Suggested "tight" defaults for Al atom (to be pasted into control.in file)
+  #
+  #  Revised June 14, 2011.
+  #     d and g functions of tier 2 now enabled by default.
+  #     This is in line with Si-Cl (same period).
+  #
+  ################################################################################
+    species        Al
+  #     global species definitions
+      nucleus             13
+      mass                26.9815386
+  #
+      l_hartree           6
+  #
+      cut_pot             4.0          2.0  1.0
+      basis_dep_cutoff    1e-4
+  #
+      radial_base         41 7.0
+      radial_multiplier   2
+      angular_grids       specified
+        division   0.6594  110
+        division   0.8170  194
+        division   0.9059  302
+        division   1.0363  434
+  #      division   1.1443  590
+  #      division   1.2621  770
+  #      division   2.8177  974
+  #      outer_grid   974
+        outer_grid  434
+  ################################################################################
+  #
+  #  Definition of "minimal" basis
+  #
+  ################################################################################
+  #     valence basis states
+      valence      3  s   2.
+      valence      3  p   1.
+  #     ion occupancy
+      ion_occ      3  s   1.
+      ion_occ      2  p   6.
+  ################################################################################
+  #
+  #  Suggested additional basis functions. For production calculations,
+  #  uncomment them one after another (the most important basis functions are
+  #  listed first).
+  #
+  #  Constructed for dimers: 2.0 A, 2.5 A, 3.0 A, 3.75 A, 4.5 A
+  #
+  ################################################################################
+  #  "First tier" - improvements: -199.47 meV to -10.63 meV
+       ionic 3 d auto
+       ionic 3 p auto
+       hydro 4 f 4.7
+       ionic 3 s auto
+  #  "Second tier" - improvements: -5.35 meV to -1.57 meV
+       hydro 5 g 7
+       hydro 3 d 6
+  #     hydro 2 s 11.6
+  #     hydro 2 p 0.9
+  #  "Third tier" - improvements: -0.63 meV to -0.20 meV
+  #     hydro 5 f 7.6
+  #     hydro 4 p 7.2
+  #     hydro 4 s 3.7
+  #     hydro 4 d 7.6
+  #  "Fourth tier" - improvements: -0.17 meV to -0.08 meV
+  #     hydro 4 d 13.6
+  #     hydro 5 g 11.2
+  #     hydro 4 d 0.9
+  #     hydro 1 s 0.4
+  #     hydro 4 p 0.1
+  #     hydro 5 f 9.8
+  #  Further basis functions that fell out of the optimization - noise level...
+  #     hydro 4 p 5
+  
+  ################################################################################
+  #
+  # For methods that use the localized form of the "resolution of identity" for
+  # the two-electron Coulomb operator (RI_method LVL), particularly Hartree-Fock and
+  # hybrid density functional calculations, the highest accuracy can be obtained by
+  # uncommenting the line beginning with "for_aux"  below, thus adding an extra g radial
+  # function to the construction of the product basis set for the expansion.
+  # See Ref. New J. Phys. 17, 093020 (2015) for more information, particularly Figs. 1 and 6.
+  #
+  ################################################################################
+  #
+  # for_aux hydro 5 g 6.0
+  ################################################################################
+  #
+  #  FHI-aims code project
+  # Volker Blum, Fritz Haber Institute Berlin, 2009
+  #
+  #  Suggested "tight" defaults for As atom (to be pasted into control.in file)
+  #
+  ################################################################################
+    species        As
+  #
+      nucleus             33
+      mass                74.92160
+  #
+      l_hartree           6
+  #
+      cut_pot             4.0          2.0  1.0
+      basis_dep_cutoff    1e-4
+  #
+      radial_base         55 7.0
+      radial_multiplier   2
+      angular_grids       specified
+        division   0.3346   50
+        division   0.6815  110
+        division   0.9821  194
+        division   1.2024  302
+        division   1.4689  434
+  #      division   1.5802  590
+  #      division   1.6697  770
+  #      division   1.7649  974
+  #      division   2.6635 1202
+  #      outer_grid  1202
+        outer_grid  434
+  ################################################################################
+  #
+  #  Definition of "minimal" basis
+  #
+  ################################################################################
+  #     valence basis states
+      valence      4  s   2.
+      valence      4  p   3.
+      valence      3  d  10.
+  #     ion occupancy
+      ion_occ      4  s   1.
+      ion_occ      4  p   2.
+      ion_occ      3  d  10.
+  ################################################################################
+  #
+  #  Suggested additional basis functions. For production calculations,
+  #  uncomment them one after another (the most important basis functions are
+  #  listed first).
+  #
+  #  Constructed for dimers: 1.75 A, 2.10 A, 2.50 A, 3.00 A, 4.00 A
+  #
+  ################################################################################
+  #  "First tier" - improvements: -385.12 meV to -54.94 meV
+       hydro 3 d 4
+       hydro 2 p 1.5
+       hydro 4 f 6.8
+       ionic 4 s auto
+  #  "Second tier" - improvements: -22.14 meV to -3.21 meV
+  #     hydro 5 g 10
+  #     hydro 6 h 13.6
+  #     hydro 4 p 4.3
+  #     hydro 4 f 15.6
+  #     hydro 4 d 5.4
+  #     hydro 1 s 0.6
+  #  "Third tier" - improvements: -0.57 meV to -0.13 meV
+  #     hydro 5 g 16.4
+  #     hydro 4 f 7.4
+  #     hydro 5 d 7.4
+  #     ionic 4 p auto
+  #     hydro 3 s 2.6
+  #  "Fourth tier" - improvements: -0.30 meV and below
+  #     hydro 3 p 3
+  #     hydro 6 h 18.4
+  #     hydro 5 d 11.2
+  #     hydro 5 f 15.2
+  #     hydro 5 g 13.6
+  #     hydro 5 s 6.2
+  
+  -----------------------------------------------------------------------
+  Completed first pass over input file control.in .
+  -----------------------------------------------------------------------
+  
+  
+  -----------------------------------------------------------------------
+  Parsing geometry.in (first pass over file, find array dimensions only).
+  The contents of geometry.in will be repeated verbatim below
+  unless switched off by setting 'verbatim_writeout .false.' .
+  in the first line of geometry.in .
+  -----------------------------------------------------------------------
+  
+  #=======================================================
+  # FHI-aims file: ./geometry.in
+  # Created using the Atomic Simulation Environment (ASE)
+  # Fri Sep  6 17:00:26 2019
+  #=======================================================
+  lattice_vector 0.0000000000000000 2.8758013299999998 2.8758013299999998
+  lattice_vector 2.8758013299999998 0.0000000000000000 2.8758013299999998
+  lattice_vector 2.8758013299999998 2.8758013299999998 0.0000000000000000
+  atom 1.4379006649999999 1.4379006649999999 1.4379006649999999 Al
+  atom 0.0000000000000000 0.0000000000000000 0.0000000000000000 As
+  
+  -----------------------------------------------------------------------
+  Completed first pass over input file geometry.in .
+  -----------------------------------------------------------------------
+  
+
+  Basic array size parameters:
+  | Number of species                 :        2
+  | Number of atoms                   :        2
+  | Number of lattice vectors         :        3
+  | Max. basis fn. angular momentum   :        4
+  | Max. atomic/ionic basis occupied n:        4
+  | Max. number of basis fn. types    :        3
+  | Max. radial fns per species/type  :        8
+  | Max. logarithmic grid size        :     1417
+  | Max. radial integration grid size :      111
+  | Max. angular integration grid size:      434
+  | Max. angular grid division number :        8
+  | Radial grid for Hartree potential :     1417
+  | Number of spin channels           :        1
+
+------------------------------------------------------------
+          Reading file control.in.
+------------------------------------------------------------
+  XC: Using PBEsol gradient-corrected functionals.
+  Convergence accuracy of self-consistent charge density:  0.1000E-06
+  Geometry relaxation: Modified BFGS - TRM (trust radius method) for lattice optimization.
+  ** Possibly untested developer features enabled. If this is unwanted, please use the keyword `trm` instead of `lattice_trm`
+  Convergence accuracy for geometry relaxation: Maximum force <   0.500000E-04 eV/A.
+  Max energy increase before discarding BFGS move:   0.100000E+01 eV
+  Max energy increase across multiple BFGS steps:   0.100000E+01 eV
+  override_illconditioning: Explicitly overriding any built-in checks for an ill-conditioned overlap matrix.
+  *** WARNING: If you use this flag, you should really know what you are doing.
+  *** DO NOT keep this flag set by default in all your control.in files.
+  Threshold for basis singularities:  0.1000E-06
+  Scalar relativistic treatment of kinetic energy: on-site free-atom approximation to ZORA.
+  Requested output level: MD_light            
+  Found k-point grid:         8         8         8
+ 
+  Reading configuration options for species Al                  .
+  | Found nuclear charge :  13.0000
+  | Found atomic mass :    26.9815386000000      amu
+  | Found l_max for Hartree potential  :   6
+  | Found cutoff potl. onset [A], width [A], scale factor :    4.00000    2.00000    1.00000
+  | Threshold for basis-dependent cutoff potential is   0.100000E-03
+  | Found data for basic radial integration grid :    41 points, outermost radius =    7.000 A
+  | Found multiplier for basic radial grid :   2
+  | Found angular grid specification: user-specified.
+  | Specified grid contains     5 separate shells.
+  | Check grid settings after all constraints further below.
+  | Found free-atom valence shell :  3 s   2.000
+  | Found free-atom valence shell :  3 p   1.000
+  | Found free-ion valence shell :  3 s   1.000
+  | Found free-ion valence shell :  2 p   6.000
+  | Found ionic basis function :  3 d , default cutoff radius.
+  | Found ionic basis function :  3 p , default cutoff radius.
+  | Found hydrogenic basis function :  4 f   4.700
+  | Found ionic basis function :  3 s , default cutoff radius.
+  | Found hydrogenic basis function :  5 g   7.000
+  | Found hydrogenic basis function :  3 d   6.000
+  Species Al                  : Missing cutoff potential type.
+  Defaulting to exp(1/x)/(1-x)^2 type cutoff potential.
+  Species Al: No 'logarithmic' tag. Using default grid for free atom:
+  | Default logarithmic grid data [bohr] : 0.1000E-03 0.1000E+03 0.1012E+01
+  | Will include ionic basis functions of  2.0-fold positive Al                   ion.
+  Species Al: On-site basis accuracy parameter (for Gram-Schmidt orthonormalisation) not specified.
+  Using default value basis_acc =  0.1000000E-03.
+  Species Al                  : Using default innermost maximum threshold i_radial=  2 for radial functions.
+  Species Al                  : Default cutoff onset for free atom density etc. : 0.40000000E+01 AA.
+  Species Al                  : Basic radial grid will be enhanced according to radial_multiplier =   2, to contain    83 grid points.
+ 
+  Reading configuration options for species As                  .
+  | Found nuclear charge :  33.0000
+  | Found atomic mass :    74.9216000000000      amu
+  | Found l_max for Hartree potential  :   6
+  | Found cutoff potl. onset [A], width [A], scale factor :    4.00000    2.00000    1.00000
+  | Threshold for basis-dependent cutoff potential is   0.100000E-03
+  | Found data for basic radial integration grid :    55 points, outermost radius =    7.000 A
+  | Found multiplier for basic radial grid :   2
+  | Found angular grid specification: user-specified.
+  | Specified grid contains     6 separate shells.
+  | Check grid settings after all constraints further below.
+  | Found free-atom valence shell :  4 s   2.000
+  | Found free-atom valence shell :  4 p   3.000
+  | Found free-atom valence shell :  3 d  10.000
+  | Found free-ion valence shell :  4 s   1.000
+  | Found free-ion valence shell :  4 p   2.000
+  | Found free-ion valence shell :  3 d  10.000
+  | Found hydrogenic basis function :  3 d   4.000
+  | Found hydrogenic basis function :  2 p   1.500
+  | Found hydrogenic basis function :  4 f   6.800
+  | Found ionic basis function :  4 s , default cutoff radius.
+  Species As                  : Missing cutoff potential type.
+  Defaulting to exp(1/x)/(1-x)^2 type cutoff potential.
+  Species As: No 'logarithmic' tag. Using default grid for free atom:
+  | Default logarithmic grid data [bohr] : 0.1000E-03 0.1000E+03 0.1012E+01
+  | Will include ionic basis functions of  2.0-fold positive As                   ion.
+  Species As: On-site basis accuracy parameter (for Gram-Schmidt orthonormalisation) not specified.
+  Using default value basis_acc =  0.1000000E-03.
+  Species As                  : Using default innermost maximum threshold i_radial=  2 for radial functions.
+  Species As                  : Default cutoff onset for free atom density etc. : 0.40000000E+01 AA.
+  Species As                  : Basic radial grid will be enhanced according to radial_multiplier =   2, to contain   111 grid points.
+ 
+  Finished reading input file 'control.in'. Consistency checks are next.
+ 
+  MPI_IN_PLACE appears to work with this MPI implementation.
+  | Keeping use_mpi_in_place .true. (see manual).
+  Target number of points in a grid batch is not set. Defaulting to  100
+  Method for grid partitioning is not set. Defaulting to parallel hash+maxmin partitioning.
+  Batch size limit is not set. Defaulting to    200
+  By default, will store active basis functions for each batch.
+  If in need of memory, prune_basis_once .false. can be used to disable this option.
+  communication_type for Hartree potential was not specified.
+  Defaulting to calc_hartree .
+  Defaulting to Pulay charge density mixer.
+  Pulay mixer: Number of relevant iterations not set.
+  Defaulting to    8 iterations.
+  Pulay mixer: Number of initial linear mixing iterations not set.
+  Defaulting to    0 iterations.
+  Work space size for distributed Hartree potential not set.
+  Defaulting to   0.200000E+03 MB.
+  Mixing parameter for charge density mixing has not been set.
+  Using default: charge_mix_param =     0.0500.
+  The mixing parameter will be adjusted in iteration number     2 of the first full s.c.f. cycle only.
+  Algorithm-dependent basis array size parameters:
+  | n_max_pulay                         :        8
+  Maximum number of self-consistency iterations not provided.
+  Presetting  1000 iterations.
+  Presetting      1001 iterations before the initial mixing cycle
+  is restarted anyway using the sc_init_iter criterion / keyword.
+  Presetting a factor      1.000 between actual scf density residual
+  and density convergence criterion sc_accuracy_rho below which sc_init_iter
+  takes no effect.
+  No maximum number of relaxation steps, defaulting to     1000
+  Default initial Hessian is Lindh matrix (thres = 15.00) plus  0.200000E+01 eV/A^2 times unity.
+  No harmonic length scale. Defaulting to   0.250000E-01 A.
+  No trust radius initializer. Defaulting to   0.200000E+00 A.
+  Unit cell relaxation: Unit cell will be relaxed fully.
+  Unit cell relaxation: Analytical stress will be used.
+  Analytical stress will be computed.
+  Analytical stress calculation: Only the upper triangle is calculated.
+                                 Final output is symmetrized.
+  Analytical stress calculation: scf convergence accuracy of stress not set.
+                                 Analytical stress self-consistency will not be checked explicitly.
+                                 Be sure to set other criteria like sc_accuracy_rho tight enough.
+  Force calculation: scf convergence accuracy of forces not set.
+  Defaulting to 'sc_accuracy_forces not_checked'.
+  Handling of forces: Unphysical translation and rotation will be removed from forces.
+  No accuracy limit for integral partition fn. given. Defaulting to  0.1000E-14.
+  No threshold value for u(r) in integrations given. Defaulting to  0.1000E-05.
+  No occupation type (smearing scheme) given. Defaulting to Gaussian broadening, width =  0.1000E-01 eV.
+  The width will be adjusted in iteration number     2 of the first full s.c.f. cycle only.
+  S.C.F. convergence parameters will be adjusted in iteration number     2 of the first full s.c.f. cycle only.
+  No accuracy for occupation numbers given. Defaulting to  0.1000E-12.
+  No threshold value for occupation numbers given. Defaulting to  0.0000E+00.
+  No accuracy for fermi level given. Defaulting to  0.1000E-19.
+  Maximum # of iterations to find E_F not set. Defaulting to  200.
+  Preferred method for the eigenvalue solver ('KS_method') not specified in 'control.in'.
+  Defaulting to serial version, LAPACK (via ELSI), since more k-points than CPUs available.
+  Will not use alltoall communication since running on < 1024 CPUs.
+  partition_type (choice of integration weights) for integrals was not specified.
+  | Using a version of the partition function of Stratmann and coworkers ('stratmann_sparse').
+  | At each grid point, the set of atoms used to build the partition table is smoothly restricted to
+  | only those atoms whose free-atom density would be non-zero at that grid point.
+  Partitioning for Hartree potential was not defined. Using partition_type for integrals.
+  | Adjusted default value of keyword multip_moments_threshold to:       0.10000000E-11
+  | This value may affect high angular momentum components of the Hartree potential in periodic systems.
+  Spin handling was not defined in control.in. Defaulting to unpolarized case.
+  Angular momentum expansion for Kerker preconditioner not set explicitly.
+  | Using default value of   0
+  No explicit requirement for turning off preconditioner.
+  | By default, it will be turned off when the charge convergence reaches
+  | sc_accuracy_rho  =   0.100000E-06
+  No special mixing parameter while Kerker preconditioner is on.
+  Using default: charge_mix_param =     0.0500.
+  No q(lm)/r^(l+1) cutoff set for long-range Hartree potential.
+  | Using default value of  0.100000E-09 .
+  | Verify using the multipole_threshold keyword.
+  Defaulting to new monopole extrapolation.
+  Density update method: automatic selection selected.
+  Using density matrix based charge density update.
+  Using density matrix based charge density update.
+  Using packed matrix style: index .
+  Geometry relaxation: A file "geometry.in.next_step" is written out by default after each step.
+  | This file contains the geometry of the current relaxation step as well as
+  | the current Hessian matrix needed to restart the relaxation algorithm.
+  | If you do not want part or all of this information, use the keywords
+  | "write_restart_geometry" or "hessian_to_restart_geometry" to switch the output off.
+  Defaulting to use time-reversal symmetry for k-point grid.
+  Charge integration errors on the 3D integration grid will be compensated
+  by explicit normalization and distribution of residual charges.
+  Use the "compensate_multipole_errors" flag to change this behaviour.
+------------------------------------------------------------
+
+
+------------------------------------------------------------
+          Reading geometry description geometry.in.
+------------------------------------------------------------
+  Input structure read successfully.
+  The structure contains        2 atoms,  and a total of         46.000 electrons.
+
+  Input geometry:
+  | Unit cell:
+  |        0.00000000        2.87580133        2.87580133
+  |        2.87580133        0.00000000        2.87580133
+  |        2.87580133        2.87580133        0.00000000
+  | Atomic structure:
+  |       Atom                x [A]            y [A]            z [A]
+  |    1: Species Al            1.43790066        1.43790066        1.43790066
+  |    2: Species As            0.00000000        0.00000000        0.00000000
+
+  Lattice parameters for 3D lattice (in Angstroms) :     4.066997    4.066997    4.066997
+  Angle(s) between unit vectors (in degrees)       :    60.000000   60.000000   60.000000
+
+  | The smallest distance between any two atoms is         2.49051701 AA.
+  | The first atom of this pair is atom number                      2 .
+  | The second atom of this pair is atom number                     1 .
+  | Wigner-Seitz cell of the first atom image           0     0     1 .
+  | (The Wigner-Seitz cell of the second atom is 0 0 0  by definition.)
+
+  Symmetry information by spglib:
+  | Precision set to  0.1E-04
+  | Number of Operations  : 24
+  | Space group           : 216
+  | International         : F-43m
+  | Schoenflies           : Td^2
+
+  Quantities derived from the lattice vectors:
+  | Reciprocal lattice vector 1: -1.092423  1.092423  1.092423
+  | Reciprocal lattice vector 2:  1.092423 -1.092423  1.092423
+  | Reciprocal lattice vector 3:  1.092423  1.092423 -1.092423
+  | Unit cell volume                               :   0.475671E+02  A^3
+
+  Range separation radius for Ewald summation (hartree_convergence_parameter):      4.14063769 bohr.
+
+  Number of empty states per atom not set in control.in - providing a guess from actual geometry.
+  | Total number of empty states used during s.c.f. cycle:        9
+  If you use a very high smearing, use empty_states (per atom!) in control.in to increase this value.
+
+  Structure-dependent array size parameters: 
+  | Maximum number of distinct radial functions  :       23
+  | Maximum number of basis functions            :       73
+  | Number of Kohn-Sham states (occupied + empty):       32
+------------------------------------------------------------
+
+------------------------------------------------------------
+          Preparing all fixed parts of the calculation.
+------------------------------------------------------------
+  Determining machine precision:
+    2.225073858507201E-308
+  Setting up grids for atomic and cluster calculations.
+
+  Creating wave function, potential, and density for free atoms.
+
+  Species: Al
+
+  List of occupied orbitals and eigenvalues:
+    n    l              occ      energy [Ha]    energy [eV]
+    1    0           2.0000       -55.632680     -1513.8422
+    2    0           2.0000        -3.968002      -107.9748
+    3    0           2.0000        -0.279583        -7.6079
+    2    1           6.0000        -2.551946       -69.4420
+    3    1           1.0000        -0.093244        -2.5373
+
+
+  Species: As
+
+  List of occupied orbitals and eigenvalues:
+    n    l              occ      energy [Ha]    energy [eV]
+    1    0           2.0000      -436.649520    -11881.8380
+    2    0           2.0000       -54.755544     -1489.9742
+    3    0           2.0000        -6.992637      -190.2793
+    4    0           2.0000        -0.530794       -14.4436
+    2    1           6.0000       -48.002396     -1306.2117
+    3    1           6.0000        -4.910227      -133.6141
+    4    1           3.0000        -0.189185        -5.1480
+    3    2          10.0000        -1.492027       -40.6001
+
+  Creating fixed part of basis set: Ionic, confined, hydrogenic.
+ 
+  Al                   ion:
+
+  List of free ionic orbitals and eigenvalues:
+    n    l      energy [Ha]    energy [eV]
+    1    0       -56.418846     -1535.2349
+    2    0        -4.732717      -128.7838
+    3    0        -0.872690       -23.7471
+    2    1        -3.317230       -90.2664
+
+
+  List of ionic basis orbitals and eigenvalues:
+    n    l      energy [Ha]    energy [eV]    outer radius [A]
+    3    2        -0.350517        -9.5381       5.451604
+    3    1        -0.632146       -17.2016       5.385364
+    3    0        -0.872680       -23.7468       4.943680
+
+ 
+  Al                   hydrogenic:
+ 
+  List of hydrogenic basis orbitals: 
+    n    l      effective z      eigenvalue [eV]  inner max. [A]     outer max. [A]     outer radius [A]   
+    4    3         4.700000       -18.7545           1.792186           1.792186           5.451604
+    5    4         7.000000       -26.6464           1.882002           1.882002           5.451604
+    3    2         6.000000       -54.4226           0.790067           0.790067           4.166016
+ 
+ 
+  As                   ion:
+
+  List of free ionic orbitals and eigenvalues:
+    n    l      energy [Ha]    energy [eV]
+    1    0      -437.521171    -11905.5568
+    2    0       -55.607242     -1513.1500
+    3    0        -7.840974      -213.3638
+    4    0        -1.261898       -34.3380
+    2    1       -48.854908     -1329.4097
+    3    1        -5.758049      -156.6845
+    4    1        -0.860696       -23.4207
+    3    2        -2.335871       -63.5623
+
+
+  List of ionic basis orbitals and eigenvalues:
+    n    l      energy [Ha]    energy [eV]    outer radius [A]
+    4    0        -1.261891       -34.3378       4.258644
+
+ 
+  As                   hydrogenic:
+ 
+  List of hydrogenic basis orbitals: 
+    n    l      effective z      eigenvalue [eV]  inner max. [A]     outer max. [A]     outer radius [A]   
+    3    2         4.000000       -24.1871           1.194291           1.194291           5.372135
+    2    1         1.500000        -7.6128           1.400007           1.400007           5.438212
+    4    3         6.800000       -39.3202           1.238904           1.238904           5.178681
+ 
+
+  Adding cutoff potential to free-atom effective potential.
+  Creating atomic-like basis functions for current effective potential.
+
+  Species Al                  :
+
+  List of atomic basis orbitals and eigenvalues:
+    n    l      energy [Ha]    energy [eV]    outer radius [A]
+    1    0       -55.632680     -1513.8422       0.850197
+    2    0        -3.968002      -107.9748       3.144911
+    3    0        -0.279583        -7.6079       5.385364
+    2    1        -2.551946       -69.4420       3.777870
+    3    1        -0.093244        -2.5373       5.451604
+
+
+  Species As                  :
+
+  List of atomic basis orbitals and eigenvalues:
+    n    l      energy [Ha]    energy [eV]    outer radius [A]
+    1    0      -436.649520    -11881.8380       0.318942
+    2    0       -54.755544     -1489.9742       0.912655
+    3    0        -6.992637      -190.2793       2.486936
+    4    0        -0.530794       -14.4436       5.306860
+    2    1       -48.002396     -1306.2117       0.946748
+    3    1        -4.910227      -133.6141       2.844895
+    4    1        -0.189185        -5.1480       5.438212
+    3    2        -1.492027       -40.6001       4.527073
+
+  Assembling full basis from fixed parts.
+  | Species Al :   atomic orbital   1 s accepted.
+  | Species Al :   atomic orbital   2 s accepted.
+  | Species Al :    ionic orbital   3 s accepted.
+  | Species Al :   atomic orbital   3 s accepted.
+  | Species Al :   atomic orbital   2 p accepted.
+  | Species Al :    ionic orbital   3 p accepted.
+  | Species Al :   atomic orbital   3 p accepted.
+  | Species Al :    hydro orbital   3 d accepted.
+  | Species Al :    ionic orbital   3 d accepted.
+  | Species Al :    hydro orbital   4 f accepted.
+  | Species Al :    hydro orbital   5 g accepted.
+  | Species As :   atomic orbital   1 s accepted.
+  | Species As :   atomic orbital   2 s accepted.
+  | Species As :   atomic orbital   3 s accepted.
+  | Species As :    ionic orbital   4 s accepted.
+  | Species As :   atomic orbital   4 s accepted.
+  | Species As :   atomic orbital   2 p accepted.
+  | Species As :   atomic orbital   3 p accepted.
+  | Species As :   atomic orbital   4 p accepted.
+  | Species As :    hydro orbital   2 p accepted.
+  | Species As :   atomic orbital   3 d accepted.
+  | Species As :    hydro orbital   3 d accepted.
+  | Species As :    hydro orbital   4 f accepted.
+ 
+  Basis size parameters after reduction:
+  | Total number of radial functions:       23
+  | Total number of basis functions :       73
+ 
+  Per-task memory consumption for arrays in subroutine allocate_ext:
+  |           8.346380MB.
+  Testing on-site integration grid accuracy.
+  |  Species  Function  <phi|h_atom|phi> (log., in eV)  <phi|h_atom|phi> (rad., in eV)
+           1        1              -1513.8422387113              -1513.8422137479
+           1        2               -107.9748298038               -107.9748295037
+           1        3                 -7.1549958236                 -7.1549944009
+           1        4                  4.6897975489                  4.6885092788
+           1        5                -69.4419904626                -69.4419903866
+           1        6                 -1.7284229072                 -1.7284376197
+           1        7                  4.8720809074                  4.8685169848
+           1        8                 17.1348402844                 17.1348398212
+           1        9                 10.9135737671                 10.9128664576
+           1       10                 11.4987355985                 11.4983224815
+           1       11                 20.2224916670                 20.2221617898
+           2       12             -11881.8379867549             -11881.8374048622
+           2       13              -1489.9741630771              -1489.9741530529
+           2       14               -190.2793234935               -190.2793223341
+           2       15                -14.1960327161                -14.1960324769
+           2       16                  5.9274629900                  5.9274413386
+           2       17              -1306.2116640294              -1306.2116626351
+           2       18               -133.6140787212               -133.6140780872
+           2       19                 -5.1494783706                 -5.1494878741
+           2       20                  4.9946648260                  4.9944740976
+           2       21                -40.6001171048                -40.6001169605
+           2       22                  7.1867940614                  7.1867909443
+           2       23                 21.1344938241                 21.1344949749
+
+  Preparing densities etc. for the partition functions (integrals / Hartree potential).
+
+  Preparations completed.
+  max(cpu_time)          :      0.429 s.
+  Wall clock time (cpu1) :      0.434 s.
+------------------------------------------------------------
+
+------------------------------------------------------------
+          Begin self-consistency loop: Initialization.
+
+          Date     :  20190906, Time     :  170028.472
+------------------------------------------------------------
+
+  Initializing index lists of integration centers etc. from given atomic structure:
+  Mapping all atomic coordinates to central unit cell.
+
+  Initializing the k-points
+          Using symmetry for reducing the k-points
+  | k-points reduced from:      512 to      260
+  | Number of k-points                             :       260
+  The eigenvectors in the calculations are COMPLEX.
+  | K-points in task   0:         8
+  | K-points in task   1:         9
+  | K-points in task   2:         9
+  | K-points in task   3:         9
+  | K-points in task   4:         9
+  | K-points in task   5:         8
+  | K-points in task   6:         8
+  | K-points in task   7:         8
+  | K-points in task   8:         8
+  | K-points in task   9:         8
+  | K-points in task  10:         8
+  | K-points in task  11:         8
+  | K-points in task  12:         8
+  | K-points in task  13:         8
+  | K-points in task  14:         8
+  | K-points in task  15:         8
+  | K-points in task  16:         8
+  | K-points in task  17:         8
+  | K-points in task  18:         8
+  | K-points in task  19:         8
+  | K-points in task  20:         8
+  | K-points in task  21:         8
+  | K-points in task  22:         8
+  | K-points in task  23:         8
+  | K-points in task  24:         8
+  | K-points in task  25:         8
+  | K-points in task  26:         8
+  | K-points in task  27:         8
+  | K-points in task  28:         8
+  | K-points in task  29:         8
+  | K-points in task  30:         8
+  | K-points in task  31:         8
+  | Number of basis functions in the Hamiltonian integrals :      2906
+  | Number of basis functions in a single unit cell        :        73
+  | Number of centers in hartree potential         :       810
+  | Number of centers in hartree multipole         :       408
+  | Number of centers in electron density summation:       318
+  | Number of centers in basis integrals           :       324
+  | Number of centers in integrals                 :       128
+  | Number of centers in hamiltonian               :       318
+  | Consuming        747 KiB for k_phase.
+  | Number of super-cells (origin) [n_cells]                     :        2197
+  | Number of super-cells (after PM_index) [n_cells]             :         184
+  | Number of super-cells in hamiltonian [n_cells_in_hamiltonian]:         184
+  | Size of matrix packed + index [n_hamiltonian_matrix_size] :      242666
+
+  Initializing relaxation algorithms.
+  Finished initialization of distributed Hessian storage.
+  | Global dimension:        15
+  | BLACS block size:         1
+  | Number of workers:       15
+
+  | Estimated reciprocal-space cutoff momentum G_max:         2.33816761 bohr^-1 .
+  | Reciprocal lattice points for long-range Hartree potential:      64
+  Partitioning the integration grid into batches with parallel hashing+maxmin method.
+  | Number of batches:      514
+  | Maximal batch size:     103
+  | Minimal batch size:      49
+  | Average batch size:      86.996
+  | Standard deviation of batch sizes:      11.590
+
+  Integration load balanced across    32 MPI tasks.
+  Work distribution over tasks is as follows:
+  Task     0 has       1365 integration points.
+  Task     1 has       1386 integration points.
+  Task     2 has       1379 integration points.
+  Task     3 has       1376 integration points.
+  Task     4 has       1373 integration points.
+  Task     5 has       1389 integration points.
+  Task     6 has       1398 integration points.
+  Task     7 has       1411 integration points.
+  Task     8 has       1401 integration points.
+  Task     9 has       1437 integration points.
+  Task    10 has       1382 integration points.
+  Task    11 has       1364 integration points.
+  Task    12 has       1389 integration points.
+  Task    13 has       1384 integration points.
+  Task    14 has       1359 integration points.
+  Task    15 has       1393 integration points.
+  Task    16 has       1398 integration points.
+  Task    17 has       1410 integration points.
+  Task    18 has       1428 integration points.
+  Task    19 has       1422 integration points.
+  Task    20 has       1405 integration points.
+  Task    21 has       1419 integration points.
+  Task    22 has       1428 integration points.
+  Task    23 has       1393 integration points.
+  Task    24 has       1384 integration points.
+  Task    25 has       1378 integration points.
+  Task    26 has       1402 integration points.
+  Task    27 has       1403 integration points.
+  Task    28 has       1407 integration points.
+  Task    29 has       1423 integration points.
+  Task    30 has       1406 integration points.
+  Task    31 has       1424 integration points.
+  Initializing partition tables, free-atom densities, potentials, etc. across the integration grid (initialize_grid_storage).
+  | initialize_grid_storage: Actual outermost partition radius vs. multipole_radius_free
+  | (-- VB: in principle, multipole_radius_free should be larger, hence this output)
+  | Species        1: Confinement radius =              6.000000000000000 AA, multipole_radius_free =              6.011712643327361 AA.
+  | Species        1: outer_partition_radius set to              6.011712643327361 AA .
+  | Species        2: Confinement radius =              6.000000000000000 AA, multipole_radius_free =              6.070707973509038 AA.
+  | Species        2: outer_partition_radius set to              6.070707973509038 AA .
+  | The sparse table of interatomic distances needs       1026.48 kbyte instead of       839.81 kbyte of memory.
+  | Using the partition_type stratmann_smoother will reduce your memory usage.
+  | Net number of integration points:    44716
+  | of which are non-zero points    :    36386
+  | Numerical average free-atom electrostatic potential    :    -12.92652782 eV
+  Renormalizing the initial density to the exact electron count on the 3D integration grid.
+  | Initial density: Formal number of electrons (from input files) :      46.0000000000
+  | Integrated number of electrons on 3D grid     :      46.0020026596
+  | Charge integration error                      :       0.0020026596
+  | Normalization factor for density and gradient :       0.9999564658
+  Renormalizing the free-atom superposition density to the exact electron count on the 3D integration grid.
+  | Formal number of electrons (from input files) :      46.0000000000
+  | Integrated number of electrons on 3D grid     :      46.0020026596
+  | Charge integration error                      :       0.0020026596
+  | Normalization factor for density and gradient :       0.9999564658
+  Obtaining max. number of non-zero basis functions in each batch (get_n_compute_maxes).
+  | Maximal number of non-zero basis functions:     1100 in task     0
+  | Maximal number of non-zero basis functions:     1102 in task     1
+  | Maximal number of non-zero basis functions:     1065 in task     2
+  | Maximal number of non-zero basis functions:     1081 in task     3
+  | Maximal number of non-zero basis functions:     1096 in task     4
+  | Maximal number of non-zero basis functions:     1114 in task     5
+  | Maximal number of non-zero basis functions:     1100 in task     6
+  | Maximal number of non-zero basis functions:     1089 in task     7
+  | Maximal number of non-zero basis functions:     1069 in task     8
+  | Maximal number of non-zero basis functions:     1067 in task     9
+  | Maximal number of non-zero basis functions:     1060 in task    10
+  | Maximal number of non-zero basis functions:     1093 in task    11
+  | Maximal number of non-zero basis functions:     1107 in task    12
+  | Maximal number of non-zero basis functions:     1088 in task    13
+  | Maximal number of non-zero basis functions:     1094 in task    14
+  | Maximal number of non-zero basis functions:     1137 in task    15
+  | Maximal number of non-zero basis functions:     1131 in task    16
+  | Maximal number of non-zero basis functions:     1107 in task    17
+  | Maximal number of non-zero basis functions:     1131 in task    18
+  | Maximal number of non-zero basis functions:     1100 in task    19
+  | Maximal number of non-zero basis functions:     1080 in task    20
+  | Maximal number of non-zero basis functions:     1094 in task    21
+  | Maximal number of non-zero basis functions:     1095 in task    22
+  | Maximal number of non-zero basis functions:     1083 in task    23
+  | Maximal number of non-zero basis functions:     1084 in task    24
+  | Maximal number of non-zero basis functions:     1083 in task    25
+  | Maximal number of non-zero basis functions:     1071 in task    26
+  | Maximal number of non-zero basis functions:     1100 in task    27
+  | Maximal number of non-zero basis functions:     1094 in task    28
+  | Maximal number of non-zero basis functions:     1089 in task    29
+  | Maximal number of non-zero basis functions:     1071 in task    30
+  | Maximal number of non-zero basis functions:     1107 in task    31
+  Allocating        0.285 MB for KS_eigenvector_complex
+  Integrating Hamiltonian matrix: batch-based integration.
+  Time summed over all CPUs for integration: real work        9.418 s, elapsed       12.052 s
+  Integrating overlap matrix.
+  Time summed over all CPUs for integration: real work        6.514 s, elapsed        7.437 s
+  Decreasing sparse matrix size:
+   Tolerance:  9.999999824516700E-014
+   Hamiltonian matrix
+  | Array has   200686 nonzero elements out of   242666 elements
+  | Sparsity factor is 0.173
+   Overlap matrix
+  | Array has   176355 nonzero elements out of   242666 elements
+  | Sparsity factor is 0.273
+  New size of hamiltonian matrix:      201780
+
+  Updating Kohn-Sham eigenvalues and eigenvectors using ELSI and the (modified) LAPACK eigensolver.
+  Singularity check in k-point 32, task 0 (analysis for other k-points/tasks may follow below):
+
+  Obtaining occupation numbers and chemical potential using ELSI.
+  | Chemical potential (Fermi level):    -5.72569085 eV
+  Writing Kohn-Sham eigenvalues.
+  K-point:       1 at    0.000000    0.000000    0.000000 (in units of recip. lattice)
+
+  State    Occupation    Eigenvalue [Ha]    Eigenvalue [eV]
+      1       2.00000        -436.292771       -11872.13036
+      2       2.00000         -55.504435        -1510.35252
+      3       2.00000         -54.729272        -1489.25925
+      4       2.00000         -47.994391        -1305.99382
+      5       2.00000         -47.994391        -1305.99382
+      6       2.00000         -47.994391        -1305.99382
+      7       2.00000          -7.005597         -190.63198
+      8       2.00000          -4.930552         -134.16715
+      9       2.00000          -4.930552         -134.16715
+     10       2.00000          -4.930552         -134.16715
+     11       2.00000          -3.969287         -108.00979
+     12       2.00000          -2.560903          -69.68571
+     13       2.00000          -2.560903          -69.68571
+     14       2.00000          -2.560903          -69.68571
+     15       2.00000          -1.522557          -41.43090
+     16       2.00000          -1.522557          -41.43090
+     17       2.00000          -1.522557          -41.43090
+     18       2.00000          -1.522017          -41.41618
+     19       2.00000          -1.522017          -41.41618
+     20       2.00000          -0.676403          -18.40586
+     21       2.00000          -0.249924           -6.80078
+     22       2.00000          -0.249924           -6.80078
+     23       2.00000          -0.249924           -6.80078
+     24       0.00000          -0.180515           -4.91207
+     25       0.00000          -0.078172           -2.12717
+     26       0.00000          -0.078172           -2.12717
+     27       0.00000          -0.078172           -2.12717
+     28       0.00000           0.093815            2.55284
+     29       0.00000           0.093815            2.55284
+     30       0.00000           0.097348            2.64899
+     31       0.00000           0.188503            5.12944
+     32       0.00000           0.188503            5.12944
+
+  What follows are estimated values for band gap, HOMO, LUMO, etc.
+  | They are estimated on a discrete k-point grid and not necessarily exact.
+  | For converged numbers, create a DOS and/or band structure plot on a denser k-grid.
+
+  Highest occupied state (VBM) at     -6.80077713 eV (relative to internal zero)
+  | Occupation number:      2.00000000
+  | K-point:       1 at    0.000000    0.000000    0.000000 (in units of recip. lattice)
+
+  Lowest unoccupied state (CBM) at    -4.91207221 eV (relative to internal zero)
+  | Occupation number:      0.00000000
+  | K-point:       1 at    0.000000    0.000000    0.000000 (in units of recip. lattice)
+
+  ESTIMATED overall HOMO-LUMO gap:      1.88870492 eV between HOMO at k-point 1 and LUMO at k-point 1
+  | This appears to be a direct band gap.
+  The gap value is above 0.2 eV. Unless you are using a very sparse k-point grid,
+  this system is most likely an insulator or a semiconductor.
+  Calculating total energy contributions from superposition of free atom densities.
+
+  Total energy components:
+  | Sum of eigenvalues            :       -1466.44766342 Ha      -39904.07121842 eV
+  | XC energy correction          :        -100.55823095 Ha       -2736.32868689 eV
+  | XC potential correction       :         131.77729658 Ha        3585.84268556 eV
+  | Free-atom electrostatic energy:       -1080.36908202 Ha      -29398.33849287 eV
+  | Hartree energy correction     :           0.00000000 Ha           0.00000000 eV
+  | Entropy correction            :           0.00000000 Ha           0.00000000 eV
+  | ---------------------------
+  | Total energy                  :       -2515.59767981 Ha      -68452.89571262 eV
+  | Total energy, T -> 0          :       -2515.59767981 Ha      -68452.89571262 eV  <-- do not rely on this value for anything but (periodic) metals
+  | Electronic free energy        :       -2515.59767981 Ha      -68452.89571262 eV
+
+  Derived energy quantities:
+  | Kinetic energy                :        2562.14268076 Ha       69719.44963008 eV
+  | Electrostatic energy          :       -4977.18212963 Ha     -135436.01665581 eV
+  | Energy correction for multipole
+  | error in Hartree potential    :           0.00000000 Ha           0.00000000 eV
+  | Sum of eigenvalues per atom                           :      -19952.03560921 eV
+  | Total energy (T->0) per atom                          :      -34226.44785631 eV  <-- do not rely on this value for anything but (periodic) metals
+  | Electronic free energy per atom                       :      -34226.44785631 eV
+  Initialize hartree_potential_storage
+  Max. number of atoms included in rho_multipole:            2
+
+  End scf initialization - timings             :  max(cpu_time)    wall_clock(cpu1)
+  | Time for scf. initialization               :        1.001 s           1.125 s
+  | Boundary condition initialization          :        0.077 s           0.085 s
+  | Relaxation initialization                  :        0.006 s           0.017 s
+  | Integration                                :        0.634 s           0.648 s
+  | Solution of K.-S. eqns.                    :        0.052 s           0.076 s
+  | Grid partitioning                          :        0.059 s           0.068 s
+  | Preloading free-atom quantities on grid    :        0.024 s           0.032 s
+  | Free-atom superposition energy             :        0.012 s           0.013 s
+  | Total energy evaluation                    :        0.002 s           0.008 s
+
+  Partial memory accounting:
+  | Current value for overall tracked memory usage:
+  |   Minimum:        4.139 MB (on task  0)
+  |   Maximum:        4.175 MB (on task  1)
+  |   Average:        4.144 MB
+  | Peak value for overall tracked memory usage:
+  |   Minimum:       16.015 MB (on task 10 after allocating wave)
+  |   Maximum:       17.488 MB (on task 15 after allocating wave)
+  |   Average:       16.646 MB
+  | Largest tracked array allocation so far:
+  |   Minimum:        8.572 MB (hamiltonian_shell on task 10)
+  |   Maximum:        9.863 MB (hamiltonian_shell on task 15)
+  |   Average:        9.120 MB
+  Note:  These values currently only include a subset of arrays which are explicitly tracked.
+  The "true" memory usage will be greater.
+------------------------------------------------------------
+Convergence:    q app. |  density  | eigen (eV) | Etot (eV) | forces (eV/A) |       CPU time |     Clock time
+  SCF    1 : -0.94E-14 |  0.10E+00 |   0.20E+01 |  0.31E-01 |             . |        1.191 s |        1.230 s
+  SCF    2 :  0.37E-14 |  0.98E-01 |   0.29E+02 |  0.20E+00 |             . |        1.192 s |        1.193 s
+  SCF    3 : -0.46E-14 |  0.31E-01 |  -0.89E+01 |  0.45E-02 |             . |        1.188 s |        1.188 s
+  SCF    4 :  0.55E-14 |  0.13E-01 |  -0.46E+01 |  0.11E-02 |             . |        1.189 s |        1.189 s
+  SCF    5 :  0.91E-14 |  0.72E-02 |  -0.93E+00 |  0.38E-03 |             . |        1.210 s |        1.209 s
+  SCF    6 :  0.14E-13 |  0.14E-02 |  -0.52E-01 |  0.11E-04 |             . |        1.200 s |        1.200 s
+  SCF    7 : -0.50E-14 |  0.77E-03 |  -0.35E+00 |  0.14E-04 |             . |        1.397 s |        1.398 s
+  SCF    8 :  0.12E-13 |  0.20E-03 |   0.68E-01 | -0.62E-05 |             . |        1.457 s |        1.457 s
+  SCF    9 :  0.41E-14 |  0.53E-04 |   0.28E-01 | -0.29E-05 |             . |        1.447 s |        1.447 s
+  SCF   10 :  0.13E-14 |  0.24E-04 |  -0.14E-01 | -0.12E-05 |             . |        1.190 s |        1.190 s
+  SCF   11 :  0.84E-14 |  0.25E-05 |   0.12E-02 | -0.30E-07 |             . |        1.191 s |        1.191 s
+  SCF   12 : -0.45E-14 |  0.10E-05 |   0.77E-04 | -0.48E-07 |             . |        1.191 s |        1.191 s
+  SCF   13 : -0.26E-13 |  0.78E-07 |   0.71E-05 | -0.73E-09 |             . |        1.190 s |        1.190 s
+  SCF   14 : -0.21E-14
+  Symmetry information by spglib:
+  | Precision set to  0.1E-04
+  | Number of Operations  : 24
+  | Space group           : 216
+  | International         : F-43m
+  | Schoenflies           : Td^2
+  | Symmetrizing total forces.
+ |  0.49E-07 |   0.54E-05 | -0.11E-08 |      0.28E-08 |        1.889 s |        1.895 s
+  SCF   15 : -0.17E-13
+  Symmetry information by spglib:
+  | Precision set to  0.1E-04
+  | Number of Operations  : 24
+  | Space group           : 216
+  | International         : F-43m
+  | Schoenflies           : Td^2
+  | Symmetrizing total forces.
+
+  Analytical stress tensor components [eV]         xx                  yy                  zz                  xy                  xz                  yz
+  -----------------------------------------------------------------------------------------------------------------------------------------------------------
+    Nuclear Hellmann-Feynman      :    -0.3701438160E+02   -0.3701405671E+02   -0.3701405671E+02   -0.1499456323E-12    0.4428080683E-13    0.1144666318E-13
+    Multipole Hellmann-Feynman    :    -0.5246806342E+02   -0.5246808714E+02   -0.5246808714E+02   -0.1005412282E-10   -0.7733940635E-11   -0.6187152508E-11
+    On-site Multipole corrections :    -0.2359039075E+00   -0.2359039075E+00   -0.2359039076E+00   -0.3170915660E-10    0.9590086387E-10   -0.8507334698E-11
+    Strain deriv. of the orbitals :     0.9047833796E+02    0.9047803185E+02    0.9047803229E+02   -0.1012251986E-08   -0.5546443863E-09    0.3760991162E-09
+  -----------------------------------------------------------------------------------------------------------------------------------------------------------
+  Sum of all contributions        :     0.7599890235E+00    0.7599840954E+00    0.7599845332E+00   -0.1054165211E-08   -0.4664331823E-09    0.3614160757E-09
+
+
+  Symmetry information by spglib:
+  | Precision set to  0.1E-04
+  | Number of Operations  : 24
+  | Space group           : 216
+  | International         : F-43m
+  | Schoenflies           : Td^2
+  | Symmetrizing stress
+  | Symmetrizing stress
+  +-------------------------------------------------------------------+
+  |              Analytical stress tensor - Symmetrized               |
+  |                  Cartesian components [eV/A**3]                   |
+  +-------------------------------------------------------------------+
+  |                x                y                z                |
+  |                                                                   |
+  |  x         0.01597713      -0.00000000      -0.00000000           |
+  |  y        -0.00000000       0.01597713      -0.00000000           |
+  |  z        -0.00000000      -0.00000000       0.01597713           |
+  |                                                                   |
+  |  Pressure:      -0.01597713   [eV/A**3]                           |
+  |                                                                   |
+  +-------------------------------------------------------------------+
+
+ |  0.23E-07 |   0.78E-05 | -0.49E-10 |      0.45E-10 |       16.267 s |       16.270 s
+
+  Total energy components:
+  | Sum of eigenvalues            :       -1465.86210600 Ha      -39888.13739031 eV
+  | XC energy correction          :        -100.56734895 Ha       -2736.57680045 eV
+  | XC potential correction       :         131.78765274 Ha        3586.12449096 eV
+  | Free-atom electrostatic energy:       -1080.36908202 Ha      -29398.33849287 eV
+  | Hartree energy correction     :          -0.57791799 Ha         -15.72594859 eV
+  | Entropy correction            :           0.00000000 Ha           0.00000000 eV
+  | ---------------------------
+  | Total energy                  :       -2515.58880223 Ha      -68452.65414126 eV
+  | Total energy, T -> 0          :       -2515.58880223 Ha      -68452.65414126 eV  <-- do not rely on this value for anything but (periodic) metals
+  | Electronic free energy        :       -2515.58880223 Ha      -68452.65414126 eV
+
+  Derived energy quantities:
+  | Kinetic energy                :        2561.72944426 Ha       69708.20489274 eV
+  | Electrostatic energy          :       -4976.75089754 Ha     -135424.28223355 eV
+  | Energy correction for multipole
+  | error in Hartree potential    :          -0.00616622 Ha          -0.16779125 eV
+  | Sum of eigenvalues per atom                           :      -19944.06869516 eV
+  | Total energy (T->0) per atom                          :      -34226.32707063 eV  <-- do not rely on this value for anything but (periodic) metals
+  | Electronic free energy per atom                       :      -34226.32707063 eV
+  What follows are estimated values for band gap, HOMO, LUMO, etc.
+  | They are estimated on a discrete k-point grid and not necessarily exact.
+  | For converged numbers, create a DOS and/or band structure plot on a denser k-grid.
+
+  Highest occupied state (VBM) at     -6.20749649 eV (relative to internal zero)
+  | Occupation number:      2.00000000
+  | K-point:       1 at    0.000000    0.000000    0.000000 (in units of recip. lattice)
+
+  Lowest unoccupied state (CBM) at    -4.80103384 eV (relative to internal zero)
+  | Occupation number:      0.00000000
+  | K-point:     202 at    0.500000    0.500000    0.000000 (in units of recip. lattice)
+
+  ESTIMATED overall HOMO-LUMO gap:      1.40646265 eV between HOMO at k-point 1 and LUMO at k-point 202
+  | This appears to be an indirect band gap.
+  | Smallest direct gap :      1.60007395 eV for k_point 1 at    0.500000    0.500000    0.000000 (in units of recip. lattice)
+  The gap value is above 0.2 eV. Unless you are using a very sparse k-point grid,
+  this system is most likely an insulator or a semiconductor.
+
+  Self-consistency cycle converged.
+
+  Removing unitary transformations (pure translations, rotations) from forces on atoms.
+  Atomic forces before filtering:
+  | Net force on center of mass :   0.531692E-23  0.708922E-23  0.177231E-23 eV/A
+  Atomic forces after filtering:
+  | Net force on center of mass :   0.118059E-38  0.118059E-38  0.295148E-39 eV/A
+
+  Energy and forces in a compact form:
+  | Total energy uncorrected      :         -0.684526541412623E+05 eV
+  | Total energy corrected        :         -0.684526541412623E+05 eV  <-- do not rely on this value for anything but (periodic) metals
+  | Electronic free energy        :         -0.684526541412623E+05 eV
+  Total atomic forces (unitary forces cleaned) [eV/Ang]:
+  |    1         -0.265845841357260E-23         -0.354461121809680E-23         -0.886152804524199E-24
+  |    2          0.265845841357260E-23          0.354461121809680E-23          0.886152804524199E-24
+
+  Relaxation / MD: End force evaluation.       :  max(cpu_time)    wall_clock(cpu1)
+  | Time for this force evaluation             :       35.372 s          35.591 s
+
+------------------------------------------------------------
+  Geometry optimization: Attempting to predict improved coordinates.
+
+  +-------------------------------------------------------------------+
+  | Generalized derivatives on lattice vectors [eV/A]                 |
+  +-------------------------------------------------------------------+
+  |lattice_vector      -0.13213463       0.13213463       0.13213463  |
+  |lattice_vector       0.13213463      -0.13213463       0.13213463  |
+  |lattice_vector       0.13213463       0.13213463      -0.13213463  |
+  +-------------------------------------------------------------------+
+  | Forces on lattice vectors cleaned from atomic contributions [eV/A]|
+  +-------------------------------------------------------------------+
+  |lattice_vector       0.13213463      -0.13213463      -0.13213463  |
+  |lattice_vector      -0.13213463       0.13213463      -0.13213463  |
+  |lattice_vector      -0.13213463      -0.13213463       0.13213463  |
+  +-------------------------------------------------------------------+
+  Removing unitary transformations (pure translations, rotations) from forces on atoms.
+  Atomic forces before filtering:
+  | Net force on center of mass :   0.118059E-38  0.118059E-38  0.295148E-39 eV/A
+  Atomic forces after filtering:
+  | Net force on center of mass :   0.295148E-39  0.000000E+00  0.000000E+00 eV/A
+  Net remaining forces (excluding translations, rotations) in present geometry:
+  || Forces on atoms   || =   0.354461E-23 eV/A.
+  || Forces on lattice || =   0.132135E+00 eV/A^3.
+  Maximum force component is  0.132135E+00 eV/A.
+  Present geometry is not yet converged.
+
+  Relaxation step number      1: Predicting new coordinates.
+
+  Advancing geometry using trust radius method.
+  Allocating        0.285 MB for stored_KS_eigenvector_complex
+  | Hessian has  0 negative and  3 zero eigenvalues.
+  | Positive eigenvalues (eV/A^2): 7.54E+00 ... 3.02E+01
+  | Use Quasi-Newton step of length |H^-1 F| = 2.15E-02 A.
+  Finished advancing geometry
+  | Time :      0.012 s
+  Updated atomic structure:
+                         x [A]             y [A]             z [A]
+  lattice_vector         0.00000000        2.86703651        2.86703651
+  lattice_vector         2.86703651        0.00000000        2.86703651
+  lattice_vector         2.86703651        2.86703651        0.00000000
+
+            atom         1.43351826        1.43351826        1.43351826  Al
+            atom         0.00000000        0.00000000        0.00000000  As
+
+  Fractional coordinates:
+                         L1                L2                L3
+       atom_frac         0.25000000        0.25000000        0.25000000  Al
+       atom_frac         0.00000000        0.00000000        0.00000000  As
+------------------------------------------------------------
+  Writing the current geometry to file "geometry.in.next_step".
+  Writing estimated Hessian matrix to file 'hessian.aims'
+
+  Quantities derived from the lattice vectors:
+  | Reciprocal lattice vector 1: -1.095763  1.095763  1.095763
+  | Reciprocal lattice vector 2:  1.095763 -1.095763  1.095763
+  | Reciprocal lattice vector 3:  1.095763  1.095763 -1.095763
+  | Unit cell volume                               :   0.471335E+02  A^3
+
+  Range separation radius for Ewald summation (hartree_convergence_parameter):      4.12694449 bohr.
+
+------------------------------------------------------------
+          Begin self-consistency loop: Re-initialization.
+
+  Date     :  20190906, Time     :  170104.119
+------------------------------------------------------------
+
+  Initializing index lists of integration centers etc. from given atomic structure:
+  Mapping all atomic coordinates to central unit cell.
+
+  Initializing the k-points
+          Using symmetry for reducing the k-points
+  | k-points reduced from:      512 to      260
+  | Number of k-points                             :       260
+  The eigenvectors in the calculations are COMPLEX.
+  | K-points in task   0:         8
+  | K-points in task   1:         9
+  | K-points in task   2:         9
+  | K-points in task   3:         9
+  | K-points in task   4:         9
+  | K-points in task   5:         8
+  | K-points in task   6:         8
+  | K-points in task   7:         8
+  | K-points in task   8:         8
+  | K-points in task   9:         8
+  | K-points in task  10:         8
+  | K-points in task  11:         8
+  | K-points in task  12:         8
+  | K-points in task  13:         8
+  | K-points in task  14:         8
+  | K-points in task  15:         8
+  | K-points in task  16:         8
+  | K-points in task  17:         8
+  | K-points in task  18:         8
+  | K-points in task  19:         8
+  | K-points in task  20:         8
+  | K-points in task  21:         8
+  | K-points in task  22:         8
+  | K-points in task  23:         8
+  | K-points in task  24:         8
+  | K-points in task  25:         8
+  | K-points in task  26:         8
+  | K-points in task  27:         8
+  | K-points in task  28:         8
+  | K-points in task  29:         8
+  | K-points in task  30:         8
+  | K-points in task  31:         8
+  | Number of basis functions in the Hamiltonian integrals :      2906
+  | Number of basis functions in a single unit cell        :        73
+  | Number of centers in hartree potential         :       810
+  | Number of centers in hartree multipole         :       408
+  | Number of centers in electron density summation:       318
+  | Number of centers in basis integrals           :       324
+  | Number of centers in integrals                 :       128
+  | Number of centers in hamiltonian               :       318
+  | Consuming        747 KiB for k_phase.
+  | Number of super-cells (origin) [n_cells]                     :        2197
+  | Number of super-cells (after PM_index) [n_cells]             :         184
+  | Number of super-cells in hamiltonian [n_cells_in_hamiltonian]:         184
+  | Size of matrix packed + index [n_hamiltonian_matrix_size] :      251126
+  Partitioning the integration grid into batches with parallel hashing+maxmin method.
+  Initializing partition tables, free-atom densities, potentials, etc. across the integration grid (initialize_grid_storage).
+  | Species        1: outer_partition_radius set to              6.011712643327361 AA .
+  | Species        2: outer_partition_radius set to              6.070707973509038 AA .
+  | The sparse table of interatomic distances needs       1026.48 kbyte instead of       839.81 kbyte of memory.
+  | Using the partition_type stratmann_smoother will reduce your memory usage.
+  | Net number of integration points:    44716
+  | of which are non-zero points    :    36350
+  Renormalizing the initial density to the exact electron count on the 3D integration grid.
+  | Initial density: Formal number of electrons (from input files) :      46.0000000000
+  | Integrated number of electrons on 3D grid     :      46.0020339189
+  | Charge integration error                      :       0.0020339189
+  | Normalization factor for density and gradient :       0.9999557863
+  Renormalizing the free-atom superposition density to the exact electron count on the 3D integration grid.
+  | Formal number of electrons (from input files) :      46.0000000000
+  | Integrated number of electrons on 3D grid     :      46.0020339189
+  | Charge integration error                      :       0.0020339189
+  | Normalization factor for density and gradient :       0.9999557863
+  Calculating total energy contributions from superposition of free atom densities.
+  Initialize hartree_potential_storage
+  Max. number of atoms included in rho_multipole:            2
+  Integrating overlap matrix.
+  Time summed over all CPUs for integration: real work        6.566 s, elapsed        7.769 s
+  Orthonormalizing eigenvectors
+
+  End scf reinitialization - timings           :  max(cpu_time)    wall_clock(cpu1)
+  | Time for scf. reinitialization             :        0.535 s           0.540 s
+  | Boundary condition initialization          :        0.066 s           0.066 s
+  | Integration                                :        0.251 s           0.249 s
+  | Grid partitioning                          :        0.048 s           0.046 s
+  | Preloading free-atom quantities on grid    :        0.103 s           0.103 s
+  | Free-atom superposition energy             :        0.009 s           0.009 s
+  | K.-S. eigenvector reorthonormalization     :        0.007 s           0.006 s
+------------------------------------------------------------
+Convergence:    q app. |  density  | eigen (eV) | Etot (eV) | forces (eV/A) |       CPU time |     Clock time
+  SCF    1 :  0.21E-14 |  0.86E-01 |  -0.40E+05 | -0.68E+05 |             . |        1.206 s |        1.208 s
+  SCF    2 :  0.23E-14 |  0.83E-03 |  -0.12E+00 |  0.14E-05 |             . |        1.223 s |        1.223 s
+  SCF    3 :  0.27E-13 |  0.59E-03 |  -0.29E+00 | -0.32E-05 |             . |        1.221 s |        1.221 s
+  SCF    4 :  0.20E-13 |  0.13E-03 |  -0.14E-02 | -0.43E-05 |             . |        1.222 s |        1.222 s
+  SCF    5 : -0.45E-14 |  0.41E-04 |  -0.95E-03 | -0.14E-05 |             . |        1.222 s |        1.222 s
+  SCF    6 :  0.11E-13 |  0.56E-05 |   0.68E-03 | -0.92E-08 |             . |        1.220 s |        1.221 s
+  SCF    7 :  0.62E-14 |  0.17E-05 |   0.70E-03 |  0.42E-08 |             . |        1.270 s |        1.269 s
+  SCF    8 : -0.12E-14 |  0.81E-06 |  -0.11E-03 |  0.25E-07 |             . |        1.222 s |        1.222 s
+  SCF    9 :  0.72E-14 |  0.12E-06 |  -0.44E-04 |  0.47E-08 |             . |        1.220 s |        1.221 s
+  SCF   10 :  0.21E-13 |  0.62E-08 |  -0.36E-06 |  0.00E+00 |             . |        1.221 s |        1.221 s
+  SCF   11 :  0.17E-13
+  Symmetry information by spglib:
+  | Precision set to  0.1E-04
+  | Number of Operations  : 24
+  | Space group           : 216
+  | International         : F-43m   I
+  | Schoenflies           : Td^2
+  | Symmetrizing total forces.
+ |  0.77E-09 |   0.25E-06 |  0.48E-09 |      0.19E-08 |        1.953 s |        1.953 s
+  SCF   12 : -0.18E-13
+  Symmetry information by spglib:
+  | Precision set to  0.1E-04
+  | Number of Operations  : 24
+  | Space group           : 216
+  | International         : F-43m
+  | Schoenflies           : Td^2
+  | Symmetrizing total forces.
+
+  Analytical stress tensor components [eV]         xx                  yy                  zz                  xy                  xz                  yz
+  -----------------------------------------------------------------------------------------------------------------------------------------------------------
+    Nuclear Hellmann-Feynman      :    -0.3783866807E+02   -0.3783833964E+02   -0.3783833964E+02    0.6534756663E-10    0.6567961995E-10    0.6522436759E-10
+    Multipole Hellmann-Feynman    :    -0.5338877015E+02   -0.5338879391E+02   -0.5338879391E+02    0.1446246899E-09    0.1330237789E-09    0.1531320246E-09
+    On-site Multipole corrections :    -0.2358790236E+00   -0.2358790236E+00   -0.2358790235E+00   -0.3944309724E-10   -0.1314769908E-10    0.3093576254E-11
+    Strain deriv. of the orbitals :     0.9204993828E+02    0.9204962812E+02    0.9204962813E+02    0.6423400225E-09   -0.1076951233E-09   -0.1143179142E-08
+  -----------------------------------------------------------------------------------------------------------------------------------------------------------
+  Sum of all contributions        :     0.5866210332E+00    0.5866155479E+00    0.5866155512E+00    0.8128691818E-09    0.7786057645E-10   -0.9217291738E-09
+
+
+  Symmetry information by spglib:
+  | Precision set to  0.1E-04
+  | Number of Operations  : 24
+  | Space group           : 216
+  | International         : F-43m    T
+  | Schoenflies           : Td^2
+  | Symmetrizing stress
+  | Symmetrizing stress
+  +-------------------------------------------------------------------+
+  |              Analytical stress tensor - Symmetrized               |
+  |                  Cartesian components [eV/A**3]                   |
+  +-------------------------------------------------------------------+
+  |                x                y                z                |
+  |                                                                   |
+  |  x         0.01244587      -0.00000000      -0.00000000           |
+  |  y        -0.00000000       0.01244587      -0.00000000           |
+  |  z        -0.00000000      -0.00000000       0.01244587           |
+  |                                                                   |
+  |  Pressure:      -0.01244587   [eV/A**3]                           |
+  |                                                                   |
+  +-------------------------------------------------------------------+
+
+ |  0.43E-09 |   0.12E-06 | -0.16E-09 |      0.43E-09 |       16.533 s |       16.534 s
+
+  Total energy components:
+  | Sum of eigenvalues            :       -1465.88323966 Ha      -39888.71246643 eV
+  | XC energy correction          :        -100.57244444 Ha       -2736.71545571 eV
+  | XC potential correction       :         131.79445662 Ha        3586.30963400 eV
+  | Free-atom electrostatic energy:       -1080.33675085 Ha      -29397.45871674 eV
+  | Hartree energy correction     :          -0.59105022 Ha         -16.08329488 eV
+  | Entropy correction            :           0.00000000 Ha           0.00000000 eV
+  | ---------------------------
+  | Total energy                  :       -2515.58902855 Ha      -68452.66029976 eV
+  | Total energy, T -> 0          :       -2515.58902855 Ha      -68452.66029976 eV  <-- do not rely on this value for anything but (periodic) metals
+  | Electronic free energy        :       -2515.58902855 Ha      -68452.66029976 eV
+
+  Derived energy quantities:
+  | Kinetic energy                :        2561.75044889 Ha       69708.77645771 eV
+  | Electrostatic energy          :       -4976.76703300 Ha     -135424.72130176 eV
+  | Energy correction for multipole
+  | error in Hartree potential    :          -0.00629079 Ha          -0.17118104 eV
+  | Sum of eigenvalues per atom                           :      -19944.35623322 eV
+  | Total energy (T->0) per atom                          :      -34226.33014988 eV  <-- do not rely on this value for anything but (periodic) metals
+  | Electronic free energy per atom                       :      -34226.33014988 eV
+  What follows are estimated values for band gap, HOMO, LUMO, etc.
+  | They are estimated on a discrete k-point grid and not necessarily exact.
+  | For converged numbers, create a DOS and/or band structure plot on a denser k-grid.
+
+  Highest occupied state (VBM) at     -6.22170647 eV (relative to internal zero)
+  | Occupation number:      2.00000000
+  | K-point:       1 at    0.000000    0.000000    0.000000 (in units of recip. lattice)
+
+  Lowest unoccupied state (CBM) at    -4.82962922 eV (relative to internal zero)
+  | Occupation number:      0.00000000
+  | K-point:     182 at    0.500000    0.000000    0.500000 (in units of recip. lattice)
+
+  ESTIMATED overall HOMO-LUMO gap:      1.39207725 eV between HOMO at k-point 1 and LUMO at k-point 182
+  | This appears to be an indirect band gap.
+  | Smallest direct gap :      1.66921250 eV for k_point 1 at    0.500000    0.000000    0.500000 (in units of recip. lattice)
+  The gap value is above 0.2 eV. Unless you are using a very sparse k-point grid,
+  this system is most likely an insulator or a semiconductor.
+
+  Self-consistency cycle converged.
+
+  Removing unitary transformations (pure translations, rotations) from forces on atoms.
+  Atomic forces before filtering:
+  | Net force on center of mass :  -0.132923E-23  0.000000E+00 -0.221538E-24 eV/A
+  Atomic forces after filtering:
+  | Net force on center of mass :  -0.295148E-39  0.000000E+00 -0.368935E-40 eV/A
+
+  Energy and forces in a compact form:
+  | Total energy uncorrected      :         -0.684526602997594E+05 eV
+  | Total energy corrected        :         -0.684526602997594E+05 eV  <-- do not rely on this value for anything but (periodic) metals
+  | Electronic free energy        :         -0.684526602997594E+05 eV
+  Total atomic forces (unitary forces cleaned) [eV/Ang]:
+  |    1          0.664614603393149E-24          0.000000000000000E+00          0.110769100565525E-24
+  |    2         -0.664614603393149E-24          0.000000000000000E+00         -0.110769100565525E-24
+
+  Relaxation / MD: End force evaluation.       :  max(cpu_time)    wall_clock(cpu1)
+  | Time for this force evaluation             :       31.264 s          31.283 s
+
+------------------------------------------------------------
+  Geometry optimization: Attempting to predict improved coordinates.
+
+  +-------------------------------------------------------------------+
+  | Generalized derivatives on lattice vectors [eV/A]                 |
+  +-------------------------------------------------------------------+
+  |lattice_vector      -0.10230379       0.10230379       0.10230379  |
+  |lattice_vector       0.10230379      -0.10230379       0.10230379  |
+  |lattice_vector       0.10230379       0.10230379      -0.10230379  |
+  +-------------------------------------------------------------------+
+  | Forces on lattice vectors cleaned from atomic contributions [eV/A]|
+  +-------------------------------------------------------------------+
+  |lattice_vector       0.10230379      -0.10230379      -0.10230379  |
+  |lattice_vector      -0.10230379       0.10230379      -0.10230379  |
+  |lattice_vector      -0.10230379      -0.10230379       0.10230379  |
+  +-------------------------------------------------------------------+
+  Removing unitary transformations (pure translations, rotations) from forces on atoms.
+  Atomic forces before filtering:
+  | Net force on center of mass :  -0.295148E-39  0.000000E+00 -0.368935E-40 eV/A
+  Atomic forces after filtering:
+  | Net force on center of mass :  -0.737870E-40  0.000000E+00  0.000000E+00 eV/A
+  Net remaining forces (excluding translations, rotations) in present geometry:
+  || Forces on atoms   || =   0.664615E-24 eV/A.
+  || Forces on lattice || =   0.102304E+00 eV/A^3.
+  Maximum force component is  0.102304E+00 eV/A.
+  Present geometry is not yet converged.
+
+  Relaxation step number      2: Predicting new coordinates.
+
+  Advancing geometry using trust radius method.
+  | True / expected gain: -6.16E-03 eV / -3.47E-03 eV =    1.7725
+  | Harmonic / expected gain: -6.16E-03 eV / -3.47E-03 eV =    1.7742
+  | Using harmonic gain <DX|-(F0+F1)/2> instead of DE to judge step.
+  | Hessian has  0 negative and  3 zero eigenvalues.
+  | Positive eigenvalues (eV/A^2): 2.98E+00 ... 3.02E+01
+  | Use Quasi-Newton step of length |H^-1 F| = 7.36E-02 A.
+  Finished advancing geometry
+  | Time :      0.001 s
+  Updated atomic structure:
+                         x [A]             y [A]             z [A]
+  lattice_vector         0.00000000        2.83697788        2.83697788
+  lattice_vector         2.83697788        0.00000000        2.83697788
+  lattice_vector         2.83697788        2.83697788        0.00000000
+
+            atom         1.41848894        1.41848894        1.41848894  Al
+            atom         0.00000000       -0.00000000       -0.00000000  As
+
+  Fractional coordinates:
+                         L1                L2                L3
+       atom_frac         0.25000000        0.25000000        0.25000000  Al
+       atom_frac        -0.00000000        0.00000000       -0.00000000  As
+------------------------------------------------------------
+  Writing the current geometry to file "geometry.in.next_step".
+  Writing estimated Hessian matrix to file 'hessian.aims'
+
+  Quantities derived from the lattice vectors:
+  | Reciprocal lattice vector 1: -1.107373  1.107373  1.107373
+  | Reciprocal lattice vector 2:  1.107373 -1.107373  1.107373
+  | Reciprocal lattice vector 3:  1.107373  1.107373 -1.107373
+  | Unit cell volume                               :   0.456665E+02  A^3
+
+  Range separation radius for Ewald summation (hartree_convergence_parameter):      4.07992912 bohr.
+
+------------------------------------------------------------
+          Begin self-consistency loop: Re-initialization.
+
+  Date     :  20190906, Time     :  170135.406
+------------------------------------------------------------
+
+  Initializing index lists of integration centers etc. from given atomic structure:
+  Mapping all atomic coordinates to central unit cell.
+
+  Initializing the k-points
+          Using symmetry for reducing the k-points
+  | k-points reduced from:      512 to      260
+  | Number of k-points                             :       260
+  The eigenvectors in the calculations are COMPLEX.
+  | K-points in task   0:         8
+  | K-points in task   1:         9
+  | K-points in task   2:         9
+  | K-points in task   3:         9
+  | K-points in task   4:         9
+  | K-points in task   5:         8
+  | K-points in task   6:         8
+  | K-points in task   7:         8
+  | K-points in task   8:         8
+  | K-points in task   9:         8
+  | K-points in task  10:         8
+  | K-points in task  11:         8
+  | K-points in task  12:         8
+  | K-points in task  13:         8
+  | K-points in task  14:         8
+  | K-points in task  15:         8
+  | K-points in task  16:         8
+  | K-points in task  17:         8
+  | K-points in task  18:         8
+  | K-points in task  19:         8
+  | K-points in task  20:         8
+  | K-points in task  21:         8
+  | K-points in task  22:         8
+  | K-points in task  23:         8
+  | K-points in task  24:         8
+  | K-points in task  25:         8
+  | K-points in task  26:         8
+  | K-points in task  27:         8
+  | K-points in task  28:         8
+  | K-points in task  29:         8
+  | K-points in task  30:         8
+  | K-points in task  31:         8
+  | Number of basis functions in the Hamiltonian integrals :      3120
+  | Number of basis functions in a single unit cell        :        73
+  | Number of centers in hartree potential         :       810
+  | Number of centers in hartree multipole         :       432
+  | Number of centers in electron density summation:       318
+  | Number of centers in basis integrals           :       336
+  | Number of centers in integrals                 :       128
+  | Number of centers in hamiltonian               :       318
+  | Consuming        747 KiB for k_phase.
+  | Number of super-cells (origin) [n_cells]                     :        2197
+  | Number of super-cells (after PM_index) [n_cells]             :         184
+  | Number of super-cells in hamiltonian [n_cells_in_hamiltonian]:         184
+  | Size of matrix packed + index [n_hamiltonian_matrix_size] :      253078
+  Partitioning the integration grid into batches with parallel hashing+maxmin method.
+  Initializing partition tables, free-atom densities, potentials, etc. across the integration grid (initialize_grid_storage).
+  | Species        1: outer_partition_radius set to              6.011712643327361 AA .
+  | Species        2: outer_partition_radius set to              6.070707973509038 AA .
+  | The sparse table of interatomic distances needs       1101.27 kbyte instead of       903.17 kbyte of memory.
+  | Using the partition_type stratmann_smoother will reduce your memory usage.
+  | Net number of integration points:    44716
+  | of which are non-zero points    :    36214
+  Renormalizing the initial density to the exact electron count on the 3D integration grid.
+  | Initial density: Formal number of electrons (from input files) :      46.0000000000
+  | Integrated number of electrons on 3D grid     :      46.0021431153
+  | Charge integration error                      :       0.0021431153
+  | Normalization factor for density and gradient :       0.9999534127
+  Renormalizing the free-atom superposition density to the exact electron count on the 3D integration grid.
+  | Formal number of electrons (from input files) :      46.0000000000
+  | Integrated number of electrons on 3D grid     :      46.0021431153
+  | Charge integration error                      :       0.0021431153
+  | Normalization factor for density and gradient :       0.9999534127
+  Calculating total energy contributions from superposition of free atom densities.
+  Initialize hartree_potential_storage
+  Max. number of atoms included in rho_multipole:            2
+  Integrating overlap matrix.
+  Time summed over all CPUs for integration: real work        7.225 s, elapsed        8.357 s
+  Orthonormalizing eigenvectors
+
+  End scf reinitialization - timings           :  max(cpu_time)    wall_clock(cpu1)
+  | Time for scf. reinitialization             :        0.574 s           0.573 s
+  | Boundary condition initialization          :        0.068 s           0.066 s
+  | Integration                                :        0.269 s           0.267 s
+  | Grid partitioning                          :        0.046 s           0.046 s
+  | Preloading free-atom quantities on grid    :        0.118 s           0.118 s
+  | Free-atom superposition energy             :        0.014 s           0.014 s
+  | K.-S. eigenvector reorthonormalization     :        0.009 s           0.007 s
+------------------------------------------------------------
+Convergence:    q app. |  density  | eigen (eV) | Etot (eV) | forces (eV/A) |       CPU time |     Clock time
+  SCF    1 : -0.31E-13 |  0.87E-01 |  -0.40E+05 | -0.68E+05 |             . |        1.471 s |        1.472 s
+  SCF    2 : -0.10E-13 |  0.30E-02 |  -0.40E+00 |  0.37E-04 |             . |        1.676 s |        1.676 s
+  SCF    3 : -0.14E-13 |  0.22E-02 |  -0.98E+00 |  0.24E-04 |             . |        1.504 s |        1.504 s
+  SCF    4 : -0.26E-13 |  0.63E-03 |  -0.63E-01 | -0.16E-04 |             . |        1.274 s |        1.274 s
+  SCF    5 : -0.29E-14 |  0.11E-03 |  -0.21E-01 |  0.21E-05 |             . |        1.268 s |        1.268 s
+  SCF    6 : -0.13E-13 |  0.22E-04 |  -0.88E-02 | -0.76E-06 |             . |        1.269 s |        1.269 s
+  SCF    7 : -0.27E-13 |  0.15E-04 |   0.72E-02 | -0.17E-06 |             . |        1.276 s |        1.275 s
+  SCF    8 : -0.11E-13 |  0.25E-05 |  -0.16E-02 |  0.36E-08 |             . |        1.274 s |        1.275 s
+  SCF    9 : -0.26E-13 |  0.38E-06 |   0.18E-03 |  0.41E-08 |             . |        1.271 s |        1.271 s
+  SCF   10 : -0.14E-13 |  0.11E-06 |  -0.30E-04 | -0.22E-08 |             . |        1.271 s |        1.272 s
+  SCF   11 : -0.37E-13 |  0.15E-07 |   0.67E-05 | -0.24E-09 |             . |        1.273 s |        1.273 s
+  SCF   12 : -0.36E-13
+  Symmetry information by spglib:
+  | Precision set to  0.1E-04
+  | Number of Operations  : 24
+  | Space group           : 216
+  | International         : F-43m
+  | Schoenflies           : Td^2
+  | Symmetrizing total forces.
+ |  0.67E-08 |   0.21E-05 |  0.33E-09 |      0.29E-08 |        2.010 s |        2.010 s
+  SCF   13 : -0.13E-13
+  Symmetry information by spglib:
+  | Precision set to  0.1E-04
+  | Number of Operations  : 24
+  | Space group           : 216
+  | International         : F-43m
+  | Schoenflies           : Td^2
+  | Symmetrizing total forces.
+
+  Analytical stress tensor components [eV]         xx                  yy                  zz                  xy                  xz                  yz
+  -----------------------------------------------------------------------------------------------------------------------------------------------------------
+    Nuclear Hellmann-Feynman      :    -0.4078045747E+02   -0.4078011410E+02   -0.4078011410E+02    0.8410318476E-10    0.8136949129E-10    0.8135618860E-10
+    Multipole Hellmann-Feynman    :    -0.5668069753E+02   -0.5668072225E+02   -0.5668072225E+02    0.1732402702E-09    0.1732402702E-09    0.1701466940E-09
+    On-site Multipole corrections :    -0.2357584282E+00   -0.2357584282E+00   -0.2357584282E+00    0.4640364381E-10    0.2938897441E-10    0.5104400819E-10
+    Strain deriv. of the orbitals :     0.9765676838E+02    0.9765644310E+02    0.9765644311E+02    0.2648632982E-09   -0.8324499508E-09   -0.1991453461E-08
+  -----------------------------------------------------------------------------------------------------------------------------------------------------------
+  Sum of all contributions        :    -0.4014505349E-01   -0.4015167440E-01   -0.4015167321E-01    0.5686103969E-09   -0.5484512149E-09   -0.1688906570E-08
+
+
+  Symmetry information by spglib:
+  | Precision set to  0.1E-04
+  | Number of Operations  : 24
+  | Space group           : 216
+  | International         : F-43m
+  | Schoenflies           : Td^2
+  | Symmetrizing stress
+  | Symmetrizing stress
+  +-------------------------------------------------------------------+
+  |              Analytical stress tensor - Symmetrized               |
+  |                  Cartesian components [eV/A**3]                   |
+  +-------------------------------------------------------------------+
+  |                x                y                z                |
+  |                                                                   |
+  |  x        -0.00087919      -0.00000000      -0.00000000           |
+  |  y        -0.00000000      -0.00087919      -0.00000000           |
+  |  z        -0.00000000      -0.00000000      -0.00087919           |
+  |                                                                   |
+  |  Pressure:       0.00087919   [eV/A**3]                           |
+  |                                                                   |
+  +-------------------------------------------------------------------+
+
+ |  0.13E-09 |   0.46E-09 | -0.12E-09 |      0.15E-10 |       17.984 s |       17.985 s
+
+  Total energy components:
+  | Sum of eigenvalues            :       -1465.96085033 Ha      -39890.82436022 eV
+  | XC energy correction          :        -100.59033876 Ha       -2737.20238510 eV
+  | XC potential correction       :         131.81835472 Ha        3586.95993447 eV
+  | Free-atom electrostatic energy:       -1080.22059490 Ha      -29394.29795277 eV
+  | Hartree energy correction     :          -0.63592009 Ha         -17.30426611 eV
+  | Entropy correction            :           0.00000000 Ha           0.00000000 eV
+  | ---------------------------
+  | Total energy                  :       -2515.58934937 Ha      -68452.66902971 eV
+  | Total energy, T -> 0          :       -2515.58934937 Ha      -68452.66902971 eV  <-- do not rely on this value for anything but (periodic) metals
+  | Electronic free energy        :       -2515.58934937 Ha      -68452.66902971 eV
+
+  Derived energy quantities:
+  | Kinetic energy                :        2561.82557749 Ha       69710.82081112 eV
+  | Electrostatic energy          :       -4976.82458810 Ha     -135426.28745574 eV
+  | Energy correction for multipole
+  | error in Hartree potential    :          -0.00673853 Ha          -0.18336460 eV
+  | Sum of eigenvalues per atom                           :      -19945.41218011 eV
+  | Total energy (T->0) per atom                          :      -34226.33451486 eV  <-- do not rely on this value for anything but (periodic) metals
+  | Electronic free energy per atom                       :      -34226.33451486 eV
+  What follows are estimated values for band gap, HOMO, LUMO, etc.
+  | They are estimated on a discrete k-point grid and not necessarily exact.
+  | For converged numbers, create a DOS and/or band structure plot on a denser k-grid.
+
+  Highest occupied state (VBM) at     -6.27206748 eV (relative to internal zero)
+  | Occupation number:      2.00000000
+  | K-point:       1 at    0.000000    0.000000    0.000000 (in units of recip. lattice)
+
+  Lowest unoccupied state (CBM) at    -4.93167467 eV (relative to internal zero)
+  | Occupation number:      0.00000000
+  | K-point:     202 at    0.500000    0.500000    0.000000 (in units of recip. lattice)
+
+  ESTIMATED overall HOMO-LUMO gap:      1.34039281 eV between HOMO at k-point 1 and LUMO at k-point 202
+  | This appears to be an indirect band gap.
+  | Smallest direct gap :      1.91135576 eV for k_point 1 at    0.500000    0.500000    0.000000 (in units of recip. lattice)
+  The gap value is above 0.2 eV. Unless you are using a very sparse k-point grid,
+  this system is most likely an insulator or a semiconductor.
+
+  Self-consistency cycle converged.
+
+  Removing unitary transformations (pure translations, rotations) from forces on atoms.
+  Atomic forces before filtering:
+  | Net force on center of mass :   0.221538E-24  0.000000E+00 -0.221538E-24 eV/A
+  Atomic forces after filtering:
+  | Net force on center of mass :   0.368935E-40  0.000000E+00 -0.368935E-40 eV/A
+
+  Energy and forces in a compact form:
+  | Total energy uncorrected      :         -0.684526690297143E+05 eV
+  | Total energy corrected        :         -0.684526690297143E+05 eV  <-- do not rely on this value for anything but (periodic) metals
+  | Electronic free energy        :         -0.684526690297143E+05 eV
+  Total atomic forces (unitary forces cleaned) [eV/Ang]:
+  |    1         -0.110769100565525E-24          0.000000000000000E+00          0.110769100565525E-24
+  |    2          0.110769100565525E-24          0.000000000000000E+00         -0.110769100565525E-24
+
+  Relaxation / MD: End force evaluation.       :  max(cpu_time)    wall_clock(cpu1)
+  | Time for this force evaluation             :       35.399 s          35.403 s
+
+------------------------------------------------------------
+  Geometry optimization: Attempting to predict improved coordinates.
+
+  +-------------------------------------------------------------------+
+  | Generalized derivatives on lattice vectors [eV/A]                 |
+  +-------------------------------------------------------------------+
+  |lattice_vector       0.00707610      -0.00707610      -0.00707610  |
+  |lattice_vector      -0.00707610       0.00707610      -0.00707610  |
+  |lattice_vector      -0.00707610      -0.00707610       0.00707610  |
+  +-------------------------------------------------------------------+
+  | Forces on lattice vectors cleaned from atomic contributions [eV/A]|
+  +-------------------------------------------------------------------+
+  |lattice_vector      -0.00707610       0.00707610       0.00707610  |
+  |lattice_vector       0.00707610      -0.00707610       0.00707610  |
+  |lattice_vector       0.00707610       0.00707610      -0.00707610  |
+  +-------------------------------------------------------------------+
+  Removing unitary transformations (pure translations, rotations) from forces on atoms.
+  Atomic forces before filtering:
+  | Net force on center of mass :   0.368935E-40  0.000000E+00 -0.368935E-40 eV/A
+  Atomic forces after filtering:
+  | Net force on center of mass :   0.000000E+00  0.000000E+00  0.000000E+00 eV/A
+  Net remaining forces (excluding translations, rotations) in present geometry:
+  || Forces on atoms   || =   0.110769E-24 eV/A.
+  || Forces on lattice || =   0.707610E-02 eV/A^3.
+  Maximum force component is  0.707610E-02 eV/A.
+  Present geometry is not yet converged.
+
+  Relaxation step number      3: Predicting new coordinates.
+
+  Advancing geometry using trust radius method.
+  | True / expected gain: -8.73E-03 eV / -9.23E-03 eV =    0.9463
+  | Harmonic / expected gain: -8.59E-03 eV / -9.23E-03 eV =    0.9308
+  | Hessian has  0 negative and  3 zero eigenvalues.
+  | Positive eigenvalues (eV/A^2): 3.16E+00 ... 3.02E+01
+  | Use Quasi-Newton step of length |H^-1 F| = 4.76E-03 A.
+  Finished advancing geometry
+  | Time :      0.001 s
+  Updated atomic structure:
+                         x [A]             y [A]             z [A]
+  lattice_vector         0.00000000        2.83892246        2.83892246
+  lattice_vector         2.83892246        0.00000000        2.83892246
+  lattice_vector         2.83892246        2.83892246        0.00000000
+
+            atom         1.41946123        1.41946123        1.41946123  Al
+            atom         0.00000000       -0.00000000       -0.00000000  As
+
+  Fractional coordinates:
+                         L1                L2                L3
+       atom_frac         0.25000000        0.25000000        0.25000000  Al
+       atom_frac        -0.00000000        0.00000000       -0.00000000  As
+------------------------------------------------------------
+  Writing the current geometry to file "geometry.in.next_step".
+  Writing estimated Hessian matrix to file 'hessian.aims'
+
+  Quantities derived from the lattice vectors:
+  | Reciprocal lattice vector 1: -1.106614  1.106614  1.106614
+  | Reciprocal lattice vector 2:  1.106614 -1.106614  1.106614
+  | Reciprocal lattice vector 3:  1.106614  1.106614 -1.106614
+  | Unit cell volume                               :   0.457605E+02  A^3
+
+  Range separation radius for Ewald summation (hartree_convergence_parameter):      4.08297331 bohr.
+
+------------------------------------------------------------
+          Begin self-consistency loop: Re-initialization.
+
+  Date     :  20190906, Time     :  170210.812
+------------------------------------------------------------
+
+  Initializing index lists of integration centers etc. from given atomic structure:
+  Mapping all atomic coordinates to central unit cell.
+
+  Initializing the k-points
+          Using symmetry for reducing the k-points
+  | k-points reduced from:      512 to      260
+  | Number of k-points                             :       260
+  The eigenvectors in the calculations are COMPLEX.
+  | K-points in task   0:         8
+  | K-points in task   1:         9
+  | K-points in task   2:         9
+  | K-points in task   3:         9
+  | K-points in task   4:         9
+  | K-points in task   5:         8
+  | K-points in task   6:         8
+  | K-points in task   7:         8
+  | K-points in task   8:         8
+  | K-points in task   9:         8
+  | K-points in task  10:         8
+  | K-points in task  11:         8
+  | K-points in task  12:         8
+  | K-points in task  13:         8
+  | K-points in task  14:         8
+  | K-points in task  15:         8
+  | K-points in task  16:         8
+  | K-points in task  17:         8
+  | K-points in task  18:         8
+  | K-points in task  19:         8
+  | K-points in task  20:         8
+  | K-points in task  21:         8
+  | K-points in task  22:         8
+  | K-points in task  23:         8
+  | K-points in task  24:         8
+  | K-points in task  25:         8
+  | K-points in task  26:         8
+  | K-points in task  27:         8
+  | K-points in task  28:         8
+  | K-points in task  29:         8
+  | K-points in task  30:         8
+  | K-points in task  31:         8
+  | Number of basis functions in the Hamiltonian integrals :      3120
+  | Number of basis functions in a single unit cell        :        73
+  | Number of centers in hartree potential         :       810
+  | Number of centers in hartree multipole         :       432
+  | Number of centers in electron density summation:       318
+  | Number of centers in basis integrals           :       336
+  | Number of centers in integrals                 :       128
+  | Number of centers in hamiltonian               :       318
+  | Consuming        747 KiB for k_phase.
+  | Number of super-cells (origin) [n_cells]                     :        2197
+  | Number of super-cells (after PM_index) [n_cells]             :         184
+  | Number of super-cells in hamiltonian [n_cells_in_hamiltonian]:         184
+  | Size of matrix packed + index [n_hamiltonian_matrix_size] :      253078
+  Partitioning the integration grid into batches with parallel hashing+maxmin method.
+  Initializing partition tables, free-atom densities, potentials, etc. across the integration grid (initialize_grid_storage).
+  | Species        1: outer_partition_radius set to              6.011712643327361 AA .
+  | Species        2: outer_partition_radius set to              6.070707973509038 AA .
+  | The sparse table of interatomic distances needs       1101.27 kbyte instead of       903.17 kbyte of memory.
+  | Using the partition_type stratmann_smoother will reduce your memory usage.
+  | Net number of integration points:    44716
+  | of which are non-zero points    :    36238
+  Renormalizing the initial density to the exact electron count on the 3D integration grid.
+  | Initial density: Formal number of electrons (from input files) :      46.0000000000
+  | Integrated number of electrons on 3D grid     :      46.0021359944
+  | Charge integration error                      :       0.0021359944
+  | Normalization factor for density and gradient :       0.9999535675
+  Renormalizing the free-atom superposition density to the exact electron count on the 3D integration grid.
+  | Formal number of electrons (from input files) :      46.0000000000
+  | Integrated number of electrons on 3D grid     :      46.0021359944
+  | Charge integration error                      :       0.0021359944
+  | Normalization factor for density and gradient :       0.9999535675
+  Calculating total energy contributions from superposition of free atom densities.
+  Initialize hartree_potential_storage
+  Max. number of atoms included in rho_multipole:            2
+  Integrating overlap matrix.
+  Time summed over all CPUs for integration: real work        6.935 s, elapsed        7.396 s
+  Orthonormalizing eigenvectors
+
+  End scf reinitialization - timings           :  max(cpu_time)    wall_clock(cpu1)
+  | Time for scf. reinitialization             :        0.540 s           0.540 s
+  | Boundary condition initialization          :        0.068 s           0.067 s
+  | Integration                                :        0.239 s           0.237 s
+  | Grid partitioning                          :        0.057 s           0.057 s
+  | Preloading free-atom quantities on grid    :        0.109 s           0.108 s
+  | Free-atom superposition energy             :        0.009 s           0.010 s
+  | K.-S. eigenvector reorthonormalization     :        0.007 s           0.006 s
+------------------------------------------------------------
+Convergence:    q app. |  density  | eigen (eV) | Etot (eV) | forces (eV/A) |       CPU time |     Clock time
+  SCF    1 :  0.19E-13 |  0.88E-01 |  -0.40E+05 | -0.68E+05 |             . |        1.230 s |        1.230 s
+  SCF    2 :  0.15E-13 |  0.19E-03 |   0.35E-01 |  0.98E-06 |             . |        1.258 s |        1.258 s
+  SCF    3 :  0.11E-13 |  0.13E-03 |   0.61E-01 |  0.19E-05 |             . |        1.255 s |        1.254 s
+  SCF    4 :  0.47E-15 |  0.36E-04 |  -0.32E-02 |  0.15E-05 |             . |        1.253 s |        1.253 s
+  SCF    5 :  0.14E-13 |  0.39E-05 |   0.11E-02 | -0.89E-07 |             . |        1.260 s |        1.260 s
+  SCF    6 :  0.68E-14 |  0.51E-06 |  -0.41E-04 | -0.33E-08 |             . |        1.259 s |        1.260 s
+  SCF    7 :  0.18E-13 |  0.14E-06 |   0.15E-04 |  0.31E-08 |             . |        1.253 s |        1.253 s
+  SCF    8 :  0.17E-13 |  0.81E-07 |  -0.42E-04 |  0.83E-09 |             . |        1.321 s |        1.321 s
+  SCF    9 :  0.33E-13
+  Symmetry information by spglib:
+  | Precision set to  0.1E-04
+  | Number of Operations  : 24
+  | Space group           : 216
+  | International         : F-43m
+  | Schoenflies           : Td^2
+  | Symmetrizing total forces.
+ |  0.20E-07 |  -0.96E-05 | -0.41E-09 |      0.11E-08 |        1.991 s |        1.992 s
+  SCF   10 :  0.19E-13
+  Symmetry information by spglib:
+  | Precision set to  0.1E-04
+  | Number of Operations  : 24
+  | Space group           : 216
+  | International         : F-43m   ree
+  | Schoenflies           : Td^2
+  | Symmetrizing total forces.
+
+  Analytical stress tensor components [eV]         xx                  yy                  zz                  xy                  xz                  yz
+  -----------------------------------------------------------------------------------------------------------------------------------------------------------
+    Nuclear Hellmann-Feynman      :    -0.4058469178E+02   -0.4058434953E+02   -0.4058434953E+02    0.1916926556E-09    0.1929957452E-09    0.1929795792E-09
+    Multipole Hellmann-Feynman    :    -0.5646124075E+02   -0.5646126535E+02   -0.5646126535E+02    0.3874704258E-09    0.3917240931E-09    0.3886305169E-09
+    On-site Multipole corrections :    -0.2357664253E+00   -0.2357664253E+00   -0.2357664253E+00    0.8507334698E-10    0.4717703787E-10   -0.6187152508E-11
+    Strain deriv. of the orbitals :     0.9728359866E+02    0.9728327444E+02    0.9728327444E+02   -0.6991240648E-09   -0.2843371190E-09   -0.6970818211E-10
+  -----------------------------------------------------------------------------------------------------------------------------------------------------------
+  Sum of all contributions        :     0.1899712753E-02    0.1893128336E-02    0.1893125514E-02   -0.3488763641E-10    0.3475597573E-09    0.5057147614E-09
+
+
+  Symmetry information by spglib:
+  | Precision set to  0.1E-04
+  | Number of Operations  : 24
+  | Space group           : 216
+  | International         : F-43m
+  | Schoenflies           : Td^2
+  | Symmetrizing stress
+  | Symmetrizing stress
+  +-------------------------------------------------------------------+
+  |              Analytical stress tensor - Symmetrized               |
+  |                  Cartesian components [eV/A**3]                   |
+  +-------------------------------------------------------------------+
+  |                x                y                z                |
+  |                                                                   |
+  |  x         0.00004142       0.00000000       0.00000000           |
+  |  y         0.00000000       0.00004142       0.00000000           |
+  |  z         0.00000000       0.00000000       0.00004142           |
+  |                                                                   |
+  |  Pressure:      -0.00004142   [eV/A**3]                           |
+  |                                                                   |
+  +-------------------------------------------------------------------+
+
+ |  0.18E-08 |   0.23E-05 |  0.20E-09 |      0.11E-08 |       17.926 s |       17.927 s
+
+  Total energy components:
+  | Sum of eigenvalues            :       -1465.95557899 Ha      -39890.68091990 eV
+  | XC energy correction          :        -100.58916117 Ha       -2737.17034111 eV
+  | XC potential correction       :         131.81678183 Ha        3586.91713384 eV
+  | Free-atom electrostatic energy:       -1080.22836427 Ha      -29394.50936794 eV
+  | Hartree energy correction     :          -0.63302824 Ha         -17.22557475 eV
+  | Entropy correction            :           0.00000000 Ha           0.00000000 eV
+  | ---------------------------
+  | Total energy                  :       -2515.58935084 Ha      -68452.66906985 eV
+  | Total energy, T -> 0          :       -2515.58935084 Ha      -68452.66906985 eV  <-- do not rely on this value for anything but (periodic) metals
+  | Electronic free energy        :       -2515.58935084 Ha      -68452.66906985 eV
+
+  Derived energy quantities:
+  | Kinetic energy                :        2561.82057239 Ha       69710.68461527 eV
+  | Electrostatic energy          :       -4976.82076206 Ha     -135426.18334401 eV
+  | Energy correction for multipole
+  | error in Hartree potential    :          -0.00670857 Ha          -0.18254960 eV
+  | Sum of eigenvalues per atom                           :      -19945.34045995 eV
+  | Total energy (T->0) per atom                          :      -34226.33453493 eV  <-- do not rely on this value for anything but (periodic) metals
+  | Electronic free energy per atom                       :      -34226.33453493 eV
+  What follows are estimated values for band gap, HOMO, LUMO, etc.
+  | They are estimated on a discrete k-point grid and not necessarily exact.
+  | For converged numbers, create a DOS and/or band structure plot on a denser k-grid.
+
+  Highest occupied state (VBM) at     -6.26873119 eV (relative to internal zero)
+  | Occupation number:      2.00000000
+  | K-point:       1 at    0.000000    0.000000    0.000000 (in units of recip. lattice)
+
+  Lowest unoccupied state (CBM) at    -4.92488235 eV (relative to internal zero)
+  | Occupation number:      0.00000000
+  | K-point:     202 at    0.500000    0.500000    0.000000 (in units of recip. lattice)
+
+  ESTIMATED overall HOMO-LUMO gap:      1.34384884 eV between HOMO at k-point 1 and LUMO at k-point 202
+  | This appears to be an indirect band gap.
+  | Smallest direct gap :      1.89545588 eV for k_point 1 at    0.500000    0.500000    0.000000 (in units of recip. lattice)
+  The gap value is above 0.2 eV. Unless you are using a very sparse k-point grid,
+  this system is most likely an insulator or a semiconductor.
+
+  Self-consistency cycle converged.
+
+  Removing unitary transformations (pure translations, rotations) from forces on atoms.
+  Atomic forces before filtering:
+  | Net force on center of mass :  -0.104123E-22 -0.106338E-22 -0.106338E-22 eV/A
+  Atomic forces after filtering:
+  | Net force on center of mass :  -0.236119E-38 -0.236119E-38 -0.236119E-38 eV/A
+
+  Energy and forces in a compact form:
+  | Total energy uncorrected      :         -0.684526690698503E+05 eV
+  | Total energy corrected        :         -0.684526690698503E+05 eV  <-- do not rely on this value for anything but (periodic) metals
+  | Electronic free energy        :         -0.684526690698503E+05 eV
+  Total atomic forces (unitary forces cleaned) [eV/Ang]:
+  |    1          0.520614772657967E-23          0.531691682714519E-23          0.531691682714519E-23
+  |    2         -0.520614772657967E-23         -0.531691682714520E-23         -0.531691682714520E-23
+
+  Relaxation / MD: End force evaluation.       :  max(cpu_time)    wall_clock(cpu1)
+  | Time for this force evaluation             :       30.538 s          30.553 s
+
+------------------------------------------------------------
+  Geometry optimization: Attempting to predict improved coordinates.
+
+  +-------------------------------------------------------------------+
+  | Generalized derivatives on lattice vectors [eV/A]                 |
+  +-------------------------------------------------------------------+
+  |lattice_vector      -0.00033381       0.00033381       0.00033381  |
+  |lattice_vector       0.00033381      -0.00033381       0.00033381  |
+  |lattice_vector       0.00033381       0.00033381      -0.00033381  |
+  +-------------------------------------------------------------------+
+  | Forces on lattice vectors cleaned from atomic contributions [eV/A]|
+  +-------------------------------------------------------------------+
+  |lattice_vector       0.00033381      -0.00033381      -0.00033381  |
+  |lattice_vector      -0.00033381       0.00033381      -0.00033381  |
+  |lattice_vector      -0.00033381      -0.00033381       0.00033381  |
+  +-------------------------------------------------------------------+
+  Removing unitary transformations (pure translations, rotations) from forces on atoms.
+  Atomic forces before filtering:
+  | Net force on center of mass :  -0.236119E-38 -0.236119E-38 -0.236119E-38 eV/A
+  Atomic forces after filtering:
+  | Net force on center of mass :   0.000000E+00 -0.590296E-39 -0.590296E-39 eV/A
+  Net remaining forces (excluding translations, rotations) in present geometry:
+  || Forces on atoms   || =   0.531692E-23 eV/A.
+  || Forces on lattice || =   0.333810E-03 eV/A^3.
+  Maximum force component is  0.333810E-03 eV/A.
+  Present geometry is not yet converged.
+
+  Relaxation step number      4: Predicting new coordinates.
+
+  Advancing geometry using trust radius method.
+  | True / expected gain: -4.01E-05 eV / -4.13E-05 eV =    0.9723
+  | Harmonic / expected gain: -3.93E-05 eV / -4.13E-05 eV =    0.9528
+  | Using harmonic gain <DX|-(F0+F1)/2> instead of DE to judge step.
+  | Hessian has  0 negative and  3 zero eigenvalues.
+  | Positive eigenvalues (eV/A^2): 3.28E+00 ... 3.02E+01
+  | Use Quasi-Newton step of length |H^-1 F| = 2.15E-04 A.
+  Finished advancing geometry
+  | Time :      0.001 s
+  Updated atomic structure:
+                         x [A]             y [A]             z [A]
+  lattice_vector         0.00000000        2.83883486        2.83883486
+  lattice_vector         2.83883486        0.00000000        2.83883486
+  lattice_vector         2.83883486        2.83883486        0.00000000
+
+            atom         1.41941743        1.41941743        1.41941743  Al
+            atom         0.00000000       -0.00000000       -0.00000000  As
+
+  Fractional coordinates:
+                         L1                L2                L3
+       atom_frac         0.25000000        0.25000000        0.25000000  Al
+       atom_frac        -0.00000000        0.00000000       -0.00000000  As
+------------------------------------------------------------
+  Writing the current geometry to file "geometry.in.next_step".
+  Writing estimated Hessian matrix to file 'hessian.aims'
+
+  Quantities derived from the lattice vectors:
+  | Reciprocal lattice vector 1: -1.106649  1.106649  1.106649
+  | Reciprocal lattice vector 2:  1.106649 -1.106649  1.106649
+  | Reciprocal lattice vector 3:  1.106649  1.106649 -1.106649
+  | Unit cell volume                               :   0.457562E+02  A^3
+
+  Range separation radius for Ewald summation (hartree_convergence_parameter):      4.08283618 bohr.
+
+------------------------------------------------------------
+          Begin self-consistency loop: Re-initialization.
+
+  Date     :  20190906, Time     :  170241.368
+------------------------------------------------------------
+
+  Initializing index lists of integration centers etc. from given atomic structure:
+  Mapping all atomic coordinates to central unit cell.
+
+  Initializing the k-points
+          Using symmetry for reducing the k-points
+  | k-points reduced from:      512 to      260
+  | Number of k-points                             :       260
+  The eigenvectors in the calculations are COMPLEX.
+  | K-points in task   0:         8
+  | K-points in task   1:         9
+  | K-points in task   2:         9
+  | K-points in task   3:         9
+  | K-points in task   4:         9
+  | K-points in task   5:         8
+  | K-points in task   6:         8
+  | K-points in task   7:         8
+  | K-points in task   8:         8
+  | K-points in task   9:         8
+  | K-points in task  10:         8
+  | K-points in task  11:         8
+  | K-points in task  12:         8
+  | K-points in task  13:         8
+  | K-points in task  14:         8
+  | K-points in task  15:         8
+  | K-points in task  16:         8
+  | K-points in task  17:         8
+  | K-points in task  18:         8
+  | K-points in task  19:         8
+  | K-points in task  20:         8
+  | K-points in task  21:         8
+  | K-points in task  22:         8
+  | K-points in task  23:         8
+  | K-points in task  24:         8
+  | K-points in task  25:         8
+  | K-points in task  26:         8
+  | K-points in task  27:         8
+  | K-points in task  28:         8
+  | K-points in task  29:         8
+  | K-points in task  30:         8
+  | K-points in task  31:         8
+  | Number of basis functions in the Hamiltonian integrals :      3120
+  | Number of basis functions in a single unit cell        :        73
+  | Number of centers in hartree potential         :       810
+  | Number of centers in hartree multipole         :       432
+  | Number of centers in electron density summation:       318
+  | Number of centers in basis integrals           :       336
+  | Number of centers in integrals                 :       128
+  | Number of centers in hamiltonian               :       318
+  | Consuming        747 KiB for k_phase.
+  | Number of super-cells (origin) [n_cells]                     :        2197
+  | Number of super-cells (after PM_index) [n_cells]             :         184
+  | Number of super-cells in hamiltonian [n_cells_in_hamiltonian]:         184
+  | Size of matrix packed + index [n_hamiltonian_matrix_size] :      253078
+  Partitioning the integration grid into batches with parallel hashing+maxmin method.
+  Initializing partition tables, free-atom densities, potentials, etc. across the integration grid (initialize_grid_storage).
+  | Species        1: outer_partition_radius set to              6.011712643327361 AA .
+  | Species        2: outer_partition_radius set to              6.070707973509038 AA .
+  | The sparse table of interatomic distances needs       1101.27 kbyte instead of       903.17 kbyte of memory.
+  | Using the partition_type stratmann_smoother will reduce your memory usage.
+  | Net number of integration points:    44716
+  | of which are non-zero points    :    36238
+  Renormalizing the initial density to the exact electron count on the 3D integration grid.
+  | Initial density: Formal number of electrons (from input files) :      46.0000000000
+  | Integrated number of electrons on 3D grid     :      46.0021363154
+  | Charge integration error                      :       0.0021363154
+  | Normalization factor for density and gradient :       0.9999535605
+  Renormalizing the free-atom superposition density to the exact electron count on the 3D integration grid.
+  | Formal number of electrons (from input files) :      46.0000000000
+  | Integrated number of electrons on 3D grid     :      46.0021363154
+  | Charge integration error                      :       0.0021363154
+  | Normalization factor for density and gradient :       0.9999535605
+  Calculating total energy contributions from superposition of free atom densities.
+  Initialize hartree_potential_storage
+  Max. number of atoms included in rho_multipole:            2
+  Integrating overlap matrix.
+  Time summed over all CPUs for integration: real work        7.057 s, elapsed        9.502 s
+  Orthonormalizing eigenvectors
+
+  End scf reinitialization - timings           :  max(cpu_time)    wall_clock(cpu1)
+  | Time for scf. reinitialization             :        0.676 s           0.676 s
+  | Boundary condition initialization          :        0.101 s           0.101 s
+  | Integration                                :        0.304 s           0.303 s
+  | Grid partitioning                          :        0.057 s           0.057 s
+  | Preloading free-atom quantities on grid    :        0.139 s           0.139 s
+  | Free-atom superposition energy             :        0.014 s           0.014 s
+  | K.-S. eigenvector reorthonormalization     :        0.011 s           0.007 s
+------------------------------------------------------------
+Convergence:    q app. |  density  | eigen (eV) | Etot (eV) | forces (eV/A) |       CPU time |     Clock time
+  SCF    1 : -0.47E-13 |  0.88E-01 |  -0.40E+05 | -0.68E+05 |             . |        1.424 s |        1.425 s
+  SCF    2 : -0.19E-13 |  0.87E-05 |  -0.17E-02 | -0.33E-07 |             . |        1.266 s |        1.266 s
+  SCF    3 : -0.41E-13 |  0.56E-05 |  -0.27E-02 | -0.77E-07 |             . |        1.261 s |        1.262 s
+  SCF    4 : -0.73E-14 |  0.14E-05 |   0.21E-03 | -0.59E-07 |             . |        1.262 s |        1.262 s
+  SCF    5 : -0.20E-13 |  0.24E-06 |   0.79E-05 | -0.43E-08 |             . |        1.265 s |        1.265 s
+  SCF    6 : -0.23E-13 |  0.37E-07 |  -0.11E-04 |  0.11E-08 |             . |        1.272 s |        1.272 s
+  SCF    7 : -0.23E-13
+  Symmetry information by spglib:
+  | Precision set to  0.1E-04
+  | Number of Operations  : 24
+  | Space group           : 216
+  | International         : F-43m     a
+  | Schoenflies           : Td^2
+  | Symmetrizing total forces.
+ |  0.21E-08 |   0.11E-05 | -0.17E-09 |      0.50E-08 |        1.990 s |        1.989 s
+  SCF    8 : -0.24E-13
+  Symmetry information by spglib:
+  | Precision set to  0.1E-04
+  | Number of Operations  : 24
+  | Space group           : 216
+  | International         : F-43m
+  | Schoenflies           : Td^2
+  | Symmetrizing total forces.
+
+  Analytical stress tensor components [eV]         xx                  yy                  zz                  xy                  xz                  yz
+  -----------------------------------------------------------------------------------------------------------------------------------------------------------
+    Nuclear Hellmann-Feynman      :    -0.4059349450E+02   -0.4059315226E+02   -0.4059315226E+02    0.1351515145E-09    0.1348701183E-09    0.1361478195E-09
+    Multipole Hellmann-Feynman    :    -0.5647110747E+02   -0.5647113207E+02   -0.5647113207E+02    0.2969833204E-09    0.2861558035E-09    0.2706879222E-09
+    On-site Multipole corrections :    -0.2357660662E+00   -0.2357660662E+00   -0.2357660661E+00   -0.9783434903E-10   -0.2010824565E-10   -0.3325594473E-10
+    Strain deriv. of the orbitals :     0.9730037896E+02    0.9730005472E+02    0.9730005473E+02    0.6463157514E-09   -0.1141239615E-08   -0.9451117141E-10
+  -----------------------------------------------------------------------------------------------------------------------------------------------------------
+  Sum of all contributions        :     0.1092840873E-04    0.4323873071E-05    0.4330068894E-05    0.9806162373E-09   -0.7403219387E-09    0.2790686256E-09
+
+
+  Symmetry information by spglib:
+  | Precision set to  0.1E-04
+  | Number of Operations  : 24
+  | Space group           : 216
+  | International         : F-43m
+  | Schoenflies           : Td^2
+  | Symmetrizing stress
+  | Symmetrizing stress
+  +-------------------------------------------------------------------+
+  |              Analytical stress tensor - Symmetrized               |
+  |                  Cartesian components [eV/A**3]                   |
+  +-------------------------------------------------------------------+
+  |                x                y                z                |
+  |                                                                   |
+  |  x         0.00000014       0.00000000       0.00000000           |
+  |  y         0.00000000       0.00000014       0.00000000           |
+  |  z         0.00000000       0.00000000       0.00000014           |
+  |                                                                   |
+  |  Pressure:      -0.00000014   [eV/A**3]                           |
+  |                                                                   |
+  +-------------------------------------------------------------------+
+
+ * Warning: Stress tensor is anisotropic. Be aware that pressure is an isotropic quantity.
+
+ |  0.54E-09 |  -0.52E-06 | -0.11E-09 |      0.73E-09 |       17.292 s |       17.294 s
+
+  Total energy components:
+  | Sum of eigenvalues            :       -1465.95581578 Ha      -39890.68736332 eV
+  | XC energy correction          :        -100.58921415 Ha       -2737.17178287 eV
+  | XC potential correction       :         131.81685260 Ha        3586.91905957 eV
+  | Free-atom electrostatic energy:       -1080.22801504 Ha      -29394.49986499 eV
+  | Hartree energy correction     :          -0.63315846 Ha         -17.22911831 eV
+  | Entropy correction            :           0.00000000 Ha           0.00000000 eV
+  | ---------------------------
+  | Total energy                  :       -2515.58935084 Ha      -68452.66906992 eV
+  | Total energy, T -> 0          :       -2515.58935084 Ha      -68452.66906992 eV  <-- do not rely on this value for anything but (periodic) metals
+  | Electronic free energy        :       -2515.58935084 Ha      -68452.66906992 eV
+
+  Derived energy quantities:
+  | Kinetic energy                :        2561.82079738 Ha       69710.69073757 eV
+  | Electrostatic energy          :       -4976.82093407 Ha     -135426.18802461 eV
+  | Energy correction for multipole
+  | error in Hartree potential    :          -0.00670992 Ha          -0.18258623 eV
+  | Sum of eigenvalues per atom                           :      -19945.34368166 eV
+  | Total energy (T->0) per atom                          :      -34226.33453496 eV  <-- do not rely on this value for anything but (periodic) metals
+  | Electronic free energy per atom                       :      -34226.33453496 eV
+  What follows are estimated values for band gap, HOMO, LUMO, etc.
+  | They are estimated on a discrete k-point grid and not necessarily exact.
+  | For converged numbers, create a DOS and/or band structure plot on a denser k-grid.
+
+  Highest occupied state (VBM) at     -6.26888126 eV (relative to internal zero)
+  | Occupation number:      2.00000000
+  | K-point:       1 at    0.000000    0.000000    0.000000 (in units of recip. lattice)
+
+  Lowest unoccupied state (CBM) at    -4.92518776 eV (relative to internal zero)
+  | Occupation number:      0.00000000
+  | K-point:     202 at    0.500000    0.500000    0.000000 (in units of recip. lattice)
+
+  ESTIMATED overall HOMO-LUMO gap:      1.34369350 eV between HOMO at k-point 1 and LUMO at k-point 202
+  | This appears to be an indirect band gap.
+  | Smallest direct gap :      1.89617148 eV for k_point 1 at    0.500000    0.500000    0.000000 (in units of recip. lattice)
+  The gap value is above 0.2 eV. Unless you are using a very sparse k-point grid,
+  this system is most likely an insulator or a semiconductor.
+
+  Self-consistency cycle converged.
+
+  Removing unitary transformations (pure translations, rotations) from forces on atoms.
+  Atomic forces before filtering:
+  | Net force on center of mass :   0.797538E-23  0.708922E-23  0.531692E-23 eV/A
+  Atomic forces after filtering:
+  | Net force on center of mass :   0.118059E-38  0.118059E-38  0.118059E-38 eV/A
+
+  Energy and forces in a compact form:
+  | Total energy uncorrected      :         -0.684526690699183E+05 eV
+  | Total energy corrected        :         -0.684526690699183E+05 eV  <-- do not rely on this value for anything but (periodic) metals
+  | Electronic free energy        :         -0.684526690699183E+05 eV
+  Total atomic forces (unitary forces cleaned) [eV/Ang]:
+  |    1         -0.398768762035889E-23         -0.354461121809680E-23         -0.265845841357260E-23
+  |    2          0.398768762035890E-23          0.354461121809680E-23          0.265845841357260E-23
+
+  Relaxation / MD: End force evaluation.       :  max(cpu_time)    wall_clock(cpu1)
+  | Time for this force evaluation             :       27.713 s          27.716 s
+
+------------------------------------------------------------
+  Geometry optimization: Attempting to predict improved coordinates.
+
+  +-------------------------------------------------------------------+
+  | Generalized derivatives on lattice vectors [eV/A]                 |
+  +-------------------------------------------------------------------+
+  |lattice_vector      -0.00000115       0.00000115       0.00000115  |
+  |lattice_vector       0.00000115      -0.00000115       0.00000115  |
+  |lattice_vector       0.00000115       0.00000115      -0.00000115  |
+  +-------------------------------------------------------------------+
+  | Forces on lattice vectors cleaned from atomic contributions [eV/A]|
+  +-------------------------------------------------------------------+
+  |lattice_vector       0.00000115      -0.00000115      -0.00000115  |
+  |lattice_vector      -0.00000115       0.00000115      -0.00000115  |
+  |lattice_vector      -0.00000115      -0.00000115       0.00000115  |
+  +-------------------------------------------------------------------+
+  Removing unitary transformations (pure translations, rotations) from forces on atoms.
+  Atomic forces before filtering:
+  | Net force on center of mass :   0.118059E-38  0.118059E-38  0.118059E-38 eV/A
+  Atomic forces after filtering:
+  | Net force on center of mass :   0.000000E+00  0.000000E+00  0.295148E-39 eV/A
+  Net remaining forces (excluding translations, rotations) in present geometry:
+  || Forces on atoms   || =   0.398769E-23 eV/A.
+  || Forces on lattice || =   0.114967E-05 eV/A^3.
+  Maximum force component is  0.114967E-05 eV/A.
+  Present geometry is converged.
+
+------------------------------------------------------------
+  Final atomic structure:
+                         x [A]             y [A]             z [A]
+  lattice_vector         0.00000000        2.83883486        2.83883486
+  lattice_vector         2.83883486        0.00000000        2.83883486
+  lattice_vector         2.83883486        2.83883486        0.00000000
+
+            atom         1.41941743        1.41941743        1.41941743  Al
+            atom         0.00000000       -0.00000000       -0.00000000  As
+
+  Fractional coordinates:
+                         L1                L2                L3
+       atom_frac         0.25000000        0.25000000        0.25000000  Al
+       atom_frac        -0.00000000        0.00000000       -0.00000000  As
+------------------------------------------------------------
+
+------------------------------------------------------------------------------
+  Final output of selected total energy values:
+
+  The following output summarizes some interesting total energy values
+  at the end of a run (AFTER all relaxation, molecular dynamics, etc.).
+
+  | Total energy of the DFT / Hartree-Fock s.c.f. calculation      :         -68452.669069918 eV
+  | Final zero-broadening corrected energy (caution - metals only) :         -68452.669069918 eV
+  | For reference only, the value of 1 Hartree used in FHI-aims is :             27.211384500 eV
+  | For reference only, the overall average (free atom contribution
+  | + realspace contribution) of the electrostatic potential after
+  | s.c.f. convergence is                                          :            -13.211386534 eV
+
+  Before relying on these values, please be sure to understand exactly which
+  total energy value is referred to by a given number. Different objects may
+  all carry the same name 'total energy'. Definitions:
+
+  Total energy of the DFT / Hartree-Fock s.c.f. calculation:
+  | Note that this energy does not include ANY quantities calculated after the
+  | s.c.f. cycle, in particular not ANY RPA, MP2, etc. many-body perturbation terms.
+
+  Final zero-broadening corrected energy:
+  | For metallic systems only, a broadening of the occupation numbers at the Fermi
+  | level can be extrapolated back to zero broadening by an electron-gas inspired
+  | formula. For all systems that are not real metals, this value can be
+  | meaningless and should be avoided.
+
+------------------------------------------------------------------------------
+  Methods described in the following list of references were used in this FHI-aims run.
+  If you publish the results, please make sure to cite these reference if they apply.
+  FHI-aims is an academic code, and for our developers (often, Ph.D. students
+  and postdocs), scientific credit in the community is essential.
+  Thank you for helping us!
+
+  For any use of FHI-aims, please cite:
+
+    Volker Blum, Ralf Gehrke, Felix Hanke, Paula Havu, Ville Havu,
+    Xinguo Ren, Karsten Reuter, and Matthias Scheffler
+    'Ab initio molecular simulations with numeric atom-centered orbitals'
+    Computer Physics Communications 180, 2175-2196 (2009)
+    http://dx.doi.org/10.1016/j.cpc.2009.06.022
+
+
+  For the analytical stress tensor used in your run, please cite:
+
+    Franz Knuth, Christian Carbogno, Viktor Atalla, Volker Blum, Matthias Scheffler
+    'All-electron formalism for total energy strain derivatives and
+    stress tensor components for numeric atom-centered orbitals'
+    Computer Physics Communications 190, 33-50 (2015).
+    http://dx.doi.org/10.1016/j.cpc.2015.01.003
+
+
+  The provided symmetry information was generated with SPGlib:
+
+    Atsushi Togo, Yusuke Seto, Dimitar Pashov
+    SPGlib 1.7.3 obtained from http://spglib.sourceforge.net
+    Copyright (C) 2008 Atsushi Togo
+
+
+  The ELSI infrastructure was used in your run to solve the Kohn-Sham electronic structure.
+  Please check out http://elsi-interchange.org to learn more.
+  If scalability is important for your project, please acknowledge ELSI by citing:
+
+    V. W-z. Yu, F. Corsetti, A. Garcia, W. P. Huhn, M. Jacquelin, W. Jia,
+    B. Lange, L. Lin, J. Lu, W. Mi, A. Seifitokaldani, A. Vazquez-Mayagoitia,
+    C. Yang, H. Yang, and V. Blum
+    'ELSI: A unified software interface for Kohn-Sham electronic structure solvers'
+    Computer Physics Communications 222, 267-285 (2018).
+    http://dx.doi.org/10.1016/j.cpc.2017.09.007
+
+
+  For the real-space grid partitioning and parallelization used in this calculation, please cite:
+
+    Ville Havu, Volker Blum, Paula Havu, and Matthias Scheffler,
+    'Efficient O(N) integration for all-electron electronic structure calculation'
+    'using numerically tabulated basis functions'
+    Journal of Computational Physics 228, 8367-8379 (2009).
+    http://dx.doi.org/10.1016/j.jcp.2009.08.008
+
+  Of course, there are many other important community references, e.g., those cited in the
+  above references. Our list is limited to references that describe implementations in the
+  FHI-aims code. The reason is purely practical (length of this list) - please credit others as well.
+
+------------------------------------------------------------
+          Leaving FHI-aims.
+          Date     :  20190906, Time     :  170309.139
+
+          Computational steps:
+          | Number of self-consistency cycles          :           58
+          | Number of SCF (re)initializations          :            5
+          | Number of relaxation steps                 :            4
+
+          Detailed time accounting                     :  max(cpu_time)    wall_clock(cpu1)
+          | Total time                                 :      160.975 s         161.493 s
+          | Preparation time                           :        0.429 s           0.434 s
+          | Boundary condition initalization           :        0.381 s           0.385 s
+          | Grid partitioning                          :        0.266 s           0.274 s
+          | Preloading free-atom quantities on grid    :        0.493 s           0.500 s
+          | Free-atom superposition energy             :        0.058 s           0.060 s
+          | Total time for integrations                :       20.909 s          20.920 s
+          | Total time for solution of K.-S. equations :        1.990 s           2.017 s
+          | Total time for EV reorthonormalization     :        0.032 s           0.026 s
+          | Total time for density & force components  :      114.322 s         114.336 s
+          | Total time for mixing & preconditioning    :        2.298 s           2.308 s
+          | Total time for Hartree multipole update    :        0.103 s           0.104 s
+          | Total time for Hartree multipole sum       :       16.830 s          16.850 s
+          | Total time for total energy evaluation     :        2.260 s           2.272 s
+          | Total time for scaled ZORA corrections     :        0.000 s           0.000 s
+
+          Partial memory accounting:
+          | Residual value for overall tracked memory usage across tasks:     0.000000 MB (should be 0.000000 MB)
+          | Peak values for overall tracked memory usage:
+          |   Minimum:       33.529 MB (on task 11 after allocating d_wave)
+          |   Maximum:       35.842 MB (on task  3 after allocating d_wave)
+          |   Average:       34.421 MB
+          | Largest tracked array allocation:
+          |   Minimum:        9.400 MB (density_matrix_con on task 11)
+          |   Maximum:       10.515 MB (density_matrix_con on task  3)
+          |   Average:        9.915 MB
+          Note:  These values currently only include a subset of arrays which are explicitly tracked.
+          The "true" memory usage will be greater.
+
+          Have a nice day.
+------------------------------------------------------------

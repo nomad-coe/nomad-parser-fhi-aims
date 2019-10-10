@@ -1500,6 +1500,7 @@ def build_FhiAimsMainFileSimpleMatcher():
                 SM (r"\s*-{20}-*", weak = True),
                 SM (r"\s*Time zero on CPU 1\s*:\s*(?P<time_run_cpu1_start>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?) *s?\."),
                 SM (r"\s*Internal wall clock time zero\s*:\s*(?P<time_run_wall_start>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?) *s\."),
+                SM (r"\s*aims_uuid\s*:\s*(?P<raw_id>[a-zA-Z0-9\-]+)"),
                 SM (name = "nParallelTasks",
                     startReStr = r"\s*Using\s*(?P<x_fhi_aims_number_of_tasks>[0-9]+)\s*parallel tasks\.",
                     sections = ["x_fhi_aims_section_parallel_tasks"],
