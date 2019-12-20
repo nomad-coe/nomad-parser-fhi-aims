@@ -204,11 +204,12 @@ class FhiAimsParserContext(object):
         # write dos
         # The explanation why we write the dos not unil section_run closes is given in onClose_section_dos.
         if self.dos_energies is not None and self.dos_values is not None:
-            gIndexTmp = backend.openSection('x_fhi_aims_section_dos')
-            backend.addValue('x_fhi_aims_dos_to_single_configuration_ref', self.dosRefSingleConfigurationCalculation)
-            backend.addArrayValues('x_fhi_aims_dos_energies', self.dos_energies)
-            backend.addArrayValues('x_fhi_aims_dos_values', self.dos_values)
-            backend.closeSection('x_fhi_aims_section_dos', gIndexTmp)
+
+            gIndexTmp = backend.superBackend.openSection('section_dos', parent_index=self.dosRefSingleConfigurationCalculation)
+            backend.superBackend.addArrayValues('dos_energies', self.dos_energies)
+            backend.superBackend.addArrayValues('dos_values', self.dos_values)
+            backend.superBackend.closeSection('section_dos', gIndexTmp)
+
         # write geometry optimization convergence
         if self.geoConvergence is not None:
             backend.addValue('x_fhi_aims_geometry_optimization_converged', self.geoConvergence)
