@@ -269,11 +269,6 @@ class FhiAimsParserContext(object):
         self.secMethodIndex = gIndex
         if self.inputMethodIndex is None:
             self.inputMethodIndex = gIndex
-        else:
-            backend.openNonOverlappingSection("section_method_to_method_refs")
-            backend.addValue("method_to_method_kind", "core_settings")
-            backend.addValue("method_to_method_ref", self.inputMethodIndex)
-            backend.closeNonOverlappingSection("section_method_to_method_refs")
         if self.mainMethodIndex is None:
             self.mainMethodIndex = gIndex
 
@@ -286,10 +281,22 @@ class FhiAimsParserContext(object):
         if section["electronic_structure_method"]:
             m = section["electronic_structure_method"][0]
             if m == "DFT":
+                backend.openNonOverlappingSection("section_method_to_method_refs")
+                backend.addValue("method_to_method_kind", "core_settings")
+                backend.addValue("method_to_method_ref", self.inputMethodIndex)
+                backend.closeNonOverlappingSection("section_method_to_method_refs")
                 self.closingDFTMethodSection(backend, gIndex, section)
             elif m == "G0W0":
+                backend.openNonOverlappingSection("section_method_to_method_refs")
+                backend.addValue("method_to_method_kind", "starting_point")
+                backend.addValue("method_to_method_ref", self.inputMethodIndex)
+                backend.closeNonOverlappingSection("section_method_to_method_refs")
                 self.closingG0W0MethodSection(backend, gIndex, section)
             elif m == "scGW":
+                backend.openNonOverlappingSection("section_method_to_method_refs")
+                backend.addValue("method_to_method_kind", "starting_point")
+                backend.addValue("method_to_method_ref", self.inputMethodIndex)
+                backend.closeNonOverlappingSection("section_method_to_method_refs")
                 self.closingScGWMethodSection(backend, gIndex, section)
             else:
                 backend.pwarn("unexpected electronic structure method value %s" % m)
