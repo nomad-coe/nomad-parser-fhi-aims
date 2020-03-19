@@ -24,9 +24,9 @@ def main():
     setup(
         name='fhiaimsparser',
         version='0.1',
-        description='NoMaD parser implementation for FHI-aims.',
-        package_dir={'': 'parser/parser-fhi-aims'},
-        packages=find_packages('parser/parser-fhi-aims'),
+        description='NOMAD parser implementation for FHI-aims.',
+        package_dir={'': './'},
+        packages=find_packages(),
         install_requires=[
             'numpy',
             'nomadcore'

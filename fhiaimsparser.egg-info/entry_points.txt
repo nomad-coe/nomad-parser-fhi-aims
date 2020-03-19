@@ -1,0 +1,4 @@
+
+            [console_scripts]
+            nomad-fhiaims-parser=fhiaimsparser.parser:main
+        
