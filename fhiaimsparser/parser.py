@@ -59,6 +59,9 @@ class FHIaimsParser(ParserInterface):
         return getParserInfo()
 
 
+fhiAimsMainFileSimpleMatcher = build_FhiAimsMainFileSimpleMatcher()
+
+
 class FHIaimsMainParser(MainHierarchicalParser):
     """The main parser class that is called for all run types.
     """
@@ -66,7 +69,7 @@ class FHIaimsMainParser(MainHierarchicalParser):
         """
         """
         super(FHIaimsMainParser, self).__init__(parser_context)
-        self.root_matcher = build_FhiAimsMainFileSimpleMatcher()
+        self.root_matcher = fhiAimsMainFileSimpleMatcher
         self.caching_levels = get_cachingLevelForMetaName(
             parser_context.metainfo_env)
         self.super_context = FhiAimsParserContext()
