@@ -1524,7 +1524,7 @@ def build_FhiAimsMainFileSimpleMatcher():
 
             SM (name = 'SectionMethodNoVerbatin',
                 startReStr = r"\s*Parsing control\.in *(?:\.\.\.|\(first pass over file, find array dimensions only\)\.)",
- #               startReStr = r"\s*Parsing control\.in \(first pass over file, find array dimensions only\)\.",
+                # startReStr = r"\s*Parsing control\.in \(first pass over file, find array dimensions only\)\.",
                 sections = ['section_method'],
                 subMatchers = [
                 # parse verbatim writeout of control.in
@@ -1577,6 +1577,7 @@ def build_FhiAimsMainFileSimpleMatcher():
                         subMatchers = [
                         SM (r"\s*Date\s*:\s*(?P<x_fhi_aims_scf_date_start>[-.0-9/]+)\s*,\s*Time\s*:\s*(?P<x_fhi_aims_scf_time_start>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?)"),
                         SM (r"\s*-{20}-*", weak = True),
+                        SM (r"\s*\| Chemical potential \(Fermi level\):\s*(?P<energy_reference_fermi__eV>[-+]?[0-9]*\.?[0-9]+)\s*eV", name='FermiLevel'),
                         EigenvaluesGroupSubMatcher,
                         TotalEnergyScfSubMatcher,
                         SM (r"\s*End scf initialization - timings\s*:\s*max\(cpu_time\)\s+wall_clock\(cpu1\)"),
@@ -1609,9 +1610,9 @@ def build_FhiAimsMainFileSimpleMatcher():
                             SM (r"\s*\|\s*Change of analytical stress\s*:\s*[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)? *eV/A\*\*3")
                             ]), # END SCFConvergence
                         # after convergence eigenvalues are printed in the end instead of usually in the beginning
-#                        EigenvaluesGroupSubMatcher.copy(), # need copy since SubMatcher already used for ScfInitialization
-#                        SM (r"\s*(?P<x_fhi_aims_single_configuration_calculation_converged>Self-consistency cycle converged)\."),
-#                        SM (r"\s*End self-consistency iteration #\s*[0-9]+\s*:\s*max\(cpu_time\)\s+wall_clock\(cpu1\)")
+                        # EigenvaluesGroupSubMatcher.copy(), # need copy since SubMatcher already used for ScfInitialization
+                        # SM (r"\s*(?P<x_fhi_aims_single_configuration_calculation_converged>Self-consistency cycle converged)\."),
+                        # SM (r"\s*End self-consistency iteration #\s*[0-9]+\s*:\s*max\(cpu_time\)\s+wall_clock\(cpu1\)")
                         ]), # END ScfIteration
                     SM (name = 'ScfIteration',
                         startReStr = r"\s*Begin self-consistency iteration #\s*[0-9]+",
