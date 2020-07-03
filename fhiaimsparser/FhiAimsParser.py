@@ -98,6 +98,7 @@ class FhiAimsParserContext(object):
         self.MD = False
         self.MDUnitCell = None
         self.unit_cell_volume = None
+        self.fermi_energy = None
         self.band_segm_start_end = None
         # start with -1 since zeroth iteration is the initialization
         self.scfIterNr = -1
@@ -209,6 +210,7 @@ class FhiAimsParserContext(object):
 
             gIndexTmp = backend.superBackend.openSection('section_dos', parent_index=self.dosRefSingleConfigurationCalculation)
             backend.superBackend.addArrayValues('dos_energies', self.dos_energies)
+            backend.superBackend.addArrayValues('dos_energies_normalized', self.dos_energies - self.fermi_energy)
             backend.superBackend.addArrayValues('dos_values', self.dos_values)
             backend.superBackend.closeSection('section_dos', gIndexTmp)
 
@@ -596,8 +598,8 @@ class FhiAimsParserContext(object):
             self.dosRefSingleConfigurationCalculation = gIndex
             self.dosFound = False
         try:
-            fermi_ref = section['x_fhi_aims_energy_reference_fermi'][0]
-            backend.addArrayValues('energy_reference_fermi', np.array([fermi_ref, fermi_ref]) * ureg.eV)
+            self.fermi_energy = (section['x_fhi_aims_energy_reference_fermi'][0] * ureg.eV).to(ureg.J).m
+            backend.addArrayValues('energy_reference_fermi', [self.fermi_energy, self.fermi_energy])
         except:
             pass
 
@@ -672,8 +674,9 @@ class FhiAimsParserContext(object):
                 # construct parser for DOS file if not present
                 if self.dosSuperContext is None or self.dosParser is None:
                     self.compile_dos_parser()
-                # forward the unit cell volume to the DOS parser for
+                # forward the unit cell volume and fermi energy to the DOS parser for
                 # normalization
+                self.dosSuperContext.fermi_energy = self.fermi_energy
                 self.dosSuperContext.unit_cell_volume = self.unit_cell_volume
                 # parse DOS file
                 self.dosParser.parseFile(fIn)
@@ -1585,7 +1588,7 @@ def build_FhiAimsMainFileSimpleMatcher():
                         subMatchers = [
                         SM (r"\s*Date\s*:\s*(?P<x_fhi_aims_scf_date_start>[-.0-9/]+)\s*,\s*Time\s*:\s*(?P<x_fhi_aims_scf_time_start>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?)"),
                         SM (r"\s*-{20}-*", weak = True),
-                        SM (r"\s*\| Chemical potential \(Fermi level\):\s*(?P<x_fhi_aims_energy_reference_fermi__eV>[-+]?[0-9]*\.?[0-9]+)\s*eV", name='FermiLevel'),
+                        SM (r"\s*\| Chemical potential \(Fermi level\) (in eV)?\s*:\s*(?P<x_fhi_aims_energy_reference_fermi__eV>[-+]?[0-9]*\.?[0-9]+)(\s*eV)?", name='FermiLevel'),
                         EigenvaluesGroupSubMatcher,
                         TotalEnergyScfSubMatcher,
                         SM (r"\s*End scf initialization - timings\s*:\s*max\(cpu_time\)\s+wall_clock\(cpu1\)"),

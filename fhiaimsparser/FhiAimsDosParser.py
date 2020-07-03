@@ -52,8 +52,9 @@ class FhiAimsDosParserContext(object):
         self.writeMetaData = writeMetaData
         # unit cell volume is necessary for unit-conversion compliant with
         # NOMAD-metaInfo
-        # unit_cell_volume is set by the 'main' FhiAimsParser before calling us
+        # unit_cell_volume and self.fermi_energy is set by the 'main' FhiAimsParser before calling us
         self.unit_cell_volume = None
+        self.fermi_energy = None
 
     def startedParsing(self, fInName, parser):
         """Function is called when the parsing starts and the compiled parser is obtained.
@@ -97,6 +98,7 @@ class FhiAimsDosParserContext(object):
             if dos_energies is not None and dos_values:
                 backend.addArrayValues('dos_energies', self.dos_energies)
                 backend.addArrayValues('dos_values', self.dos_values)
+                backend.addArrayValues('dos_energies_normalized', self.dos_energies - self.fermi_energy)
 
 def build_FhiAimsDosFileSimpleMatcher():
     """Builds the SimpleMatcher to parse the DOS file of FHI-aims.
