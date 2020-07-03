@@ -4,6 +4,7 @@ from nomad.metainfo import (  # pylint: disable=unused-import
     MSection, MCategory, Category, Package, Quantity, Section, SubSection, SectionProxy,
     Reference
 )
+from nomad.units import ureg
 from nomad.metainfo.legacy import LegacyDefinition
 
 from nomad.datamodel.metainfo import public
@@ -818,6 +819,9 @@ class section_single_configuration_calculation(public.section_single_configurati
         sub_section=SectionProxy('x_fhi_aims_section_eigenvalues_ZORA'),
         repeats=False,
         a_legacy=LegacyDefinition(name='x_fhi_aims_section_eigenvalues_ZORA'))
+
+    x_fhi_aims_energy_reference_fermi = Quantity(
+        type=float, unit=ureg.eV, a_legacy=LegacyDefinition(name='x_fhi_aims_energy_reference_fermi'))
 
 
 class section_scf_iteration(public.section_scf_iteration):

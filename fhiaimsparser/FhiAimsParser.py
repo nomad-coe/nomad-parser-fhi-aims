@@ -34,6 +34,8 @@ import os
 import re
 import sys
 
+from nomad.units import ureg
+
 
 ############################################################
 # This is the parser for the main file of FHI-aims.
@@ -593,6 +595,12 @@ class FhiAimsParserContext(object):
         if self.dosFound:
             self.dosRefSingleConfigurationCalculation = gIndex
             self.dosFound = False
+        try:
+            fermi_ref = section['x_fhi_aims_energy_reference_fermi'][0]
+            backend.addArrayValues('energy_reference_fermi', np.array([fermi_ref, fermi_ref]) * ureg.eV)
+        except:
+            pass
+
         self.lastCalculationGIndex = gIndex
 
     def onClose_x_fhi_aims_section_eigenvalues_ZORA(self, backend, gIndex, section):
@@ -1577,6 +1585,7 @@ def build_FhiAimsMainFileSimpleMatcher():
                         subMatchers = [
                         SM (r"\s*Date\s*:\s*(?P<x_fhi_aims_scf_date_start>[-.0-9/]+)\s*,\s*Time\s*:\s*(?P<x_fhi_aims_scf_time_start>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?)"),
                         SM (r"\s*-{20}-*", weak = True),
+                        SM (r"\s*\| Chemical potential \(Fermi level\):\s*(?P<x_fhi_aims_energy_reference_fermi__eV>[-+]?[0-9]*\.?[0-9]+)\s*eV", name='FermiLevel'),
                         EigenvaluesGroupSubMatcher,
                         TotalEnergyScfSubMatcher,
                         SM (r"\s*End scf initialization - timings\s*:\s*max\(cpu_time\)\s+wall_clock\(cpu1\)"),
