@@ -210,7 +210,6 @@ class FhiAimsParserContext(object):
 
             gIndexTmp = backend.superBackend.openSection('section_dos', parent_index=self.dosRefSingleConfigurationCalculation)
             backend.superBackend.addArrayValues('dos_energies', self.dos_energies)
-            backend.superBackend.addArrayValues('dos_energies_normalized', self.dos_energies - self.fermi_energy)
             backend.superBackend.addArrayValues('dos_values', self.dos_values)
             backend.superBackend.closeSection('section_dos', gIndexTmp)
 
@@ -597,10 +596,14 @@ class FhiAimsParserContext(object):
         if self.dosFound:
             self.dosRefSingleConfigurationCalculation = gIndex
             self.dosFound = False
+
+        # Save the Fermi energy from the last converged SCF step
         try:
-            self.fermi_energy = (section['x_fhi_aims_energy_reference_fermi'][0] * ureg.eV).to(ureg.J).m
+            scf_iterations = section["section_scf_iteration"]
+            last_iteration = scf_iterations[-1]
+            self.fermi_energy = (last_iteration['x_fhi_aims_energy_reference_fermi'][0] * ureg.eV).to(ureg.J).m
             backend.addArrayValues('energy_reference_fermi', [self.fermi_energy, self.fermi_energy])
-        except:
+        except Exception:
             pass
 
         self.lastCalculationGIndex = gIndex
@@ -667,7 +670,7 @@ class FhiAimsParserContext(object):
         self.dos_values = None
         # construct file name
         dirName = os.path.dirname(os.path.abspath(self.fName))
-        dFile = 'KS_DOS_total.dat'
+        dFile = 'KS_DOS_total_raw.dat'
         fName = os.path.normpath(os.path.join(dirName, dFile))
         try:
             with open(fName) as fIn:
@@ -1588,7 +1591,7 @@ def build_FhiAimsMainFileSimpleMatcher():
                         subMatchers = [
                         SM (r"\s*Date\s*:\s*(?P<x_fhi_aims_scf_date_start>[-.0-9/]+)\s*,\s*Time\s*:\s*(?P<x_fhi_aims_scf_time_start>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?)"),
                         SM (r"\s*-{20}-*", weak = True),
-                        SM (r"\s*\| Chemical potential \(Fermi level\) (in eV)?\s*:\s*(?P<x_fhi_aims_energy_reference_fermi__eV>[-+]?[0-9]*\.?[0-9]+)(\s*eV)?", name='FermiLevel'),
+                        SM (r"\s*\| Chemical potential \(Fermi level\) (in eV)?\s*:\s*(?P<x_fhi_aims_energy_reference_fermi__eV>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?)(\s*eV)?", name='FermiLevel'),
                         EigenvaluesGroupSubMatcher,
                         TotalEnergyScfSubMatcher,
                         SM (r"\s*End scf initialization - timings\s*:\s*max\(cpu_time\)\s+wall_clock\(cpu1\)"),
@@ -1602,6 +1605,7 @@ def build_FhiAimsMainFileSimpleMatcher():
                         subMatchers = [
                         SM (r"\s*Date\s*:\s*(?P<x_fhi_aims_scf_date_start>[-.0-9/]+)\s*,\s*Time\s*:\s*(?P<x_fhi_aims_scf_time_start>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?)"),
                         SM (r"\s*-{20}-*", weak = True),
+                        SM (r"\s*\| Chemical potential \(Fermi level\) (in eV)?\s*:\s*(?P<x_fhi_aims_energy_reference_fermi__eV>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?)(\s*eV)?", name='FermiLevel'),
                         EigenvaluesGroupSubMatcher.copy(), # need copy since SubMatcher already used for ScfInitialization
                         TotalEnergyScfSubMatcher.copy(), # need copy since SubMatcher already used for ScfInitialization
                         # raw forces
@@ -1632,6 +1636,7 @@ def build_FhiAimsMainFileSimpleMatcher():
                         subMatchers = [
                         SM (r"\s*Date\s*:\s*(?P<x_fhi_aims_scf_date_start>[-.0-9/]+)\s*,\s*Time\s*:\s*(?P<x_fhi_aims_scf_time_start>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?)"),
                         SM (r"\s*-{20}-*", weak = True),
+                        SM (r"\s*\| Chemical potential \(Fermi level\) (in eV)?\s*:\s*(?P<x_fhi_aims_energy_reference_fermi__eV>[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?)(\s*eV)?", name='FermiLevel'),
                         EigenvaluesGroupSubMatcher.copy(), # need copy since SubMatcher already used for ScfInitialization
                         TotalEnergyScfSubMatcher.copy(), # need copy since SubMatcher already used for ScfInitialization
                         # raw forces
@@ -1777,6 +1782,8 @@ def get_cachingLevelForMetaName(metaInfoEnv):
                                'x_fhi_aims_single_configuration_calculation_converged': CachingLevel.Cache,
                                'x_fhi_aims_species_projected_dos_file': CachingLevel.Cache,
                                'x_fhi_aims_species_projected_dos_species_label': CachingLevel.Cache,
+                               'section_scf_iteration': CachingLevel.ForwardAndCache,
+                               'x_fhi_aims_energy_reference_fermi': CachingLevel.ForwardAndCache,
                                'section_dos': CachingLevel.Ignore,
                               }
     # Set all controlIn and controlInOut metadata to Cache to capture multiple occurrences of keywords and

@@ -98,7 +98,6 @@ class FhiAimsDosParserContext(object):
             if dos_energies is not None and dos_values:
                 backend.addArrayValues('dos_energies', self.dos_energies)
                 backend.addArrayValues('dos_values', self.dos_values)
-                backend.addArrayValues('dos_energies_normalized', self.dos_energies - self.fermi_energy)
 
 def build_FhiAimsDosFileSimpleMatcher():
     """Builds the SimpleMatcher to parse the DOS file of FHI-aims.
@@ -119,7 +118,7 @@ def build_FhiAimsDosFileSimpleMatcher():
             sections = ['section_run'],
             subMatchers = [
             SM (name = 'Root3',
-                startReStr = r"# The energy reference for this output is the (?:average )?chemical potential, mu =\s*[-+0-9.]+ *eV",
+                startReStr = r"# The energy reference for this output is the vacuum level",
                 sections = ['section_single_configuration_calculation'],
                 subMatchers = [
                 SM (name = 'Root4',

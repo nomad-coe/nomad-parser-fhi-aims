@@ -820,9 +820,6 @@ class section_single_configuration_calculation(public.section_single_configurati
         repeats=False,
         a_legacy=LegacyDefinition(name='x_fhi_aims_section_eigenvalues_ZORA'))
 
-    x_fhi_aims_energy_reference_fermi = Quantity(
-        type=float, unit=ureg.eV, a_legacy=LegacyDefinition(name='x_fhi_aims_energy_reference_fermi'))
-
 
 class section_scf_iteration(public.section_scf_iteration):
 
@@ -967,6 +964,9 @@ class section_scf_iteration(public.section_scf_iteration):
         sub_section=SectionProxy('x_fhi_aims_section_eigenvalues_group'),
         repeats=False,
         a_legacy=LegacyDefinition(name='x_fhi_aims_section_eigenvalues_group'))
+
+    x_fhi_aims_energy_reference_fermi = Quantity(
+        type=float, unit=ureg.eV, a_legacy=LegacyDefinition(name='x_fhi_aims_energy_reference_fermi'))
 
 
 class section_atom_projected_dos(public.section_atom_projected_dos):
