@@ -1,10 +1,10 @@
-code-label: FHI-aims
-code-label-style: 'Capitals: FHI, the rest in lowercase; use dash.'
-code-url: https://aimsclub.fhi-berlin.mpg.de/
-parser-dir-name: dependencies/parsers/fhi-aims/
-parser-git-url: https://gitlab.mpcdf.mpg.de/nomad-lab/parser-fhi-aims
-parser-specific: ''
-table-of-files: |
+codeLabel: FHI-aims
+codeLabelStyle: 'Capitals: FHI, the rest in lowercase; use dash.'
+codeUrl: https://aimsclub.fhi-berlin.mpg.de/
+parserDirName: dependencies/parsers/fhi-aims/
+parserGitUrl: https://gitlab.mpcdf.mpg.de/nomad-lab/parser-fhi-aims
+parserSpecific: ''
+tableOfFiles: |
   |Input Filename| Description|
   |--- | --- |
   |`<text_file>` | **Mainfile**, plain text file w/arbitrary name, e.g.,  `<output,control, aims,...>.out` |
