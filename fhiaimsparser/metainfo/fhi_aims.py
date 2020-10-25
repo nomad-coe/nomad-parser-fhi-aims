@@ -117,6 +117,14 @@ class x_fhi_aims_section_controlIn_basis_set(MSection):
         ''',
         a_legacy=LegacyDefinition(name='x_fhi_aims_controlIn_basis_dep_cutoff'))
 
+    x_fhi_aims_controlIn_cut_pot = Quantity(
+        type=np.dtype(np.float64),
+        shape=[3],
+        description='''
+        cut\\_pot parameters
+        ''',
+        a_legacy=LegacyDefinition(name='x_fhi_aims_controlIn_cut_pot'))
+
     x_fhi_aims_controlIn_cut_pot1 = Quantity(
         type=np.dtype(np.float64),
         shape=[],
@@ -157,6 +165,22 @@ class x_fhi_aims_section_controlIn_basis_set(MSection):
         ''',
         a_legacy=LegacyDefinition(name='x_fhi_aims_controlIn_division2'))
 
+    x_fhi_aims_controlIn_division = Quantity(
+        type=np.dtype(np.float64),
+        shape=['x_fhi_aims_controlIn_number_of_basis_func', 2],
+        description='''
+        division parameters
+        ''',
+        a_legacy=LegacyDefinition(name='x_fhi_aims_controlIn_division'))
+
+    x_fhi_aims_controlIn_number_of_basis_func = Quantity(
+        type=np.dtype(np.int32),
+        shape=[],
+        description='''
+        number of basis functions
+        ''',
+        a_legacy=LegacyDefinition(name='x_fhi_aims_controlIn_number_of_basis_func'))
+
     x_fhi_aims_controlIn_l_hartree = Quantity(
         type=np.dtype(np.int32),
         shape=[],
@@ -188,6 +212,14 @@ class x_fhi_aims_section_controlIn_basis_set(MSection):
         outer grid
         ''',
         a_legacy=LegacyDefinition(name='x_fhi_aims_controlIn_outer_grid'))
+
+    x_fhi_aims_controlIn_radial_base = Quantity(
+        type=np.dtype(np.float64),
+        shape=[2],
+        description='''
+        radial\\_base parameters
+        ''',
+        a_legacy=LegacyDefinition(name='x_fhi_aims_controlIn_radial_base'))
 
     x_fhi_aims_controlIn_radial_base1 = Quantity(
         type=np.dtype(np.float64),
@@ -245,6 +277,7 @@ class x_fhi_aims_section_controlInOut_atom_species(MSection):
     x_fhi_aims_controlInOut_species_charge = Quantity(
         type=np.dtype(np.float64),
         shape=[],
+        unit='coulomb',
         description='''
         -
         ''',
@@ -261,6 +294,7 @@ class x_fhi_aims_section_controlInOut_atom_species(MSection):
     x_fhi_aims_controlInOut_species_cut_pot_width = Quantity(
         type=np.dtype(np.float64),
         shape=[],
+        unit='meter',
         description='''
         -
         ''',
@@ -269,6 +303,7 @@ class x_fhi_aims_section_controlInOut_atom_species(MSection):
     x_fhi_aims_controlInOut_species_cut_pot = Quantity(
         type=np.dtype(np.float64),
         shape=[],
+        unit='meter',
         description='''
         -
         ''',
