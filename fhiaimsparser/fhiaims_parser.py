@@ -3,6 +3,9 @@ import numpy as np
 import pint
 import logging
 
+from .metainfo import m_env
+from nomad.parsing.parser import FairdiParser
+
 from nomad.parsing.text_parser import UnstructuredTextFileParser, Quantity, ParsePattern,\
     DataTextFileParser
 
@@ -22,8 +25,8 @@ from .metainfo.fhi_aims import section_run as xsection_run, section_method as xs
 
 
 class FHIAimsControlParser(UnstructuredTextFileParser):
-    def __init__(self, mainfile, logger):
-        super().__init__(mainfile, logger=logger)
+    def __init__(self):
+        super().__init__(None)
 
     @staticmethod
     def str_to_unit(val_in):
@@ -168,8 +171,8 @@ class FHIAimsControlParser(UnstructuredTextFileParser):
 
 
 class FHIAimsOutParser(UnstructuredTextFileParser):
-    def __init__(self, mainfile, logger):
-        super().__init__(mainfile, logger=logger)
+    def __init__(self):
+        super().__init__(None)
 
     def init_quantities(self):
         self._quantities = []
@@ -687,17 +690,21 @@ class FHIAimsOutParser(UnstructuredTextFileParser):
         return calculation_type
 
 
-class FHIAimsParserInterface:
-    def __init__(self, filepath, archive, logger):
-        self.filepath = os.path.abspath(filepath)
-        self.archive = archive
-        self.maindir = os.path.dirname(self.filepath)
-        self.logger = logger if logger is not None else logging
-        self.out_parser = FHIAimsOutParser(self.filepath, self.logger)
-        self.control_parser = FHIAimsControlParser(None, self.logger)
-        self.dos_parser = DataTextFileParser(None, self.logger)
-        self.bandstructure_parser = DataTextFileParser(None, self.logger)
-        self._electronic_structure_method = 'DFT'
+class FHIAimsParser(FairdiParser):
+    def __init__(self):
+        super().__init__(
+            name='parsers/fhi-aims', code_name='FHI-aims',
+            code_homepage='https://aimsclub.fhi-berlin.mpg.de/',
+            mainfile_contents_re=(
+                r'^(.*\n)*'
+                r'?\s*Invoking FHI-aims \.\.\.'))
+        self._metainfo_env = m_env
+
+        self.out_parser = FHIAimsOutParser()
+        self.control_parser = FHIAimsControlParser()
+        self.dos_parser = DataTextFileParser()
+        self.bandstructure_parser = DataTextFileParser()
+
         self._xc_map = {
             'Perdew-Wang parametrisation of Ceperley-Alder LDA': [
                 {'name': 'LDA_C_PW'}, {'name': 'LDA_X'}],
@@ -1321,7 +1328,22 @@ class FHIAimsParserInterface:
             for specie in species:
                 parse_atom_type(specie)
 
-    def parse(self):
+    def _init_parsers(self):
+        self.out_parser.mainfile = self.filepath
+        self.out_parser.logger = self.logger
+        self.control_parser.logger = self.logger
+        self.dos_parser.logger = self.logger
+        self.bandstructure_parser.logger = self.logger
+
+    def parse(self, filepath, archive, logger):
+        self.filepath = os.path.abspath(filepath)
+        self.archive = archive
+        self.maindir = os.path.dirname(self.filepath)
+        self.logger = logger if logger is not None else logging
+
+        self._electronic_structure_method = 'DFT'
+        self._init_parsers()
+
         sec_run = self.archive.m_create(section_run)
         sec_run.program_name = 'FHI-aims'
         sec_run.program_basis_set_type = 'numeric AOs'
