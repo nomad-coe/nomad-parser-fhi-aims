@@ -6,7 +6,7 @@ import logging
 from .metainfo import m_env
 from nomad.parsing.parser import FairdiParser
 
-from nomad.parsing.text_parser import UnstructuredTextFileParser, Quantity, ParsePattern,\
+from nomad.parsing.file_parser import UnstructuredTextFileParser, Quantity, ParsePattern,\
     DataTextFileParser
 
 from nomad.datamodel.metainfo.public import section_run, section_method, section_system,\
