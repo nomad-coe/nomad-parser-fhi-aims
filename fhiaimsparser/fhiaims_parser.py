@@ -6,16 +6,12 @@ import logging
 from .metainfo import m_env
 from nomad.parsing.parser import FairdiParser
 
-from nomad.parsing.file_parser import UnstructuredTextFileParser, Quantity, ParsePattern,\
-    DataTextFileParser
+from nomad.parsing.file_parser import TextParser, Quantity, ParsePattern, DataTextParser
 
-from nomad.datamodel.metainfo.public import section_run, section_method, section_system,\
-    section_XC_functionals, section_scf_iteration, section_single_configuration_calculation,\
-    section_sampling_method, section_frame_sequence, section_eigenvalues, section_dos,\
-    section_atom_projected_dos, section_species_projected_dos, section_k_band,\
-    section_k_band_segment, section_energy_van_der_Waals, section_calculation_to_calculation_refs,\
-    section_method_to_method_refs
-from nomad.datamodel.metainfo.common import section_topology, section_atom_type
+from nomad.datamodel.metainfo.common_dft import Run, Method, System, XCFunctionals,\
+    ScfIteration, SingleConfigurationCalculation, SamplingMethod, FrameSequence, Eigenvalues,\
+    Dos, AtomProjectedDos, SpeciesProjectedDos, KBand, KBandSegment, EnergyVanDerWaals,\
+    CalculationToCalculationRefs, MethodToMethodRefs, Topology, AtomType
 from .metainfo.fhi_aims import section_run as xsection_run, section_method as xsection_method,\
     x_fhi_aims_section_parallel_task_assignement, x_fhi_aims_section_parallel_tasks,\
     x_fhi_aims_section_controlIn_basis_set, x_fhi_aims_section_controlIn_basis_func,\
@@ -24,7 +20,7 @@ from .metainfo.fhi_aims import section_run as xsection_run, section_method as xs
     x_fhi_aims_section_eigenvalues_list_perturbativeGW, x_fhi_aims_section_vdW_TS
 
 
-class FHIAimsControlParser(UnstructuredTextFileParser):
+class FHIAimsControlParser(TextParser):
     def __init__(self):
         super().__init__(None)
 
@@ -165,12 +161,12 @@ class FHIAimsControlParser(UnstructuredTextFileParser):
         self._quantities.append(
             Quantity(
                 'species', r'\n *(species\s*[A-Z][a-z]?[\s\S]+)'
-                r'(gaussian|hydro|valence|ion_occ|ionic|confined)([\w ]*)\n',
+                r'(gaussian|hydro|valence|ion_occ|ionic|confined)( *\d+ *\w *[\d\.]*)\n',
                 str_operation=str_to_species, repeats=False)
         )
 
 
-class FHIAimsOutParser(UnstructuredTextFileParser):
+class FHIAimsOutParser(TextParser):
     def __init__(self):
         super().__init__(None)
 
@@ -178,7 +174,7 @@ class FHIAimsOutParser(UnstructuredTextFileParser):
         self._quantities = []
         self._quantities.append(
             Quantity(
-                section_run.program_version, ParsePattern(
+                Run.program_version, ParsePattern(
                     head=r'Invoking FHI\-aims', key=r'(?:Version|FHI-aims version)',
                     value=r'[\d\.]+', tail='\n'),
                 repeats=False))
@@ -186,21 +182,21 @@ class FHIAimsOutParser(UnstructuredTextFileParser):
         self._quantities.append(
             Quantity(
                 xsection_run.x_fhi_aims_program_compilation_date, ParsePattern(
-                    head='Compiled', key='on', value=r'[\d\/ ]+', tail=' '),
+                    head='Compiled', key='on', value=r'[\d\/]+', tail=' '),
                 repeats=False)
         )
 
         self._quantities.append(
             Quantity(
                 xsection_run.x_fhi_aims_program_compilation_time, ParsePattern(
-                    head='Compiled', key='at', value=r'[\d\: ]+', tail=' '),
+                    head='Compiled', key='at', value=r'[\d\:]+', tail=' '),
                 repeats=False)
         )
 
         self._quantities.append(
             Quantity(
-                section_run.program_compilation_host, ParsePattern(
-                    head='Compiled', key='on host', value=r'[\w \.]+', tail=r'reporting\.\n'),
+                Run.program_compilation_host, ParsePattern(
+                    head='Compiled', key='on host', value=r'[\w\.\-]+', tail=r'\.\n'),
                 repeats=False)
         )
 
@@ -218,20 +214,20 @@ class FHIAimsOutParser(UnstructuredTextFileParser):
 
         self.quantities.append(
             Quantity(
-                section_run.time_run_cpu1_start,
+                Run.time_run_cpu1_start,
                 r'Time zero on CPU 1\s*:\s*([0-9\-E\.]+)\s*(?P<__unit>\w+)\.',
                 repeats=False)
         )
 
         self.quantities.append(
             Quantity(
-                section_run.time_run_wall_start,
+                Run.time_run_wall_start,
                 r'Internal wall clock time zero\s*:\s*([0-9\-E\.]+)\s*(?P<__unit>\w+)\.',
                 repeats=False)
         )
 
         self._quantities.append(
-            Quantity(section_run.raw_id, r'aims_uuid\s*:\s*([\w\-]+)', repeats=False)
+            Quantity(Run.raw_id, r'aims_uuid\s*:\s*([\w\-]+)', repeats=False)
         )
 
         self._quantities.append(
@@ -249,7 +245,7 @@ class FHIAimsOutParser(UnstructuredTextFileParser):
         self._quantities.append(
             Quantity(
                 x_fhi_aims_section_parallel_task_assignement.x_fhi_aims_parallel_task_host,
-                r'Task\s*\d+\s*on host\s*([\w\. ]+)reporting', repeats=True)
+                r'Task\s*\d+\s*on host\s*([\s\S]+?)reporting', repeats=True)
         )
 
         self._quantities.append(
@@ -264,7 +260,7 @@ class FHIAimsOutParser(UnstructuredTextFileParser):
             Quantity(
                 'array_size_parameters',
                 r'Basic array size parameters:\s*([\|:\s\w\.\/]+:\s*\d+)', repeats=False,
-                str_operation=str_to_array_size_parameters)
+                str_operation=str_to_array_size_parameters, convert=False)
         )
 
         self._quantities.append(
@@ -297,7 +293,7 @@ class FHIAimsOutParser(UnstructuredTextFileParser):
         self._quantities.append(
             Quantity(
                 xsection_method.x_fhi_aims_controlInOut_relativistic,
-                r'\n *Scalar relativistic treatment of kinetic energy:\s*([\w]+)',
+                r'\n *Scalar relativistic treatment of kinetic energy:\s*([\w\- ]+)',
                 repeats=False)
         )
 
@@ -318,7 +314,7 @@ class FHIAimsOutParser(UnstructuredTextFileParser):
             Quantity(
                 xsection_method.x_fhi_aims_controlInOut_xc,
                 r'\n *XC:\s*(?:Using)*\s*([\w\- ]+) with OMEGA =\s*([\d\.Ee\-\+]+)',
-                repeats=False)
+                repeats=False, dtype=None)
         )
 
         self._quantities.append(
@@ -340,7 +336,7 @@ class FHIAimsOutParser(UnstructuredTextFileParser):
                 repeats=True)
         )
 
-        def _str_to_species(val_in):
+        def str_to_species_in(val_in):
             val = [v.strip() for v in val_in.split('\n')]
             data = []
             species = dict()
@@ -372,7 +368,7 @@ class FHIAimsOutParser(UnstructuredTextFileParser):
             Quantity(
                 'species',
                 r'(Reading configuration options for species [\s\S]+?)\n *Finished',
-                str_operation=_str_to_species, repeats=False)
+                str_operation=str_to_species_in, repeats=False)
         )
 
         def str_to_species(val_in):
@@ -393,7 +389,7 @@ class FHIAimsOutParser(UnstructuredTextFileParser):
                     for j in range(n_gaussians):
                         v.extend(val[i + j + 1].lstrip('|').split())
                 v = v[0] if len(v) == 1 else v
-                if val[i][0] in data:
+                if k in data:
                     data[k].extend([v])
                 else:
                     data[k] = [v]
@@ -404,13 +400,13 @@ class FHIAimsOutParser(UnstructuredTextFileParser):
                 'control_inout',
                 r'\n *Reading file control\.in\.\s*\-*\s*([\s\S]+?)'
                 r'Finished reading input file \'control\.in\'', repeats=False,
-                sub_parser=UnstructuredTextFileParser(quantities=[
+                sub_parser=TextParser(quantities=[
                     Quantity(
                         'species', r'Reading configuration options for (species[\s\S]+?)grid points\.',
                         repeats=True, str_operation=str_to_species)]))
         )
 
-        # The assign the initial geometry to full scf as no change in structure is done
+        # assign the initial geometry to full scf as no change in structure is done
         # during the initial scf step
         self._quantities.append(
             Quantity(
@@ -449,6 +445,7 @@ class FHIAimsOutParser(UnstructuredTextFileParser):
                 dtype=float)
 
             if velocities:
+                velocities = np.array(velocities, dtype=float)
                 return [labels, positions, velocities]
 
             return [labels, positions]
@@ -459,7 +456,7 @@ class FHIAimsOutParser(UnstructuredTextFileParser):
                 r'Input geometry:\s*\|\s*(?:Unit cell:[\d\.\sEe\-\+\|]+|No unit cell requested\.\n)'
                 r'\s*\|\s*Atomic structure:\s*\|\s*Atom\s*x \[A\]\s*y \[A\]\s*z \[A\]\n'
                 r'([\s\S]*\s*\|\s*\d+:\s*Species\s*[A-Z][a-z]?\s*[\d\. \-]+\n)+',
-                repeats=False, str_operation=str_to_labels_positions)
+                repeats=False, str_operation=str_to_labels_positions, convert=False)
         )
 
         def str_to_eigenvalues(val_in):
@@ -485,9 +482,7 @@ class FHIAimsOutParser(UnstructuredTextFileParser):
                 vi = v[1].split()
                 if not vi[0][-1].isdecimal():
                     continue
-                unit = None
-                if len(vi) > 2:
-                    unit = 'hartree' if vi[1] == 'Ha' else 'eV'
+                unit = {'Ha': 'hartree', 'eV': 'eV'}.get(vi[1], None)
                 res[v[0].strip()] = pint.Quantity(
                     float(vi[0]), unit) if unit is not None else float(vi[0])
             return res
@@ -495,11 +490,16 @@ class FHIAimsOutParser(UnstructuredTextFileParser):
         def str_to_scf_convergence(val_in):
             res = dict()
             for v in val_in.strip().split('\n'):
-                v = v.lstrip(' | Change of').split(':')
+                v = v.lstrip(' |').split(':')
                 if len(v) != 2:
                     break
-                res[v[0].strip()] = float(v[1].split()[0])
-                return res
+                vs = v[1].split()
+                unit = None
+                if len(vs) > 1:
+                    unit = {'Ha': 'hartree', 'eV': 'eV'}.get(vs[1], None)
+                res[v[0].strip()] = pint.Quantity(
+                    float(vs[0]), unit) if unit is not None else float(vs[0])
+            return res
 
         def str_to_atomic_forces(val_in):
             val = [v.lstrip(' |').split() for v in val_in.strip().split('\n')]
@@ -526,6 +526,7 @@ class FHIAimsOutParser(UnstructuredTextFileParser):
             for v in val[1:]:
                 if len(keys) == len(v) and v[0].isdecimal():
                     data.append(v)
+            data = np.array(data, dtype=float)
             data = np.transpose(data)
             res = {keys[i]: data[i] for i in range(len(data))}
             return res
@@ -537,50 +538,63 @@ class FHIAimsOutParser(UnstructuredTextFileParser):
                 if len(v) == 2:
                     data[v[0].strip(' |')] = pint.Quantity(float(v[1].split()[0]), 'eV')
                 if 'Fit accuracy for G' in v[0]:
-                    data['Fit accuracy for G(w)'] = v[0].split()[-1]
+                    data['Fit accuracy for G(w)'] = float(v[0].split()[-1])
             return data
 
         scf_quantities = Quantity(
             'self_consistency',
             r'Begin self\-consistency iteration #\s*\d+([\s\S]+?Total energy evaluation[s:\d\. ]+)',
-            repeats=True, sub_parser=UnstructuredTextFileParser(quantities=[
+            repeats=True, sub_parser=TextParser(quantities=[
                 Quantity(
-                    'date_time', r'\n *Date\s*:(\s*\d+), Time\s*:(\s*[\d\.]+)\s*', repeats=False),
-                # section_eigenvalues is written on scc but for exciting it belongs to scf
+                    'date_time', r'\n *Date\s*:(\s*\d+), Time\s*:(\s*[\d\.]+)\s*',
+                    repeats=False, convert=False),
+                # TODO add section_eigenvalues to scf_iteration
                 Quantity(
                     'eigenvalues',
                     r'(?:Spin-(?:up|down) eigenvalues:)*'
                     r'(K-point:\s*\d+ at\s* [\d\.\-\+ ]+\(in units of recip\. lattice\))*'
                     r'(\s*State\s*Occupation\s*Eigenvalue \[Ha\]\s*Eigenvalue \[eV\]\s*[\d\.\s\-Ee]+)',
-                    repeats=True, str_operation=str_to_eigenvalues),
+                    repeats=True, str_operation=str_to_eigenvalues, convert=False),
                 Quantity(
                     'energy_components',
-                    r'\n *Total energy components:([\s\S]+?)(\| Electronic free energy per atom[eV:\d\. ]+)',
-                    repeats=False, str_operation=str_to_energy_components),
+                    r'\n *Total energy components:([\s\S]+?)(\| Electronic free energy per atom\s*:\s*[Ee\d\.\-]+ eV)',
+                    repeats=False, str_operation=str_to_energy_components, convert=False),
                 # TODO include scf forces, stress, pressure in metainfo
                 # Quantity(
-                #         'atomic_forces', r'\n *Total forces\([\s\d]+\)\s*:([\s\d\.\-\+Ee]+)\n', repeats=True),
+                #         'forces', r'\n *Total forces\([\s\d]+\)\s*:([\s\d\.\-\+Ee]+)\n', repeats=True),
                 # Quantity(
                 #     'stress_tensor', r'\n *Sum of all contributions\s*:\s*([\d\.\-\+Ee ]+\n)', repeats=False),
                 # Quantity(
                 #     'pressure', r' *\|\s*Pressure:\s*([\d\.\-\+Ee ]+)', repeats=False),
                 Quantity(
                     'scf_convergence',
-                    r'\n *Self-consistency convergence accuracy:([\s\S]+?)(\| Change of total energy\s*:\s*[\d\.\-\+Ee]+)',
-                    repeats=False, str_operation=str_to_scf_convergence),
+                    r'\n *Self-consistency convergence accuracy:([\s\S]+?)(\| Change of total energy\s*:\s*[\d\.\-\+Ee V]+)',
+                    repeats=False, str_operation=str_to_scf_convergence, convert=False),
                 Quantity(
                     'humo', r'Highest occupied state \(VBM\) at\s*([\d\.\-\+Ee ]+) (?P<__unit>\w+)',
-                    repeats=False),
+                    repeats=False, dtype=float),
                 Quantity(
                     'lumo', r'Lowest unoccupied state \(CBM\) at\s*([\d\.\-\+Ee ]+) (?P<__unit>\w+)',
-                    repeats=False),
+                    repeats=False, dtype=float),
                 Quantity(
                     'fermi_level', r'\n *\| Chemical potential \(Fermi level\) in (?P<__unit>\w+)\s*:([\d\.\-\+Ee ]+)',
-                    repeats=False)]))
+                    repeats=False, dtype=float)]))
+
+        def str_to_scf_convergence2(val_in):
+            energy = pint.Quantity(float(val_in.split('|')[3]), 'eV')
+            return {'Change of total energy': energy}
+
+        # different format for scf loop
+        scf_quantities2 = Quantity(
+            'self_consistency',
+            r'\n *SCF\s*\d+\s*:([ \|\-\+Ee\d\.s]+)', repeats=True,
+            sub_parser=TextParser(quantities=[Quantity(
+                'scf_convergence', r'([\s\S]+)', str_operation=str_to_scf_convergence2,
+                repeats=False, convert=False)]))
 
         scf_gw_quantities = Quantity(
             'gw_self_consistency', r'GW Total Energy Calculation([\s\S]+?)\-{5}',
-            repeats=True, str_operation=str_to_gw_scf)
+            repeats=True, str_operation=str_to_gw_scf, convert=False)
 
         def str_to_hirshfeld(val_in):
             val = [v.strip() for v in val_in.strip().split('\n')]
@@ -589,94 +603,109 @@ class FHIAimsOutParser(UnstructuredTextFileParser):
                 if v.startswith('|'):
                     v = v.strip(' |').split(':')
                     if v[0][0].isalpha():
-                        key = v[0]
+                        key = v[0].strip()
                         data[key] = []
-                    data[key].extend(v[-1].split())
+                    data[key].extend([float(vi) for vi in v[-1].split()])
             return data
 
         calculation_quantities = [
+            scf_quantities,
+            scf_quantities2,
+            scf_gw_quantities,
             Quantity(
-                'date_time', r'\n *Date\s*:(\s*\d+), Time\s*:(\s*[\d\.]+)\s*', repeats=False),
+                'date_time', r'\n *Date\s*:(\s*\d+), Time\s*:(\s*[\d\.]+)\s*', repeats=False,
+                convert=False),
             Quantity(
                 'labels_positions',
-                r'\n *(atom\s*[\s\S]+?)\n\-{5}', str_operation=str_to_labels_positions, repeats=False),
+                r'\n *(atom\s*[\s\S]+?)\n\-{5}', str_operation=str_to_labels_positions,
+                repeats=False, convert=False),
             Quantity(
                 'lattice_vectors',
                 r'\n *lattice_vector([\d\.\- ]+)\n *lattice_vector([\d\.\- ]+)\n *lattice_vector([\d\.\- ]+)',
                 unit='angstrom', repeats=False, shape=(3, 3), dtype=float),
             Quantity(
                 'energy',
-                r'\n *Energy and forces in a compact form:([\s\S]+?Electronic free energy\s*:\s*[\d\.\-\+Ee] eV)',
-                str_operation=str_to_energy_components, repeats=False),
+                r'\n *Energy and forces in a compact form:([\s\S]+?Electronic free energy\s*:\s*[\d\.\-Ee]+ eV)',
+                str_operation=str_to_energy_components, repeats=False, convert=False),
             # in some cases, the energy components are also printed for after a calculation
             # same format as in scf iteration, they are printed also in initialization
             # so we should get last occurence
             Quantity(
                 'energy_components',
-                r'\n *Total energy components:([\s\S]*?)(\| Electronic free energy per atom[eV:\d\. ]+)',
-                repeats=True, str_operation=str_to_energy_components),
+                r'\n *Total energy components:([\s\S]*?)(\| Electronic free energy per atom\s*:\s*[\d\.\-Ee]+ eV)',
+                repeats=True, str_operation=str_to_energy_components, convert=False),
             Quantity(
                 'energy_xc',
                 r'\n *Start decomposition of the XC Energy([\s\S]+?)End decomposition of the XC Energy',
-                str_operation=str_to_energy_components, repeats=False),
+                str_operation=str_to_energy_components, repeats=False, convert=False),
+            Quantity(
+                'eigenvalues',
+                r'(?:Spin-(?:up|down) eigenvalues:)*'
+                r'(K-point:\s*\d+ at\s* [\d\.\-\+ ]+\(in units of recip\. lattice\))*'
+                r'(\s*State\s*Occupation\s*Eigenvalue \[Ha\]\s*Eigenvalue \[eV\]\s*[\d\.\s\-Ee]+)',
+                repeats=True, str_operation=str_to_eigenvalues, convert=False),
             Quantity(
                 'forces', r'\n *Total atomic forces.*?\[eV/Ang\]:\s*([\d\.Ee\-\+\s\|]+)',
-                str_operation=str_to_atomic_forces, repeats=False),
+                str_operation=str_to_atomic_forces, repeats=False, convert=False),
+            # TODO no metainfo for scf forces but old parser put it in atom_forces_free_raw
+            Quantity(
+                'forces_raw', r'\n *Total forces\([\s\d]+\)\s*:([\s\d\.\-\+Ee]+)\n', repeats=True,
+                dtype=float),
             Quantity(
                 'time_force_evaluation',
-                r'\n *\| Time for this force evaluation\s*:\s*([\d\.]+) s\s*([\d\.]+) s', repeats=False),
+                r'\n *\| Time for this force evaluation\s*:\s*([\d\.]+) s\s*([\d\.]+) s',
+                repeats=False, dtype=float),
             Quantity(
                 'total_dos_files', r'Calculating total density of states([\s\S]+?)\-{5}',
-                str_operation=str_to_dos_files, repeats=False),
+                str_operation=str_to_dos_files, repeats=False, convert=False),
             Quantity(
                 'atom_projected_dos_files', r'Calculating atom\-projected density of states([\s\S]+?)\-{5}',
-                str_operation=str_to_dos_files, repeats=False),
+                str_operation=str_to_dos_files, repeats=False, convert=False),
             Quantity(
                 'species_projected_dos_files', r'Calculating angular momentum projected density of states([\s\S]+?)\-{5}',
-                str_operation=str_to_dos_files, repeats=False),
+                str_operation=str_to_dos_files, repeats=False, convert=False),
             Quantity(
                 'gw_eigenvalues', r'(state\s*occ_num\s*e_gs[\s\S]+?)\s*\| Total time',
-                str_operation=str_to_gw_eigs, repeats=False),
+                str_operation=str_to_gw_eigs, repeats=False, convert=False),
             Quantity(
                 'vdW_TS',
-                r'Evaluating non-empirical van der Waals correction[\s\S]+?\|\s*Converged\.',
-                repeats=False, sub_parser=UnstructuredTextFileParser(quantities=[
+                r'(Evaluating non\-empirical van der Waals correction[\s\S]+?)(?:\|\s*Converged\.|\-{5}\n\n)',
+                repeats=False, sub_parser=TextParser(quantities=[
                     Quantity(
-                        'kind', r'Evaluating non-empirical van der Waals correction \(([\w/]+)\)',
-                        repeats=False),
+                        'kind', r'Evaluating non\-empirical van der Waals correction \(([\w /]+)\)',
+                        repeats=False, convert=False, flatten=False),
                     Quantity(
-                        'atom_hirshfeld', r'\| Atom\s*\d+:[\s\S]+?\-{5}',
-                        str_operation=str_to_hirshfeld, repeats=True)])),
-            Quantity('converged', r'Self\-consistency cycle (converged)\.', repeats=False),
-            scf_quantities,
-            scf_gw_quantities
+                        'atom_hirshfeld', r'\| Atom\s*\d+:([\s\S]+?)\-{5}',
+                        str_operation=str_to_hirshfeld, repeats=True, convert=False)])),
+            Quantity(
+                'converged', r'Self\-consistency cycle (converged)\.', repeats=False, dtype=str),
         ]
 
         self._quantities.append(
             Quantity(
                 'full_scf',
                 r'Begin self-consistency loop: Initialization'
-                r'([\s\S]+?(?:Time for this force evaluation\s*:\s*[s \d\.]+|Final output of selected total energy values))',
-                repeats=True, sub_parser=UnstructuredTextFileParser(quantities=calculation_quantities))
+                r'([\s\S]+?(?:Time for this force evaluation\s*:\s*[s \d\.]+|Final output of selected total energy values|No geometry change|Leaving FHI\-aims))',
+                repeats=True, sub_parser=TextParser(quantities=calculation_quantities))
         )
 
         self._quantities.append(
             Quantity(
                 'geometry_optimization',
                 r'\n *Geometry optimization: Attempting to predict improved coordinates\.'
-                r'([\s\S]+?(?:Time for this force evaluation\s*:\s*[s \d\.]+|Final output of selected total energy values))',
-                repeats=True, sub_parser=UnstructuredTextFileParser(quantities=calculation_quantities))
+                r'([\s\S]+?(?:Time for this force evaluation\s*:\s*[s \d\.]+|Final output of selected total energy values|Leaving FHI\-aims))',
+                repeats=True, sub_parser=TextParser(quantities=calculation_quantities))
         )
 
         self._quantities.append(
             Quantity(
                 'molecular_dynamics',
                 r'\n *Molecular dynamics: Attempting to update all nuclear coordinates\.'
-                r'([\s\S]+?(?:Time for this force evaluation\s*:\s*[s \d\.]+|Final output of selected total energy values))',
-                repeats=True, sub_parser=UnstructuredTextFileParser(quantities=calculation_quantities))
+                r'([\s\S]+?(?:Time for this force evaluation\s*:\s*[s \d\.]+|Final output of selected total energy values|Leaving FHI\-aims))',
+                repeats=True, sub_parser=TextParser(quantities=calculation_quantities))
         )
 
-        # TODO add SOC perturbed eigs
+        # TODO add SOC perturbed eigs, dielectric function
 
     def get_number_of_spin_channels(self):
         array_size = self.get('array_size_parameters')
@@ -702,8 +731,8 @@ class FHIAimsParser(FairdiParser):
 
         self.out_parser = FHIAimsOutParser()
         self.control_parser = FHIAimsControlParser()
-        self.dos_parser = DataTextFileParser()
-        self.bandstructure_parser = DataTextFileParser()
+        self.dos_parser = DataTextParser()
+        self.bandstructure_parser = DataTextParser()
 
         self._xc_map = {
             'Perdew-Wang parametrisation of Ceperley-Alder LDA': [
@@ -744,12 +773,12 @@ class FHIAimsParser(FairdiParser):
             'HSE-functional': [{'name': 'HYB_GGA_XC_HSE06'}],
             'hybrid-PBE0 functionals': [
                 {'name': 'GGA_C_PBE'}, {
-                    'name': 'GGA_X_PBE', 'weight': lambda x: 1.0 - x},
-                {'name': 'HF_X', 'weight': lambda x: x}],
+                    'name': 'GGA_X_PBE', 'weight': lambda x: 0.75 if x is None else 1.0 - x},
+                {'name': 'HF_X', 'weight': lambda x: 0.25 if x is None else x}],
             'hybrid-PBEsol0 functionals': [
                 {'name': 'GGA_C_PBE_SOL'}, {
-                    'name': 'GGA_X_PBE_SOL', 'weight': lambda x: 1.0 - x},
-                {'name': 'HF_X', 'weight': lambda x: x}],
+                    'name': 'GGA_X_PBE_SOL', 'weight': lambda x: 0.75 if x is None else 1.0 - x},
+                {'name': 'HF_X', 'weight': lambda x: 0.25 if x is None else x}],
             'Hybrid M06 gradient-corrected functionals': [{'name': 'HYB_MGGA_XC_M06'}],
             'Hybrid M06-2X gradient-corrected functionals': [
                 {'name': 'HYB_MGGA_XC_M06_2X'}],
@@ -795,11 +824,20 @@ class FHIAimsParser(FairdiParser):
             'GW correlation Energy': 'x_fhi_aims_energy_scgw_correlation_energy',
             'RPA correlation Energy': 'x_fhi_aims_scgw_rpa_correlation_energy',
             'Sigle Particle Energy': 'x_fhi_aims_single_particle_energy',
-            'Fit accuracy for G(w)': 'x_fhi_aims_poles_fit_accuracy'
+            'Fit accuracy for G(w)': 'x_fhi_aims_poles_fit_accuracy',
+            # Convergence
+            'Change of total energy': 'energy_change',
+        }
+
+        self._relativity_map = {
+            'Non-relativistic': '',
+            'ZORA': 'scalar_relativistic',
+            'on-site free-atom approximation to ZORA': 'scalar_relativistic_atomic_ZORA'
         }
 
     def get_fhiaims_file(self, default):
-        base, ext = default.split('.')
+        base, *ext = default.split('.')
+        ext = '.'.join(ext)
         base = base.lower()
         files = os.listdir(self.maindir)
         files = [os.path.basename(f) for f in files]
@@ -818,7 +856,7 @@ class FHIAimsParser(FairdiParser):
             bandstructure_files = self.get_fhiaims_file('band.out')
             if not bandstructure_files:
                 return
-            sec_k_band = sec_scc.m_create(section_k_band)
+            sec_k_band = sec_scc.m_create(KBand)
             sec_k_band.band_structure_kind = 'electronic'
             for band_file in bandstructure_files:
                 self.bandstructure_parser.mainfile = band_file
@@ -828,7 +866,7 @@ class FHIAimsParser(FairdiParser):
                 k_points = np.transpose(data[1:4])
                 band_occupations = np.transpose(data[4::2])
                 band_energies = np.transpose(data[5::2])
-                sec_k_band_segment = sec_k_band.m_create(section_k_band_segment)
+                sec_k_band_segment = sec_k_band.m_create(KBandSegment)
                 sec_k_band_segment.band_k_points = k_points
                 # TODO verify spin formatting
                 sec_k_band_segment.band_occupations = [band_occupations]
@@ -893,7 +931,7 @@ class FHIAimsParser(FairdiParser):
                 data = read_dos(dos_file)
                 if data is None:
                     continue
-                sec_dos = sec_scc.m_create(section_dos)
+                sec_dos = sec_scc.m_create(Dos)
                 sec_dos.dos_kind = 'electronic'
                 energies = pint.Quantity(data[0], 'eV')
                 sec_dos.number_of_dos_values = len(energies)
@@ -914,9 +952,9 @@ class FHIAimsParser(FairdiParser):
                     if dos is None:
                         continue
                     if projection_type == 'atom':
-                        sec_dos = sec_scc.m_create(section_atom_projected_dos)
+                        sec_dos = sec_scc.m_create(AtomProjectedDos)
                     else:
-                        sec_dos = sec_scc.m_create(section_species_projected_dos)
+                        sec_dos = sec_scc.m_create(SpeciesProjectedDos)
 
                     n_l = len(dos[1:]) - 1
                     values = {
@@ -930,12 +968,15 @@ class FHIAimsParser(FairdiParser):
                     if projection_type == 'species':
                         sec_dos.species_projected_dos_species_label = species
 
-        def get_eigenvalues(iteration):
-            data = iteration.get('eigenvalues', None)
+        def get_eigenvalues(section):
+            data = section.get('eigenvalues', None)
             if data is None:
                 return
 
             n_spin = self.out_parser.get_number_of_spin_channels()
+            # for calculation, it reads eigs also for scf iteration, get the last one
+            # corresponding to the calculation
+            data = data[-n_spin:]
 
             kpts = [data[i][0] for i in range(len(data)) if i % n_spin == 0]
             kpts = None if kpts[0] is None else kpts
@@ -947,12 +988,21 @@ class FHIAimsParser(FairdiParser):
                 eigs.append([
                     data[i][2] for i in range(len(data)) if i % n_spin == ns])
 
+            # rounding error in hartree and eV print outs
             return kpts, pint.Quantity(eigs, 'hartree'), occs
 
         def parse_scf(iteration):
             sec_scc = sec_run.section_single_configuration_calculation[-1]
-            sec_scf = sec_scc.m_create(section_scf_iteration)
+            sec_scf = sec_scc.m_create(ScfIteration)
+
+            date_time = iteration.get('date_time')
+            if date_time is not None:
+                sec_scf.x_fhi_aims_scf_date_start = date_time[0]
+                sec_scf.x_fhi_aims_scf_time_start = date_time[1]
+
             energies = iteration.get('energy_components', {})
+            convergence = iteration.get('scf_convergence', {})
+            energies.update(convergence)
             for key, val in energies.items():
                 metainfo_key = self._energy_map.get(key, None)
                 if metainfo_key is not None:
@@ -970,10 +1020,10 @@ class FHIAimsParser(FairdiParser):
                     val = [val.magnitude] * self.out_parser.get_number_of_spin_channels()
                     setattr(sec_scf, quantity, pint.Quantity(val, unit))
 
-            # eigenvalues are properties of
+            # eigenvalues scf iteration
             eigenvalues = get_eigenvalues(iteration)
-            if eigenvalues is not None:
-                sec_eigenvalues = sec_scc.m_create(section_eigenvalues)
+            if eigenvalues is not None and False:
+                sec_eigenvalues = sec_scf.m_create(Eigenvalues)
                 if eigenvalues[0] is not None:
                     sec_eigenvalues.eigenvalues_kpoints = eigenvalues[0]
                 sec_eigenvalues.eigenvalues_values = eigenvalues[1]
@@ -981,10 +1031,16 @@ class FHIAimsParser(FairdiParser):
 
         def parse_gw(section):
             sec_scc = sec_run.section_single_configuration_calculation[-1]
+            if not sec_scc.section_scf_iteration:
+                return
+
             sec_scf_iteration = sec_scc.section_scf_iteration[-1]
             gw_scf_energies = section.get('gw_self_consistency', [])
+            if not gw_scf_energies:
+                return
+
             for energies in gw_scf_energies:
-                sec_scf_iteration = sec_scc.m_create(section_scf_iteration)
+                sec_scf_iteration = sec_scc.m_create(ScfIteration)
                 for key, val in energies.items():
                     metainfo_key = self._energy_map.get(key, None)
                     if metainfo_key is not None:
@@ -1005,7 +1061,7 @@ class FHIAimsParser(FairdiParser):
             xsec_eig_list.x_fhi_aims_eigenvalue_correlation_perturbativeGW = gw_eigenvalues['e_c^nloc']
             xsec_eig_list.x_fhi_aims_eigenvalue_quasiParticle_energy = gw_eigenvalues['e_qp']
 
-            sec_calc_to_calc_refs = sec_run.m_create(section_calculation_to_calculation_refs)
+            sec_calc_to_calc_refs = sec_run.m_create(CalculationToCalculationRefs)
             sec_calc_to_calc_refs.calculation_to_calculation_ref = sec_scc
             sec_calc_to_calc_refs.calculation_to_calculation_kind = 'pertubative GW'
 
@@ -1015,25 +1071,29 @@ class FHIAimsParser(FairdiParser):
             # TODO why is x_fhi_aims_section_vdW_TS under x_fhi_aims_section_controlInOut_atom_species
             # we would then have to split the vdW parameters by species
             atoms = section.get('vdW_TS', {}).get('atom_hirshfeld', [])
+            if not atoms:
+                return
             # get species from section_atom_type
             sec_atom_type = sec_run.section_topology[-1].section_atom_type
             if not sec_atom_type:
                 return
-            sec_atom_type = sec_atom_type[-1]
-            sec_atom_species = sec_atom_type.x_fhi_aims_section_controlInOut_atom_species
+            # sec_atom_type = sec_atom_type[-1]
+            # sec_atom_species = sec_atom_type.x_fhi_aims_section_controlInOut_atom_species
             property_map = {
                 'atom': 'x_fhi_aims_atom_type_vdW',
                 'Free atom volume': 'x_fhi_aims_free_atom_volume',
                 'Hirshfeld charge': 'x_fhi_aims_hirschfeld_charge',
                 'Hirshfeld volume': 'x_fhi_aims_hirschfeld_volume'}
-            for sec in sec_atom_species:
+            for sec in sec_atom_type:
                 for atom in atoms:
-                    if sec.x_fhi_aims_controlInOut_species_name == atom['atom']:
-                        sec_vdW_ts = sec.m_create(x_fhi_aims_section_vdW_TS)
+                    if sec.atom_type_name == atom['atom']:
+                        sec_vdW_ts = sec.x_fhi_aims_section_controlInOut_atom_species[-1].m_create(
+                            x_fhi_aims_section_vdW_TS)
                         for key, val in atom.items():
                             metainfo_name = property_map.get(key, None)
                             if metainfo_name is None:
                                 continue
+                            val = val[0] if len(val) == 1 else val
                             setattr(sec_vdW_ts, metainfo_name, val)
                             # TODO add the remanining properties
             self._electronic_structure_method = 'DFT'
@@ -1042,16 +1102,17 @@ class FHIAimsParser(FairdiParser):
         def parse_section(section):
             lattice_vectors = section.get(
                 'lattice_vectors', self.out_parser.get('lattice_vectors'))
+            if lattice_vectors is None:
+                lattice_vectors = pint.Quantity(np.eye(3), 'meter')
             labels_positions = section.get(
                 'labels_positions', self.out_parser.get('labels_positions'))
             pbc = [lattice_vectors is not None] * 3
             if labels_positions is None:
                 return
 
-            sec_system = sec_run.m_create(section_system)
-            if lattice_vectors is not None:
-                sec_system.lattice_vectors = lattice_vectors
-                sec_system.simulation_cell = lattice_vectors
+            sec_system = sec_run.m_create(System)
+            sec_system.lattice_vectors = lattice_vectors
+            sec_system.simulation_cell = lattice_vectors
 
             sec_system.configuration_periodic_dimensions = pbc
             sec_system.atom_labels = labels_positions[0]
@@ -1059,46 +1120,63 @@ class FHIAimsParser(FairdiParser):
             if len(labels_positions) > 2:
                 sec_system.atom_velocities = pint.Quantity(labels_positions[2], 'angstrom/ps')
 
-            sec_scc = sec_run.m_create(section_single_configuration_calculation)
+            sec_scc = sec_run.m_create(SingleConfigurationCalculation)
             sec_scc.single_configuration_calculation_to_system_ref = sec_system
-            sec_scc.single_configuration_to_calculation_method_ref = sec_run.section_method[-1]
+
             energy = section.get('energy', {})
             energy.update(section.get('energy_components', [{}])[-1])
             energy.update(section.get('energy_xc', {}))
             for key, val in energy.items():
                 metainfo_key = self._energy_map.get(key, None)
                 if key == 'vdW energy correction':
-                    sec_energy_vdw = sec_scc.m_create(section_energy_van_der_Waals)
+                    sec_energy_vdw = sec_scc.m_create(EnergyVanDerWaals)
                     kind = section.get('vdW_TS', {}).get('kind', 'Tkatchenko/Scheffler 2009')
                     sec_energy_vdw.energy_van_der_Waals_kind = kind
                     sec_energy_vdw.energy_van_der_Waals = val
                 elif metainfo_key is not None:
                     setattr(sec_scc, metainfo_key, val)
 
+            # eigenvalues
+            eigenvalues = get_eigenvalues(section)
+            if eigenvalues is not None:
+                sec_eigenvalues = sec_scc.m_create(Eigenvalues)
+                if eigenvalues[0] is not None:
+                    sec_eigenvalues.eigenvalues_kpoints = eigenvalues[0]
+                sec_eigenvalues.eigenvalues_values = eigenvalues[1]
+                sec_eigenvalues.eigenvalues_occupation = eigenvalues[2]
+
             # TODO add force contributions and stress
             forces = section.get('forces', None)
             if forces is not None:
                 sec_scc.atom_forces_free = forces
+
+            forces_raw = section.get('forces_raw', None)
+            if forces_raw is not None:
+                # we are actually reading the scf forces so we take only the last iteration
+                sec_scc.atom_forces_free_raw = pint.Quantity(
+                    forces_raw[-len(forces):], 'eV/angstrom')
+
             time_calculation = section.get('time_force_evaluation')
             if time_calculation is not None:
                 sec_scc.time_calculation = time_calculation
 
-            scf_iterations = section.get('self_consistency')
-            if scf_iterations is None:
-                return
+            scf_iterations = section.get('self_consistency', [])
             sec_scc.number_of_scf_iterations = len(scf_iterations)
             for scf_iteration in scf_iterations:
                 parse_scf(scf_iteration)
 
             sec_scc.single_configuration_calculation_converged = section.get(
                 'converged') == 'converged'
+            # how about geometry optimization convergence
 
             # density of states
             parse_dos(section)
 
             # fermi level
-            fermi_energy = scf_iterations[-1].get('fermi_level')
-            fermi_energy = fermi_energy.to('joule').magnitude if fermi_energy else 0.0
+            fermi_energy = 0.0
+            if scf_iterations:
+                fermi_energy = scf_iterations[-1].get('fermi_level')
+                fermi_energy = fermi_energy.to('joule').magnitude if fermi_energy else 0.0
             sec_scc.energy_reference_fermi = [
                 fermi_energy] * self.out_parser.get_number_of_spin_channels()
 
@@ -1107,6 +1185,16 @@ class FHIAimsParser(FairdiParser):
 
             # vdW parameters
             parse_vdW(section)
+
+            if self._electronic_structure_method in ['DFT', 'G0W0', 'scGW']:
+                # TODO i do not understand the idea for multiple method sections
+                sec_method = sec_run.m_create(Method)
+                sec_scc.single_configuration_to_calculation_method_ref = sec_run.section_method[-1]
+                sec_method.electronic_structure_method = self._electronic_structure_method
+                kind = 'core_settings' if self._electronic_structure_method == 'DFT' else 'starting_point'
+                sec_method_to_method_refs = sec_method.m_create(MethodToMethodRefs)
+                sec_method_to_method_refs.method_to_method_kind = kind
+                sec_method_to_method_refs.method_to_method_ref = sec_run.section_method[0]
 
         for section in self.out_parser.get('full_scf', []):
             parse_section(section)
@@ -1124,25 +1212,17 @@ class FHIAimsParser(FairdiParser):
         parse_bandstructure()
 
         # sampling method
-        sec_sampling_method = sec_run.m_create(section_sampling_method)
+        sec_sampling_method = sec_run.m_create(SamplingMethod)
         sec_sampling_method.sampling_method = self.out_parser.get_calculation_type()
 
         # frame_sequence
-        sec_frame_sequence = sec_run.m_create(section_frame_sequence)
+        sec_frame_sequence = sec_run.m_create(FrameSequence)
         sec_frame_sequence.frame_sequence_to_sampling_ref = sec_sampling_method
         sec_frame_sequence.frame_sequence_local_frames_ref = sec_run.section_single_configuration_calculation
 
-        if self._electronic_structure_method in ['DFT', 'G0W0', 'scGW']:
-            sec_method = sec_run.section_method[-1]
-            sec_method.electronic_structure_method = self._electronic_structure_method
-            kind = 'core_settings' if self._electronic_structure_method == 'DFT' else 'starting_point'
-            sec_method_to_method_refs = sec_method.m_create(section_method_to_method_refs)
-            sec_method_to_method_refs.method_to_method_kind = kind
-            sec_method_to_method_refs.method_to_method_ref = sec_run.section_method[-1]
-
     def parse_method(self):
         sec_run = self.archive.section_run[-1]
-        sec_method = sec_run.m_create(section_method)
+        sec_method = sec_run.m_create(Method)
 
         # control parameters from out file
         self.control_parser.mainfile = self.filepath
@@ -1166,13 +1246,17 @@ class FHIAimsParser(FairdiParser):
                 elif key == 'division':
                     pass
                 elif key in basis_funcs:
-                    sec_basis_func = sec_basis_set.m_create(
-                        x_fhi_aims_section_controlIn_basis_func)
-                    sec_basis_func.x_fhi_aims_controlIn_basis_func_type = key
-                    sec_basis_func.x_fhi_aims_controlIn_basis_func_n = int(val[0][0])
-                    sec_basis_func.x_fhi_aims_controlIn_basis_func_l = str(val[0][1])
-                    if len(val[0]) == 4 and isinstance(val[0][3], float):
-                        sec_basis_func.x_fhi_aims_controlIn_basis_func_radius = val[0][3]
+                    for i in range(len(val)):
+                        sec_basis_func = sec_basis_set.m_create(
+                            x_fhi_aims_section_controlIn_basis_func)
+                        sec_basis_func.x_fhi_aims_controlIn_basis_func_type = key
+                        sec_basis_func.x_fhi_aims_controlIn_basis_func_n = int(val[i][0])
+                        sec_basis_func.x_fhi_aims_controlIn_basis_func_l = str(val[i][1])
+                        if len(val[i]) == 3 and hasattr(val[i][2], 'real'):
+                            sec_basis_func.x_fhi_aims_controlIn_basis_func_radius = val[i][2]
+                elif key in ['cut_pot', 'radial_base']:
+                    setattr(sec_basis_set, 'x_fhi_aims_controlIn_%s' % key, np.array(
+                        val[0], dtype=float))
                 else:
                     setattr(sec_basis_set, 'x_fhi_aims_controlIn_%s' % key, val[0])
 
@@ -1183,7 +1267,8 @@ class FHIAimsParser(FairdiParser):
                 sec_basis_set.x_fhi_aims_controlIn_division = division
 
         for key, val in self.control_parser.items():
-            if val is None or (isinstance(val, str) and val == 'none'):
+            if val is None:
+                # TODO consider also none entries? or (isinstance(val, str) and val == 'none'):
                 continue
             if key.startswith('x_fhi_aims_controlIn'):
                 setattr(sec_method, key, val)
@@ -1213,6 +1298,27 @@ class FHIAimsParser(FairdiParser):
                     # is it necessary to check if xc is a hybrid type aside from hybrid_coeff
                     sec_method.x_fhi_aims_controlIn_hybrid_xc_coeff = hybrid_coeff
 
+        inout_exclude = [
+            'x_fhi_aims_controlInOut_relativistic', 'x_fhi_aims_controlInOut_xc',
+            'x_fhi_aims_controlInOut_hse_unit', 'x_fhi_aims_controlInOut_hybrid_xc_coeff']
+        # add controlInOut parameters
+        for key, val in self.out_parser.items():
+            if key.startswith('x_fhi_aims_controlInOut') and val is not None:
+                if key not in inout_exclude:
+                    setattr(sec_method, key, val)
+
+        sec_method.x_fhi_aims_controlInOut_number_of_spin_channels = self.out_parser.get_number_of_spin_channels()
+
+        # convert relativistic
+        relativistic = self.out_parser.get('x_fhi_aims_controlInOut_relativistic')
+        if relativistic is not None:
+            if not isinstance(relativistic, str):
+                relativistic = ' '.join(relativistic)
+            sec_method.x_fhi_aims_controlInOut_relativistic = relativistic
+            relativistic = self._relativity_map.get(relativistic, None)
+            if relativistic is not None:
+                sec_method.relativity_method = relativistic
+
         # atom species
         self.parse_topology()
 
@@ -1230,7 +1336,6 @@ class FHIAimsParser(FairdiParser):
                 hse_omega = pint.Quantity(xc_inout[-1], unit) if unit else xc_inout[-1]
                 sec_method.x_fhi_aims_controlInOut_hse_omega = hse_omega
 
-            hybrid_coeff = None
             hybrid_coeff = self.out_parser.get('x_fhi_aims_controlInOut_hybrid_xc_coeff')
             if hybrid_coeff is not None:
                 sec_method.x_fhi_aims_controlIn_hybrid_xc_coeff = hybrid_coeff
@@ -1238,25 +1343,26 @@ class FHIAimsParser(FairdiParser):
             # convert parsed xc to meta info
             xc_meta_list = self._xc_map.get(xc, [])
             for xc_meta in xc_meta_list:
-                sec_xc_func = sec_method.m_create(section_XC_functionals)
+                sec_xc_func = sec_method.m_create(XCFunctionals)
                 sec_xc_func.XC_functional_name = xc_meta.get('name')
+                weight = xc_meta.get('weight', None)
+                if weight is not None:
+                    sec_xc_func.XC_functional_weight = weight(hybrid_coeff)
                 xc_parameters = dict()
                 if hse_omega is not None:
-                    xc_parameters.setdefault('$\\omega$ in m^-1', hse_omega)
+                    hybrid_coeff = 0.25 if hybrid_coeff is None else hybrid_coeff
+                    xc_parameters.setdefault('$\\omega$ in m^-1', hse_omega.to('1/m').magnitude)
                 if hybrid_coeff is not None:
                     xc_parameters.setdefault('hybrid coefficient $\\alpha$', hybrid_coeff)
-                    weight = xc_meta.get('weight', None)
-                    if weight is not None:
-                        sec_xc_func.XC_functional_weight = weight(hybrid_coeff)
                 if xc_parameters:
                     sec_xc_func.XC_functional_parameters = xc_parameters
 
     def parse_topology(self):
         sec_run = self.archive.section_run[-1]
-        sec_topology = sec_run.m_create(section_topology)
+        sec_topology = sec_run.m_create(Topology)
 
         def parse_atom_type(species):
-            sec_atom_type = sec_topology.m_create(section_atom_type)
+            sec_atom_type = sec_topology.m_create(AtomType)
             sec_atom_species = sec_atom_type.m_create(
                 x_fhi_aims_section_controlInOut_atom_species)
             for key, val in species.items():
@@ -1269,8 +1375,8 @@ class FHIAimsParser(FairdiParser):
                     sec_atom_type.atom_type_mass = mass
                     sec_atom_species.x_fhi_aims_controlInOut_species_mass = mass
                 elif key == 'species':
-                    sec_atom_type.atom_type_name = val[0]
-                    sec_atom_species.x_fhi_aims_controlInOut_species_name = val[0]
+                    sec_atom_type.atom_type_name = val
+                    sec_atom_species.x_fhi_aims_controlInOut_species_name = val
                 elif 'request to include pure gaussian fns' in key:
                     sec_atom_species.x_fhi_aims_controlInOut_pure_gaussian = val[0]
                 elif 'cutoff potl' in key:
@@ -1279,23 +1385,23 @@ class FHIAimsParser(FairdiParser):
                     sec_atom_species.x_fhi_aims_controlInOut_species_cut_pot_width = pint.Quantity(
                         val[0][1], 'angstrom')
                     sec_atom_species.x_fhi_aims_controlInOut_species_cut_pot_scale = val[0][2]
-                elif 'free-atom valence' in key:
+                elif 'free-atom' in key or 'free-ion' in key:
                     for i in range(len(val)):
                         sec_basis_func = sec_atom_species.m_create(
                             x_fhi_aims_section_controlInOut_basis_func)
-                        sec_basis_func.x_fhi_aims_controlInOut_basis_func_type = 'free-atom valence'
+                        sec_basis_func.x_fhi_aims_controlInOut_basis_func_type = ' '.join(key.split()[:-1])
                         sec_basis_func.x_fhi_aims_controlInOut_basis_func_n = val[i][0]
                         sec_basis_func.x_fhi_aims_controlInOut_basis_func_l = val[i][1]
                         sec_basis_func.x_fhi_aims_controlInOut_basis_func_occ = val[i][2]
-                elif 'hydrogenic basis' in key:
+                elif 'hydrogenic' in key:
                     for i in range(len(val)):
                         sec_basis_func = sec_atom_species.m_create(
                             x_fhi_aims_section_controlInOut_basis_func)
-                        sec_basis_func.x_fhi_aims_controlInOut_basis_func_type = 'hydrogenic basis'
+                        sec_basis_func.x_fhi_aims_controlInOut_basis_func_type = ' '.join(key.split()[:-1])
                         sec_basis_func.x_fhi_aims_controlInOut_basis_func_n = val[i][0]
                         sec_basis_func.x_fhi_aims_controlInOut_basis_func_l = val[i][1]
                         sec_basis_func.x_fhi_aims_controlInOut_basis_func_eff_charge = val[i][2]
-                elif 'ionic basis' in key:
+                elif 'ionic' in key:
                     for i in range(len(val)):
                         sec_basis_func = sec_atom_species.m_create(
                             x_fhi_aims_section_controlInOut_basis_func)
@@ -1344,7 +1450,7 @@ class FHIAimsParser(FairdiParser):
         self._electronic_structure_method = 'DFT'
         self._init_parsers()
 
-        sec_run = self.archive.m_create(section_run)
+        sec_run = self.archive.m_create(Run)
         sec_run.program_name = 'FHI-aims'
         sec_run.program_basis_set_type = 'numeric AOs'
         section_run_keys = [
@@ -1362,8 +1468,8 @@ class FHIAimsParser(FairdiParser):
         sec_parallel_tasks = sec_run.m_create(x_fhi_aims_section_parallel_tasks)
         # why embed section not just let task be an array
 
-        task_nrs = self.out_parser.get('x_fhi_aims_parallel_task_nr')
-        task_hosts = self.out_parser.get('x_fhi_aims_parallel_task_host')
+        task_nrs = self.out_parser.get('x_fhi_aims_parallel_task_nr', [])
+        task_hosts = self.out_parser.get('x_fhi_aims_parallel_task_host', [])
         for i in range(len(task_nrs)):
             sec_parallel_task_assignement = sec_parallel_tasks.m_create(
                 x_fhi_aims_section_parallel_task_assignement)
