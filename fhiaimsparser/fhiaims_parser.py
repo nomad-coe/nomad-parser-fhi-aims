@@ -1278,6 +1278,8 @@ class FHIAimsParser(FairdiParser):
                 if len(val) > 2:
                     sec_method.x_fhi_aims_controlIn_occupation_order = int(val[2])
             elif key == 'relativistic':
+                if isinstance(val, str):
+                    val = [val]
                 sec_method.x_fhi_aims_controlIn_relativistic = ' '.join(val[:2])
                 if len(val) > 2:
                     sec_method.x_fhi_aims_controlIn_relativistic_threshold = val[2]
