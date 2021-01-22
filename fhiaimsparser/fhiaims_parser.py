@@ -6,7 +6,7 @@ import logging
 from .metainfo import m_env
 from nomad.parsing.parser import FairdiParser
 
-from nomad.parsing.file_parser import TextParser, Quantity, ParsePattern, DataTextParser
+from nomad.parsing.file_parser import TextParser, Quantity, DataTextParser
 
 from nomad.datamodel.metainfo.common_dft import Run, Method, System, XCFunctionals,\
     ScfIteration, SingleConfigurationCalculation, SamplingMethod, FrameSequence, Eigenvalues,\
@@ -160,8 +160,8 @@ class FHIAimsControlParser(TextParser):
 
         self._quantities.append(
             Quantity(
-                'species', r'\n *(species\s*[A-Z][a-z]?[\s\S]+)'
-                r'(gaussian|hydro|valence|ion_occ|ionic|confined)( *\d+ *\w *[\d\.]*)\n',
+                'species', r'\n *(species\s*[A-Z][a-z]?[\s\S]+?)'
+                r'(?:species\s*[A-Z][a-z]?|Completed|\-{10})',
                 str_operation=str_to_species, repeats=False)
         )
 
@@ -174,29 +174,24 @@ class FHIAimsOutParser(TextParser):
         self._quantities = []
         self._quantities.append(
             Quantity(
-                Run.program_version, ParsePattern(
-                    head=r'Invoking FHI\-aims', key=r'(?:Version|FHI-aims version)',
-                    value=r'[\d\.]+', tail='\n'),
+                Run.program_version, r'(?:Version|FHI\-aims version) ([\d\.]+)\s*',
                 repeats=False))
 
         self._quantities.append(
             Quantity(
-                xsection_run.x_fhi_aims_program_compilation_date, ParsePattern(
-                    head='Compiled', key='on', value=r'[\d\/]+', tail=' '),
+                xsection_run.x_fhi_aims_program_compilation_date, r'Compiled on ([\d\/]+)',
                 repeats=False)
         )
 
         self._quantities.append(
             Quantity(
-                xsection_run.x_fhi_aims_program_compilation_time, ParsePattern(
-                    head='Compiled', key='at', value=r'[\d\:]+', tail=' '),
+                xsection_run.x_fhi_aims_program_compilation_time, r'at (\d+\:\d+\:\d+)',
                 repeats=False)
         )
 
         self._quantities.append(
             Quantity(
-                Run.program_compilation_host, ParsePattern(
-                    head='Compiled', key='on host', value=r'[\w\.\-]+', tail=r'\.\n'),
+                Run.program_compilation_host, r'on host ([\w\.\-]+)',
                 repeats=False)
         )
 
@@ -455,7 +450,7 @@ class FHIAimsOutParser(TextParser):
                 'labels_positions',
                 r'Input geometry:\s*\|\s*(?:Unit cell:[\d\.\sEe\-\+\|]+|No unit cell requested\.\n)'
                 r'\s*\|\s*Atomic structure:\s*\|\s*Atom\s*x \[A\]\s*y \[A\]\s*z \[A\]\n'
-                r'([\s\S]*\s*\|\s*\d+:\s*Species\s*[A-Z][a-z]?\s*[\d\. \-]+\n)+',
+                r'([\s\S]+?)\n\n',
                 repeats=False, str_operation=str_to_labels_positions, convert=False)
         )
 
@@ -701,7 +696,7 @@ class FHIAimsOutParser(TextParser):
             Quantity(
                 'molecular_dynamics',
                 r'\n *Molecular dynamics: Attempting to update all nuclear coordinates\.'
-                r'([\s\S]+?(?:Time for this force evaluation\s*:\s*[s \d\.]+|Final output of selected total energy values|Leaving FHI\-aims))',
+                r'([\s\S]+?(?:Time for this force evaluation\s*:\s*[\d\.]+\s*s\s*[\d\.]+\s*s|Final output of selected total energy values|Leaving FHI\-aims))',
                 repeats=True, sub_parser=TextParser(quantities=calculation_quantities))
         )
 
@@ -719,16 +714,8 @@ class FHIAimsOutParser(TextParser):
         return calculation_type
 
 
-class FHIAimsParser(FairdiParser):
+class FHIAimsParserInterface:
     def __init__(self):
-        super().__init__(
-            name='parsers/fhi-aims', code_name='FHI-aims',
-            code_homepage='https://aimsclub.fhi-berlin.mpg.de/',
-            mainfile_contents_re=(
-                r'^(.*\n)*'
-                r'?\s*Invoking FHI-aims \.\.\.'))
-        self._metainfo_env = m_env
-
         self.out_parser = FHIAimsOutParser()
         self.control_parser = FHIAimsControlParser()
         self.dos_parser = DataTextParser()
@@ -1436,12 +1423,16 @@ class FHIAimsParser(FairdiParser):
             for specie in species:
                 parse_atom_type(specie)
 
-    def _init_parsers(self):
+    def init_parser(self):
         self.out_parser.mainfile = self.filepath
         self.out_parser.logger = self.logger
         self.control_parser.logger = self.logger
         self.dos_parser.logger = self.logger
         self.bandstructure_parser.logger = self.logger
+
+    def reuse_parser(self, parser):
+        self.out_parser.quantities = parser.out_parser.quantities
+        self.control_parser.quantities = parser.control_parser.quantities
 
     def parse(self, filepath, archive, logger):
         self.filepath = os.path.abspath(filepath)
@@ -1450,7 +1441,7 @@ class FHIAimsParser(FairdiParser):
         self.logger = logger if logger is not None else logging
 
         self._electronic_structure_method = 'DFT'
-        self._init_parsers()
+        self.init_parser()
 
         sec_run = self.archive.m_create(Run)
         sec_run.program_name = 'FHI-aims'
@@ -1481,3 +1472,25 @@ class FHIAimsParser(FairdiParser):
         self.parse_method()
 
         self.parse_configurations()
+
+
+class FHIAimsParser(FairdiParser):
+    def __init__(self):
+        super().__init__(
+            name='parsers/fhi-aims', code_name='FHI-aims',
+            code_homepage='https://aimsclub.fhi-berlin.mpg.de/',
+            mainfile_contents_re=(
+                r'^(.*\n)*'
+                r'?\s*Invoking FHI-aims \.\.\.'))
+        self._metainfo_env = m_env
+        self.parser = None
+
+    def parse(self, filepath, archive, logger):
+        parser = FHIAimsParserInterface()
+
+        if self.parser is not None:
+            parser.reuse_parser(self.parser)
+        else:
+            self.parser = parser
+
+        parser.parse(filepath, archive, logger)
