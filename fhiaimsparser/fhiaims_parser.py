@@ -174,7 +174,7 @@ class FHIAimsOutParser(TextParser):
         self._quantities = []
         self._quantities.append(
             Quantity(
-                Run.program_version, r'(?:Version|FHI\-aims version) ([\d\.]+)\s*',
+                Run.program_version, r'(?:Version|FHI\-aims version)\s*\:*\s*([\d\.]+)\s*',
                 repeats=False))
 
         self._quantities.append(
@@ -413,7 +413,7 @@ class FHIAimsOutParser(TextParser):
 
         def str_to_labels_positions(val_in):
             val = [v.split() for v in val_in.strip().split('\n')]
-            val = [v for v in val if len(v) >= 4]
+            val = [v for v in val if len(v) >= 4 and v[-2][-1].isdecimal()]
             velocities = [
                 val.pop(i)[1:] for i in range(
                     len(val) - 1, -1, -1) if val[i][0].startswith('velocity')]
@@ -576,7 +576,10 @@ class FHIAimsOutParser(TextParser):
                     repeats=False, dtype=float)]))
 
         def str_to_scf_convergence2(val_in):
-            energy = pint.Quantity(float(val_in.split('|')[3]), 'eV')
+            val = val_in.split('|')
+            if len(val) != 7:
+                return
+            energy = pint.Quantity(float(val[3]), 'eV')
             return {'Change of total energy': energy}
 
         # different format for scf loop
