@@ -413,7 +413,7 @@ class FHIAimsOutParser(TextParser):
 
         def str_to_labels_positions(val_in):
             val = [v.split() for v in val_in.strip().split('\n')]
-            val = [v for v in val if len(v) >= 4 and v[-2][-1].isdecimal()]
+            val = [v for v in val if len(v) >= 4 and v[-3][-1].isdecimal()]
             velocities = [
                 val.pop(i)[1:] for i in range(
                     len(val) - 1, -1, -1) if val[i][0].startswith('velocity')]
