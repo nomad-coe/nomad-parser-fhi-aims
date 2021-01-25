@@ -717,8 +717,15 @@ class FHIAimsOutParser(TextParser):
         return calculation_type
 
 
-class FHIAimsParserInterface:
+class FHIAimsParser(FairdiParser):
     def __init__(self):
+        super().__init__(
+            name='parsers/fhi-aims', code_name='FHI-aims',
+            code_homepage='https://aimsclub.fhi-berlin.mpg.de/',
+            mainfile_contents_re=(
+                r'^(.*\n)*'
+                r'?\s*Invoking FHI-aims \.\.\.'))
+        self._metainfo_env = m_env
         self.out_parser = FHIAimsOutParser()
         self.control_parser = FHIAimsControlParser()
         self.dos_parser = DataTextParser()
@@ -1475,25 +1482,3 @@ class FHIAimsParserInterface:
         self.parse_method()
 
         self.parse_configurations()
-
-
-class FHIAimsParser(FairdiParser):
-    def __init__(self):
-        super().__init__(
-            name='parsers/fhi-aims', code_name='FHI-aims',
-            code_homepage='https://aimsclub.fhi-berlin.mpg.de/',
-            mainfile_contents_re=(
-                r'^(.*\n)*'
-                r'?\s*Invoking FHI-aims \.\.\.'))
-        self._metainfo_env = m_env
-        self.parser = None
-
-    def parse(self, filepath, archive, logger):
-        parser = FHIAimsParserInterface()
-
-        if self.parser is not None:
-            parser.reuse_parser(self.parser)
-        else:
-            self.parser = parser
-
-        parser.parse(filepath, archive, logger)
