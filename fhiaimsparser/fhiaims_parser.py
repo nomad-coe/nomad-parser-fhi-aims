@@ -439,6 +439,9 @@ class FHIAimsOutParser(TextParser):
                 [v[position_index:position_index + 3] for v in val if 'atom' in v or 'Species' in v],
                 dtype=float)
 
+            if len(labels) == 0 or len(positions) == 0:
+                return
+
             if velocities:
                 velocities = np.array(velocities, dtype=float)
                 return [labels, positions, velocities]
