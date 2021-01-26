@@ -240,7 +240,7 @@ class FHIAimsOutParser(TextParser):
         self._quantities.append(
             Quantity(
                 x_fhi_aims_section_parallel_task_assignement.x_fhi_aims_parallel_task_host,
-                r'Task\s*\d+\s*on host\s*([\s\S]+?)reporting', repeats=True)
+                r'Task\s*\d+\s*on host\s*([\s\S]+?)reporting', repeats=True, flatten=False)
         )
 
         self._quantities.append(
@@ -362,7 +362,7 @@ class FHIAimsOutParser(TextParser):
         self._quantities.append(
             Quantity(
                 'species',
-                r'(Reading configuration options for species [\s\S]+?)\n *Finished',
+                r'(Reading configuration options for species [\s\S]+?)(?:\n *Finished|\n *\n)',
                 str_operation=str_to_species_in, repeats=False)
         )
 
@@ -394,7 +394,7 @@ class FHIAimsOutParser(TextParser):
             Quantity(
                 'control_inout',
                 r'\n *Reading file control\.in\.\s*\-*\s*([\s\S]+?)'
-                r'Finished reading input file \'control\.in\'', repeats=False,
+                r'(?:Finished reading input file \'control\.in\'|Input file control\.in ends\.)', repeats=False,
                 sub_parser=TextParser(quantities=[
                     Quantity(
                         'species', r'Reading configuration options for (species[\s\S]+?)grid points\.',
@@ -464,6 +464,9 @@ class FHIAimsOutParser(TextParser):
             eigs = np.array([v.split() for v in val if v[0].isdecimal()], dtype=float)
 
             eigs = np.transpose(eigs)
+            if len(eigs) < 2:
+                return kpt, [], []
+
             eig, occ = eigs[1:3]
             return kpt, eig, occ
 
@@ -475,7 +478,7 @@ class FHIAimsOutParser(TextParser):
                 if len(v) < 2 or not v[1]:
                     continue
                 vi = v[1].split()
-                if not vi[0][-1].isdecimal():
+                if not vi[0][-1].isdecimal() or len(vi) < 2:
                     continue
                 unit = {'Ha': 'hartree', 'eV': 'eV'}.get(vi[1], None)
                 res[v[0].strip()] = pint.Quantity(
@@ -552,7 +555,7 @@ class FHIAimsOutParser(TextParser):
                     repeats=True, str_operation=str_to_eigenvalues, convert=False),
                 Quantity(
                     'energy_components',
-                    r'\n *Total energy components:([\s\S]+?)(\| Electronic free energy per atom\s*:\s*[Ee\d\.\-]+ eV)',
+                    r'\n *Total energy components:([\s\S]+?)((?:\n\n|\| Electronic free energy per atom\s*:\s*[Ee\d\.\-]+ eV))',
                     repeats=False, str_operation=str_to_energy_components, convert=False),
                 # TODO include scf forces, stress, pressure in metainfo
                 # Quantity(
@@ -623,14 +626,14 @@ class FHIAimsOutParser(TextParser):
                 unit='angstrom', repeats=False, shape=(3, 3), dtype=float),
             Quantity(
                 'energy',
-                r'\n *Energy and forces in a compact form:([\s\S]+?Electronic free energy\s*:\s*[\d\.\-Ee]+ eV)',
+                r'\n *Energy and forces in a compact form:([\s\S]+?(?:\n\n|Electronic free energy\s*:\s*[\d\.\-Ee]+ eV))',
                 str_operation=str_to_energy_components, repeats=False, convert=False),
             # in some cases, the energy components are also printed for after a calculation
             # same format as in scf iteration, they are printed also in initialization
             # so we should get last occurence
             Quantity(
                 'energy_components',
-                r'\n *Total energy components:([\s\S]*?)(\| Electronic free energy per atom\s*:\s*[\d\.\-Ee]+ eV)',
+                r'\n *Total energy components:([\s\S]+?)((?:\n\n|\| Electronic free energy per atom\s*:\s*[\d\.\-Ee]+ eV))',
                 repeats=True, str_operation=str_to_energy_components, convert=False),
             Quantity(
                 'energy_xc',
@@ -706,8 +709,7 @@ class FHIAimsOutParser(TextParser):
         # TODO add SOC perturbed eigs, dielectric function
 
     def get_number_of_spin_channels(self):
-        array_size = self.get('array_size_parameters')
-        return array_size.get('Number of spin channels', 1)
+        return self.get('array_size_parameters', {}).get('Number of spin channels', 1)
 
     def get_calculation_type(self):
         calculation_type = 'geometry_optimization'
@@ -855,6 +857,9 @@ class FHIAimsParser(FairdiParser):
                 return
             sec_k_band = sec_scc.m_create(KBand)
             sec_k_band.band_structure_kind = 'electronic'
+            # TODO use band_segment_points info to determine relevant band files
+            # band_segment_points = self.out_parser.get('band_segment_points', [])
+            shape = None
             for band_file in bandstructure_files:
                 self.bandstructure_parser.mainfile = band_file
                 if self.bandstructure_parser.data is None:
@@ -863,6 +868,11 @@ class FHIAimsParser(FairdiParser):
                 k_points = np.transpose(data[1:4])
                 band_occupations = np.transpose(data[4::2])
                 band_energies = np.transpose(data[5::2])
+
+                shape = np.shape(band_energies) if shape is None else shape
+                if shape != np.shape(band_energies):
+                    continue
+
                 sec_k_band_segment = sec_k_band.m_create(KBandSegment)
                 sec_k_band_segment.band_k_points = k_points
                 # TODO verify spin formatting
@@ -896,12 +906,13 @@ class FHIAimsParser(FairdiParser):
                     dos_dn.append(data_dn[1:])
                 l_max.append(len(data[1:]))
                 # column 0 is energy column 1 is total
+                energy = data[0]
                 dos.append(data[1:])
                 n_atoms += 1
 
             if not dos:
                 return None, None
-            energies = pint.Quantity(data[0], 'eV')
+            energies = pint.Quantity(energy, 'eV')
             n_l = min(l_max)
             n_spin = 2 if dos_dn else 1
             dos = [d[:n_l] for d in dos]
@@ -1019,7 +1030,7 @@ class FHIAimsParser(FairdiParser):
 
             # eigenvalues scf iteration
             eigenvalues = get_eigenvalues(iteration)
-            if eigenvalues is not None and False:
+            if eigenvalues is not None:
                 sec_eigenvalues = sec_scf.m_create(Eigenvalues)
                 if eigenvalues[0] is not None:
                     sec_eigenvalues.eigenvalues_kpoints = eigenvalues[0]
@@ -1150,8 +1161,13 @@ class FHIAimsParser(FairdiParser):
             forces_raw = section.get('forces_raw', None)
             if forces_raw is not None:
                 # we are actually reading the scf forces so we take only the last iteration
-                sec_scc.atom_forces_free_raw = pint.Quantity(
-                    forces_raw[-len(forces):], 'eV/angstrom')
+                try:
+                    # TODO This is a temporary fix to a huge md run I cannot test.
+                    # see calc_id=a8r8KkvKXWams50UhzMGCxY0IGqH
+                    sec_scc.atom_forces_free_raw = pint.Quantity(
+                        forces_raw[-len(forces):], 'eV/angstrom')
+                except Exception:
+                    self.logger.warn('Error setting raw forces')
 
             time_calculation = section.get('time_force_evaluation')
             if time_calculation is not None:
@@ -1346,7 +1362,7 @@ class FHIAimsParser(FairdiParser):
                 sec_xc_func.XC_functional_name = xc_meta.get('name')
                 weight = xc_meta.get('weight', None)
                 if weight is not None:
-                    sec_xc_func.XC_functional_weight = weight(hybrid_coeff)
+                    sec_xc_func.XC_functional_weight = weight(float(hybrid_coeff))
                 xc_parameters = dict()
                 if hse_omega is not None:
                     hybrid_coeff = 0.25 if hybrid_coeff is None else hybrid_coeff
@@ -1428,7 +1444,7 @@ class FHIAimsParser(FairdiParser):
 
         # add inout parameters read from main output
         # species
-        species = self.out_parser['control_inout']['species']
+        species = self.out_parser.get('control_inout', {}).get('species')
         if species is not None:
             for specie in species:
                 parse_atom_type(specie)
