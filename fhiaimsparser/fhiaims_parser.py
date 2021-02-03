@@ -985,6 +985,11 @@ class FHIAimsParser(FairdiParser):
                 return
 
             n_spin = self.out_parser.get_number_of_spin_channels()
+            n_bands = len(data[0][1])
+
+            # eigenvalues are also printed sometimes in SOC calculations, filter this out
+            # TODO improve re pattern for eigenvalues so it catches only KS eigenvalues
+            data = [d for d in data if len(d[1]) == n_bands]
             # for calculation, it reads eigs also for scf iteration, get the last one
             # corresponding to the calculation
             data = data[-n_spin:]
@@ -1017,7 +1022,10 @@ class FHIAimsParser(FairdiParser):
             for key, val in energies.items():
                 metainfo_key = self._energy_map.get(key, None)
                 if metainfo_key is not None:
-                    setattr(sec_scf, '%s_scf_iteration' % metainfo_key, val)
+                    try:
+                        setattr(sec_scf, '%s_scf_iteration' % metainfo_key, val)
+                    except Exception:
+                        self.logger.warn('Error setting scf energy metainfo.', data=dict(key=metainfo_key))
 
             scf_quantities = {
                 'humo': 'energy_reference_highest_occupied_iteration',
@@ -1029,7 +1037,10 @@ class FHIAimsParser(FairdiParser):
                 if val is not None:
                     unit = val.units
                     val = [val.magnitude] * self.out_parser.get_number_of_spin_channels()
-                    setattr(sec_scf, quantity, pint.Quantity(val, unit))
+                    try:
+                        setattr(sec_scf, quantity, pint.Quantity(val, unit))
+                    except Exception:
+                        self.logger.warn('Error setting scf metainfo.', data=dict(key=quantity))
 
             # eigenvalues scf iteration
             eigenvalues = get_eigenvalues(iteration)
@@ -1055,7 +1066,10 @@ class FHIAimsParser(FairdiParser):
                 for key, val in energies.items():
                     metainfo_key = self._energy_map.get(key, None)
                     if metainfo_key is not None:
-                        setattr(sec_scf_iteration, metainfo_key, val)
+                        try:
+                            setattr(sec_scf_iteration, metainfo_key, val)
+                        except Exception:
+                            self.logger.warn('Error setting gw metainfo.', data=dict(key=metainfo_key))
 
             self._electronic_structure_method = 'scGW' if len(gw_scf_energies) > 1 else 'G0W0'
             gw_eigenvalues = section.get('gw_eigenvalues')
@@ -1105,7 +1119,10 @@ class FHIAimsParser(FairdiParser):
                             if metainfo_name is None:
                                 continue
                             val = val[0] if len(val) == 1 else val
-                            setattr(sec_vdW_ts, metainfo_name, val)
+                            try:
+                                setattr(sec_vdW_ts, metainfo_name, val)
+                            except Exception:
+                                self.logger.warn('Error setting vdW metainfo.', data=dict(key=metainfo_name))
                             # TODO add the remanining properties
             self._electronic_structure_method = 'DFT'
             sec_run.section_method[-1].van_der_Waals_method = 'TS'
@@ -1145,7 +1162,10 @@ class FHIAimsParser(FairdiParser):
                     sec_energy_vdw.energy_van_der_Waals_kind = kind
                     sec_energy_vdw.energy_van_der_Waals = val
                 elif metainfo_key is not None:
-                    setattr(sec_scc, metainfo_key, val)
+                    try:
+                        setattr(sec_scc, metainfo_key, val)
+                    except Exception:
+                        self.logger.warn('Error setting energy metainfo.', data=dict(key=key))
 
             # eigenvalues
             eigenvalues = get_eigenvalues(section)
@@ -1170,7 +1190,7 @@ class FHIAimsParser(FairdiParser):
                     sec_scc.atom_forces_free_raw = pint.Quantity(
                         forces_raw[-len(forces):], 'eV/angstrom')
                 except Exception:
-                    self.logger.warn('Error setting raw forces')
+                    self.logger.warn('Error setting raw forces.')
 
             time_calculation = section.get('time_force_evaluation')
             if time_calculation is not None:
@@ -1274,7 +1294,10 @@ class FHIAimsParser(FairdiParser):
                     setattr(sec_basis_set, 'x_fhi_aims_controlIn_%s' % key, np.array(
                         val[0], dtype=float))
                 else:
-                    setattr(sec_basis_set, 'x_fhi_aims_controlIn_%s' % key, val[0])
+                    try:
+                        setattr(sec_basis_set, 'x_fhi_aims_controlIn_%s' % key, val[0])
+                    except Exception:
+                        self.logger.warn('Error setting controlIn metainfo.', data=dict(key=key))
 
             # is the number of basis functions equal to number of divisions?
             division = species.get('division', None)
@@ -1287,7 +1310,10 @@ class FHIAimsParser(FairdiParser):
                 # TODO consider also none entries? or (isinstance(val, str) and val == 'none'):
                 continue
             if key.startswith('x_fhi_aims_controlIn'):
-                setattr(sec_method, key, val)
+                try:
+                    setattr(sec_method, key, val)
+                except Exception:
+                    self.logger.warn('Error setting controlIn metainfo.', data=dict(key=key))
             elif key == 'occupation_type':
                 sec_method.x_fhi_aims_controlIn_occupation_type = val[0]
                 sec_method.x_fhi_aims_controlIn_occupation_width = val[1]
@@ -1323,7 +1349,10 @@ class FHIAimsParser(FairdiParser):
         for key, val in self.out_parser.items():
             if key.startswith('x_fhi_aims_controlInOut') and val is not None:
                 if key not in inout_exclude:
-                    setattr(sec_method, key, val)
+                    try:
+                        setattr(sec_method, key, val)
+                    except Exception:
+                        self.logger.warn('Error setting controlInOut metainfo.', data=dict(key=key))
 
         sec_method.x_fhi_aims_controlInOut_number_of_spin_channels = self.out_parser.get_number_of_spin_channels()
 
@@ -1364,7 +1393,7 @@ class FHIAimsParser(FairdiParser):
                 sec_xc_func = sec_method.m_create(XCFunctionals)
                 sec_xc_func.XC_functional_name = xc_meta.get('name')
                 weight = xc_meta.get('weight', None)
-                if weight is not None:
+                if weight is not None and hybrid_coeff is not None:
                     sec_xc_func.XC_functional_weight = weight(float(hybrid_coeff))
                 xc_parameters = dict()
                 if hse_omega is not None:
@@ -1485,7 +1514,10 @@ class FHIAimsParser(FairdiParser):
             value = self.out_parser.get(key)
             if value is None:
                 continue
-            setattr(sec_run, key, value)
+            try:
+                setattr(sec_run, key, value)
+            except Exception:
+                self.logger.warn('Error setting run metainfo', data=dict(key=key))
 
         sec_parallel_tasks = sec_run.m_create(x_fhi_aims_section_parallel_tasks)
         # why embed section not just let task be an array
