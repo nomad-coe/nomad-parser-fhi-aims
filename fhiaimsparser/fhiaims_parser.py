@@ -1130,8 +1130,7 @@ class FHIAimsParser(FairdiParser):
         def parse_section(section):
             lattice_vectors = section.get(
                 'lattice_vectors', self.out_parser.get('lattice_vectors'))
-            if lattice_vectors is None:
-                lattice_vectors = pint.Quantity(np.eye(3), 'meter')
+
             labels_positions = section.get(
                 'labels_positions', self.out_parser.get('labels_positions'))
             pbc = [lattice_vectors is not None] * 3
@@ -1139,8 +1138,9 @@ class FHIAimsParser(FairdiParser):
                 return
 
             sec_system = sec_run.m_create(System)
-            sec_system.lattice_vectors = lattice_vectors
-            sec_system.simulation_cell = lattice_vectors
+            if lattice_vectors is not None:
+                sec_system.lattice_vectors = lattice_vectors
+                sec_system.simulation_cell = lattice_vectors
 
             sec_system.configuration_periodic_dimensions = pbc
             sec_system.atom_labels = labels_positions[0]
