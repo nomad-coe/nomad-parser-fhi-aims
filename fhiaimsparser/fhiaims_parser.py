@@ -431,10 +431,11 @@ class FHIAimsOutParser(TextParser):
                 except Exception:
                     continue
 
-            if label_index is None or position_index is None:
+            if position_index is None:
                 return
+            label_index = position_index - 1 if label_index is None else label_index
 
-            labels = [v[label_index] for v in val if 'atom' in v or 'Species' in v]
+            labels = [v[label_index].split('_')[0] for v in val if 'atom' in v or 'Species' in v]
             positions = np.array(
                 [v[position_index:position_index + 3] for v in val if 'atom' in v or 'Species' in v],
                 dtype=float)
@@ -685,11 +686,18 @@ class FHIAimsOutParser(TextParser):
                 'converged', r'Self\-consistency cycle (converged)\.', repeats=False, dtype=str),
         ]
 
+        tail = '|'.join([
+            r'Time for this force evaluation\s*:\s*[s \d\.]+',
+            r'Final output of selected total energy values',
+            r'No geometry change',
+            r'Leaving FHI\-aims',
+            r'\Z'])
+
         self._quantities.append(
             Quantity(
                 'full_scf',
                 r'Begin self-consistency loop: Initialization'
-                r'([\s\S]+?(?:Time for this force evaluation\s*:\s*[s \d\.]+|Final output of selected total energy values|No geometry change|Leaving FHI\-aims))',
+                rf'([\s\S]+?(?:{tail}))',
                 repeats=True, sub_parser=TextParser(quantities=calculation_quantities))
         )
 
@@ -697,7 +705,7 @@ class FHIAimsOutParser(TextParser):
             Quantity(
                 'geometry_optimization',
                 r'\n *Geometry optimization: Attempting to predict improved coordinates\.'
-                r'([\s\S]+?(?:Time for this force evaluation\s*:\s*[s \d\.]+|Final output of selected total energy values|Leaving FHI\-aims))',
+                rf'([\s\S]+?(?:{tail}))',
                 repeats=True, sub_parser=TextParser(quantities=calculation_quantities))
         )
 
@@ -705,7 +713,7 @@ class FHIAimsOutParser(TextParser):
             Quantity(
                 'molecular_dynamics',
                 r'\n *Molecular dynamics: Attempting to update all nuclear coordinates\.'
-                r'([\s\S]+?(?:Time for this force evaluation\s*:\s*[\d\.]+\s*s\s*[\d\.]+\s*s|Final output of selected total energy values|Leaving FHI\-aims))',
+                rf'([\s\S]+?(?:{tail}))',
                 repeats=True, sub_parser=TextParser(quantities=calculation_quantities))
         )
 
