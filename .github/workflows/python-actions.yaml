@@ -18,7 +18,7 @@ jobs:
         pip install "nomad-lab>=0.10.1"
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         echo $PYTHONPATH
-        export PYTHONPATH=$(pwd)"
+        export PYTHONPATH=$(pwd)
         echo $PYTHONPATH
     - name: pycodestyle
       run: |
