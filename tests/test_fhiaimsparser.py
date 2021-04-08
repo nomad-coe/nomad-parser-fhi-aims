@@ -148,7 +148,7 @@ def test_band_silicon(silicon):
     # reference energy
     energies = energies.flatten()
     energies.sort()
-    lowest_unoccupied_index = np.searchsorted(energies, energy_reference, "right")
+    lowest_unoccupied_index = np.searchsorted(energies, energy_reference, "right")[0]
     highest_occupied_index = lowest_unoccupied_index - 1
     gap = energies[lowest_unoccupied_index] - energies[highest_occupied_index]
     assert gap == pytest.approx(0.60684)
@@ -172,7 +172,7 @@ def test_dos_silicon(silicon):
     nonzero = np.unique(values.nonzero())
     energies = energies[nonzero]
     energies.sort()
-    lowest_unoccupied_index = np.searchsorted(energies, energy_reference, "right")
+    lowest_unoccupied_index = np.searchsorted(energies, energy_reference, "right")[0]
     highest_occupied_index = lowest_unoccupied_index - 1
     gap = energies[lowest_unoccupied_index] - energies[highest_occupied_index]
     assert gap == pytest.approx(0.54054054)

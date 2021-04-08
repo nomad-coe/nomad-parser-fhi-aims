@@ -732,7 +732,7 @@ class FHIAimsParser(FairdiParser):
                 # been shifted to the fermi energy. This shift is undone so
                 # that the energy scales for for energy_reference_fermi, band
                 # energies and the DOS energies match.
-                sec_k_band_segment.band_energies = pint.Quantity(np.transpose(data[5::2]) + energy_fermi_ev, 'eV')
+                sec_k_band_segment.band_energies = pint.Quantity(np.transpose(data[5::2]) + energy_fermi_ev[:, None, None], 'eV')
 
         def read_dos(dos_file):
             dos_file = self.get_fhiaims_file(dos_file)
