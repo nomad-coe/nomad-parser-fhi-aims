@@ -17,7 +17,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install "nomad-lab>=0.10.1"
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-        pip install .
+        export PYTHONPATH="${PYTHONPATH}:$(pwd)"
     - name: pycodestyle
       run: |
         python -m pycodestyle --ignore=E501,E701,E731 *parser tests
@@ -29,4 +29,4 @@ jobs:
         python -m mypy --ignore-missing-imports --follow-imports=silent --no-strict-optional *parser tests
     - name: Test with pytest
       run: |
-        python -m pytest -sv tests
+        pytest -sv tests
