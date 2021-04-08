@@ -22,6 +22,7 @@ import pint
 import logging
 
 from .metainfo import m_env
+from nomad.units import ureg
 from nomad.parsing.parser import FairdiParser
 
 from nomad.parsing.file_parser import TextParser, Quantity, DataTextParser
@@ -699,6 +700,14 @@ class FHIAimsParser(FairdiParser):
 
             sec_k_band = sec_scc.m_create(KBand)
             sec_k_band.band_structure_kind = 'electronic'
+
+            # get the fermi energy for this SCC: if it is not found, the band
+            # structure cannot be reported.
+            energy_fermi = sec_scc.energy_reference_fermi
+            if energy_fermi is None:
+                return
+            energy_fermi_ev = energy_fermi.to(ureg.electron_volt).magnitude
+
             nspin = self.out_parser.get_number_of_spin_channels()
             for n in range(len(band_segments_points)):
                 bandstructure_files = [os.path.join(
@@ -718,7 +727,12 @@ class FHIAimsParser(FairdiParser):
                 sec_k_band_segment = sec_k_band.m_create(KBandSegment)
                 sec_k_band_segment.band_k_points = np.transpose(data[1:4])[0]
                 sec_k_band_segment.band_occupations = np.transpose(data[4::2])
-                sec_k_band_segment.band_energies = pint.Quantity(np.transpose(data[5::2]), 'eV')
+
+                # the band energies stored in the band*.out files have already
+                # been shifted to the fermi energy. This shift is undone so
+                # that the energy scales for for energy_reference_fermi, band
+                # energies and the DOS energies match.
+                sec_k_band_segment.band_energies = pint.Quantity(np.transpose(data[5::2]) + energy_fermi_ev, 'eV')
 
         def read_dos(dos_file):
             dos_file = self.get_fhiaims_file(dos_file)

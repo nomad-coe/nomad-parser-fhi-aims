@@ -20,12 +20,20 @@ import pytest
 import numpy as np
 
 from nomad.datamodel import EntryArchive
+from nomad.units import ureg
 from fhiaimsparser.fhiaims_parser import FHIAimsParser
 
 
 @pytest.fixture(scope='module')
 def parser():
     return FHIAimsParser()
+
+
+@pytest.fixture(scope='module')
+def silicon(parser):
+    archive = EntryArchive()
+    parser.parse('tests/data/Si_band_dos/aims_CC.out', archive, None)
+    return archive
 
 
 def test_scf_spinpol(parser):
@@ -121,6 +129,53 @@ def test_band_spinpol(parser):
     assert pytest.approx(sec_atom_dos.atom_projected_dos_values_lm[2][1][0][22], 6.61986474e+18)
     assert pytest.approx(sec_atom_dos.atom_projected_dos_values_lm[0][0][0][8], 3.35029976e+17)
     assert pytest.approx(sec_atom_dos.atom_projected_dos_values_total[0][0][40], 9.950877863070872e+17)
+
+
+def test_band_silicon(silicon):
+    """Tests that the band structure of silicon is parsed correctly.
+    """
+    scc = silicon.section_run[-1].section_single_configuration_calculation[0]
+    band = scc.section_k_band[-1]
+    segments = band.section_k_band_segment
+    energies = np.array([s.band_energies.to(ureg.electron_volt).magnitude for s in segments])
+
+    # Check that an energy reference is reported
+    energy_reference = scc.energy_reference_fermi
+    assert energy_reference is not None
+    energy_reference = energy_reference.to(ureg.electron_volt).magnitude
+
+    # Check that an approporiately sized band gap is found at the given
+    # reference energy
+    energies = energies.flatten()
+    energies.sort()
+    lowest_unoccupied_index = np.searchsorted(energies, energy_reference, "right")
+    highest_occupied_index = lowest_unoccupied_index - 1
+    gap = energies[lowest_unoccupied_index] - energies[highest_occupied_index]
+    assert gap == pytest.approx(0.60684)
+
+
+def test_dos_silicon(silicon):
+    """Tests that the DOS of silicon is parsed correctly.
+    """
+    scc = silicon.section_run[-1].section_single_configuration_calculation[0]
+    dos = scc.section_dos[-1]
+    energies = dos.dos_energies.to(ureg.electron_volt).magnitude
+    values = dos.dos_values
+
+    # Check that an energy reference is reported
+    energy_reference = scc.energy_reference_fermi
+    assert energy_reference is not None
+    energy_reference = energy_reference.to(ureg.electron_volt).magnitude
+
+    # Check that an approporiately sized band gap is found at the given
+    # reference energy
+    nonzero = np.unique(values.nonzero())
+    energies = energies[nonzero]
+    energies.sort()
+    lowest_unoccupied_index = np.searchsorted(energies, energy_reference, "right")
+    highest_occupied_index = lowest_unoccupied_index - 1
+    gap = energies[lowest_unoccupied_index] - energies[highest_occupied_index]
+    assert gap == pytest.approx(0.54054054)
 
 
 def test_dos(parser):
