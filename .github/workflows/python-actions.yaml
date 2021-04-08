@@ -17,7 +17,9 @@ jobs:
         python -m pip install --upgrade pip
         pip install "nomad-lab>=0.10.1"
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-        export PYTHONPATH=":$(pwd):${PYTHONPATH}"
+        echo $PYTHONPATH
+        export PYTHONPATH=$(pwd)"
+        echo $PYTHONPATH
     - name: pycodestyle
       run: |
         python -m pycodestyle --ignore=E501,E701,E731 *parser tests
