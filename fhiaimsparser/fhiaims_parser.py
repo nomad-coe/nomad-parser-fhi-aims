@@ -824,8 +824,8 @@ class FHIAimsParser(FairdiParser):
                     n_l = len(dos[1:])
                     values = {
                         'm_kind': 'integrated', 'energies': energies,
-                        'values_total': dos[0].magnitude,
-                        'values_lm': dos[1:].magnitude,
+                        'values_total': dos[0].to('1/J').magnitude,
+                        'values_lm': dos[1:].to('1/J').magnitude,
                         'lm': np.column_stack((np.arange(n_l), np.zeros(n_l, dtype=np.int32)))}
                     for key, val in values.items():
                         setattr(sec_dos, '%s_projected_dos_%s' % (projection_type, key), val)
