@@ -18,7 +18,6 @@
 #
 import os
 import numpy as np
-import pint
 import logging
 
 from .metainfo import m_env
@@ -51,9 +50,9 @@ class FHIAimsControlParser(TextParser):
         val = val_in.strip().lower()
         unit = None
         if val.startswith('a'):
-            unit = '1/angstrom'
+            unit = 1 / ureg.angstrom
         elif val.startswith('b'):
-            unit = '1/bohr'
+            unit = 1 / ureg.bohr
         return unit
 
     def init_quantities(self):
@@ -139,6 +138,8 @@ class FHIAimsOutParser(TextParser):
         super().__init__(None)
 
     def init_quantities(self):
+        units_mapping = {'Ha': ureg.hartree, 'eV': ureg.eV}
+
         def str_to_energy_components(val_in):
             val = [v.strip() for v in val_in.strip().split('\n')]
             res = dict()
@@ -149,9 +150,8 @@ class FHIAimsOutParser(TextParser):
                 vi = v[1].split()
                 if not vi[0][-1].isdecimal() or len(vi) < 2:
                     continue
-                unit = {'Ha': 'hartree', 'eV': 'eV'}.get(vi[1], None)
-                res[v[0].strip()] = pint.Quantity(
-                    float(vi[0]), unit) if unit is not None else float(vi[0])
+                unit = units_mapping.get(vi[1], None)
+                res[v[0].strip()] = float(vi[0]) * unit if unit is not None else float(vi[0])
             return res
 
         def str_to_scf_convergence(val_in):
@@ -163,15 +163,14 @@ class FHIAimsOutParser(TextParser):
                 vs = v[1].split()
                 unit = None
                 if len(vs) > 1:
-                    unit = {'Ha': 'hartree', 'eV': 'eV'}.get(vs[1], None)
-                res[v[0].strip()] = pint.Quantity(
-                    float(vs[0]), unit) if unit is not None else float(vs[0])
+                    unit = units_mapping.get(vs[1], None)
+                res[v[0].strip()] = float(vs[0]) * unit if unit is not None else float(vs[0])
             return res
 
         def str_to_atomic_forces(val_in):
             val = [v.lstrip(' |').split() for v in val_in.strip().split('\n')]
             forces = np.array([v[1:4] for v in val if len(v) == 4], dtype=float)
-            return pint.Quantity(forces, 'eV/angstrom')
+            return forces * ureg.eV / ureg.angstrom
 
         def str_to_dos_files(val_in):
             val = [v.strip() for v in val_in.strip().split('\n')]
@@ -203,7 +202,7 @@ class FHIAimsOutParser(TextParser):
             data = {}
             for v in val:
                 if len(v) == 2:
-                    data[v[0].strip(' |')] = pint.Quantity(float(v[1].split()[0]), 'eV')
+                    data[v[0].strip(' |')] = float(v[1].split()[0]) * ureg.eV
                 if 'Fit accuracy for G' in v[0]:
                     data['Fit accuracy for G(w)'] = float(v[0].split()[-1])
             return data
@@ -265,9 +264,16 @@ class FHIAimsOutParser(TextParser):
             return data
 
         structure_quantities = [
-            Quantity('labels', r'(?:Species\s*([A-Z][a-z]?)|([A-Z][a-z]?)\w+\n)', repeats=True),
-            Quantity('positions', rf'({re_float})\s+({re_float})\s+({re_float})', repeats=True),
-            Quantity('velocities', rf'velocity\s+({re_float})\s+({re_float})\s+({re_float})', repeats=True)]
+            Quantity(
+                'labels', r'(?:Species\s*([A-Z][a-z]?)|([A-Z][a-z]?)\w+\n)', repeats=True),
+            Quantity(
+                'positions',
+                rf'({re_float})\s+({re_float})\s+({re_float})',
+                dtype=np.dtype(np.float64), repeats=True),
+            Quantity(
+                'velocities',
+                rf'velocity\s+({re_float})\s+({re_float})\s+({re_float})',
+                dtype=np.dtype(np.float64), repeats=True)]
 
         eigenvalues = Quantity(
             'eigenvalues',
@@ -317,7 +323,7 @@ class FHIAimsOutParser(TextParser):
             val = val_in.split('|')
             if len(val) != 7:
                 return
-            energy = pint.Quantity(float(val[3]), 'eV')
+            energy = float(val[3]) * ureg.eV
             return {'Change of total energy': energy}
 
         def str_to_hirshfeld(val_in):
@@ -732,7 +738,8 @@ class FHIAimsParser(FairdiParser):
                 # been shifted to the fermi energy. This shift is undone so
                 # that the energy scales for for energy_reference_fermi, band
                 # energies and the DOS energies match.
-                sec_k_band_segment.band_energies = pint.Quantity(np.transpose(data[5::2]) + energy_fermi_ev[:, None, None], 'eV')
+                sec_k_band_segment.band_energies = (np.transpose(
+                    data[5::2]) + energy_fermi_ev[:, None, None]) * ureg.eV
 
         def read_dos(dos_file):
             dos_file = self.get_fhiaims_file(dos_file)
@@ -767,7 +774,7 @@ class FHIAimsParser(FairdiParser):
 
             if not dos:
                 return None, None
-            energies = pint.Quantity(energy, 'eV')
+            energies = energy * ureg.eV
             # we cut the l components up to the minimum (or pad zeros?)
             n_l = min(l_max)
             n_spin = 2 if dos_dn else 1
@@ -777,7 +784,7 @@ class FHIAimsParser(FairdiParser):
                 dos = [dos, dos_dn]
             dos = np.transpose(np.reshape(
                 dos, (n_spin, n_atoms, n_l, len(energies))), axes=(2, 0, 1, 3))
-            dos = pint.Quantity(dos, '1/eV')
+            dos = dos / ureg.eV
             return energies, dos
 
         def parse_dos(section):
@@ -787,7 +794,7 @@ class FHIAimsParser(FairdiParser):
             lattice_vectors = section.get(
                 'lattice_vectors', self.out_parser.get('lattice_vectors'))
             if lattice_vectors is None:
-                lattice_vectors = pint.Quantity(np.eye(3))
+                lattice_vectors = np.eye(3) * ureg.m
             volume = np.abs(np.linalg.det(lattice_vectors.magnitude))
             n_spin = self.out_parser.get_number_of_spin_channels()
             # parse total first, we expect only one file
@@ -798,11 +805,11 @@ class FHIAimsParser(FairdiParser):
                     continue
                 sec_dos = sec_scc.m_create(Dos)
                 sec_dos.dos_kind = 'electronic'
-                energies = pint.Quantity(data[0], 'eV')
+                energies = data[0] * ureg.eV
                 sec_dos.number_of_dos_values = len(energies)
                 sec_dos.dos_energies = energies
                 # dos unit is 1/(eV-cell volume)
-                dos = pint.Quantity(data[1: n_spin + 1] * volume, 'angstrom**3/eV')
+                dos = (data[1: n_spin + 1] * volume) * ureg.angstrom**3 / ureg.eV
                 sec_dos.dos_values = dos.to('m**3/J').magnitude
 
             # parse projected
@@ -849,7 +856,7 @@ class FHIAimsParser(FairdiParser):
             occs_eigs = np.transpose(
                 np.reshape(occs_eigs, (len(kpts), n_spin, n_eigs, 2)), axes=(3, 1, 0, 2))
 
-            return kpts, pint.Quantity(occs_eigs[1], 'hartree'), occs_eigs[0]
+            return kpts, occs_eigs[1] * ureg.hartree, occs_eigs[0]
 
         def parse_scf(iteration):
             sec_scc = sec_run.section_single_configuration_calculation[-1]
@@ -882,7 +889,7 @@ class FHIAimsParser(FairdiParser):
                     unit = val.units
                     val = [val.magnitude] * self.out_parser.get_number_of_spin_channels()
                     try:
-                        setattr(sec_scf, quantity, pint.Quantity(val, unit))
+                        setattr(sec_scf, quantity, val * unit)
                     except Exception:
                         self.logger.warn('Error setting scf metainfo.', data=dict(key=quantity))
 
@@ -980,10 +987,10 @@ class FHIAimsParser(FairdiParser):
 
             sec_system.configuration_periodic_dimensions = pbc
             sec_system.atom_labels = structure.get('labels')
-            sec_system.atom_positions = pint.Quantity(structure.get('positions'), 'angstrom')
+            sec_system.atom_positions = structure.get('positions') * ureg.angstrom
             velocities = structure.get('velocities')
             if velocities is not None:
-                sec_system.atom_velocities = pint.Quantity(velocities, 'angstrom/ps')
+                sec_system.atom_velocities = velocities * ureg.angstrom / ureg.ps
 
             sec_scc = sec_run.m_create(SingleConfigurationCalculation)
             sec_scc.single_configuration_calculation_to_system_ref = sec_system
@@ -1025,8 +1032,7 @@ class FHIAimsParser(FairdiParser):
                 try:
                     # TODO This is a temporary fix to a huge md run I cannot test.
                     # see calc_id=a8r8KkvKXWams50UhzMGCxY0IGqH
-                    sec_scc.atom_forces_free_raw = pint.Quantity(
-                        forces_raw[-len(forces):], 'eV/angstrom')
+                    sec_scc.atom_forces_free_raw = forces_raw[-len(forces):] * ureg.eV / ureg.angstrom
                 except Exception:
                     self.logger.warn('Error setting raw forces.')
 
@@ -1173,7 +1179,7 @@ class FHIAimsParser(FairdiParser):
                 sec_method.x_fhi_aims_controlIn_xc = str(xc)
                 if not isinstance(val[-1], str) and xc.lower().startswith('hse'):
                     unit = self.control_parser.get('x_fhi_aims_controlIn_hse_unit')
-                    hse_omega = pint.Quantity(val[-1], unit) if unit else val[-1]
+                    hse_omega = val[-1] * unit if unit else val[-1]
                     sec_method.x_fhi_aims_controlIn_hse_omega = hse_omega
                 hybrid_coeff = self.control_parser.get('x_fhi_aims_controlIn_hybrid_xc_coeff')
                 if hybrid_coeff is not None:
@@ -1220,7 +1226,7 @@ class FHIAimsParser(FairdiParser):
             hse_omega = None
             if not isinstance(xc_inout[-1], str) and xc.lower().startswith('hse'):
                 unit = self.out_parser.get('x_fhi_aims_controlInOut_hse_unit')
-                hse_omega = pint.Quantity(xc_inout[-1], unit) if unit else xc_inout[-1]
+                hse_omega = xc_inout[-1] * unit if unit else xc_inout[-1]
                 sec_method.x_fhi_aims_controlInOut_hse_omega = hse_omega
 
             hybrid_coeff = self.out_parser.get('x_fhi_aims_controlInOut_hybrid_xc_coeff')
@@ -1254,11 +1260,11 @@ class FHIAimsParser(FairdiParser):
                 x_fhi_aims_section_controlInOut_atom_species)
             for key, val in species.items():
                 if key == 'nuclear charge':
-                    charge = pint.Quantity(val[0], 'elementary_charge')
+                    charge = val[0] * ureg.elementary_charge
                     sec_atom_type.atom_type_charge = charge
                     sec_atom_species.x_fhi_aims_controlInOut_species_charge = charge
                 elif key == 'atomic mass':
-                    mass = pint.Quantity(val[0][0], val[0][1])
+                    mass = val[0][0] * ureg.amu
                     sec_atom_type.atom_type_mass = mass
                     sec_atom_species.x_fhi_aims_controlInOut_species_mass = mass
                 elif key == 'species':
@@ -1267,10 +1273,8 @@ class FHIAimsParser(FairdiParser):
                 elif 'request to include pure gaussian fns' in key:
                     sec_atom_species.x_fhi_aims_controlInOut_pure_gaussian = val[0]
                 elif 'cutoff potl' in key:
-                    sec_atom_species.x_fhi_aims_controlInOut_species_cut_pot = pint.Quantity(
-                        val[0][0], 'angstrom')
-                    sec_atom_species.x_fhi_aims_controlInOut_species_cut_pot_width = pint.Quantity(
-                        val[0][1], 'angstrom')
+                    sec_atom_species.x_fhi_aims_controlInOut_species_cut_pot = val[0][0] * ureg.angstrom
+                    sec_atom_species.x_fhi_aims_controlInOut_species_cut_pot_width = val[0][1] * ureg.angstrom
                     sec_atom_species.x_fhi_aims_controlInOut_species_cut_pot_scale = val[0][2]
                 elif 'free-atom' in key or 'free-ion' in key:
                     for i in range(len(val)):
@@ -1306,12 +1310,12 @@ class FHIAimsParser(FairdiParser):
                             sec_basis_func.x_fhi_aims_controlInOut_basis_func_gauss_N = val[i][3]
                             alpha = [val[i][j + 2] for j in range(len(val[i])) if val[i][j] == 'alpha']
                             weight = [val[i][j + 2] for j in range(len(val[i])) if val[i][j] == 'weight']
-                            alpha = pint.Quantity(alpha, '1/angstrom ** 2')
+                            alpha = alpha / ureg.angstrom ** 2
                             sec_basis_func.x_fhi_aims_controlInOut_basis_func_gauss_alpha = alpha
                             sec_basis_func.x_fhi_aims_controlInOut_basis_func_gauss_weight = weight
                         elif len(val[i]) == 2:
                             sec_basis_func.x_fhi_aims_controlInOut_basis_func_gauss_l = val[i][0]
-                            alpha = pint.Quantity(val[i][1], '1/angstrom ** 2')
+                            alpha = val[i][1] / ureg.angstrom ** 2
                             sec_basis_func.x_fhi_aims_controlInOut_basis_func_primitive_gauss_alpha = alpha
 
         # add inout parameters read from main output
