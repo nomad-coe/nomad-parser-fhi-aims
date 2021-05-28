@@ -26,7 +26,7 @@ from nomad.units import ureg
 from nomad.metainfo.legacy import LegacyDefinition
 
 from nomad.datamodel.metainfo import public
-from nomad.datamodel.metainfo import common
+from nomad.datamodel.metainfo import common_dft
 
 m_package = Package(
     name='fhi_aims_nomadmetainfo_json',
@@ -1022,19 +1022,6 @@ class section_scf_iteration(public.section_scf_iteration):
         type=float, unit=ureg.eV, a_legacy=LegacyDefinition(name='x_fhi_aims_energy_reference_fermi'))
 
 
-class section_atom_projected_dos(public.section_atom_projected_dos):
-
-    m_def = Section(validate=False, extends_base_section=True, a_legacy=LegacyDefinition(name='section_atom_projected_dos'))
-
-    x_fhi_aims_atom_projected_dos_file = Quantity(
-        type=str,
-        shape=[],
-        description='''
-        -
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_atom_projected_dos_file'))
-
-
 class section_k_band(public.section_k_band):
 
     m_def = Section(validate=False, extends_base_section=True, a_legacy=LegacyDefinition(name='section_k_band'))
@@ -1544,28 +1531,6 @@ class section_run(public.section_run):
         a_legacy=LegacyDefinition(name='x_fhi_aims_section_parallel_tasks'))
 
 
-class section_dos(public.section_dos):
-
-    m_def = Section(validate=False, extends_base_section=True, a_legacy=LegacyDefinition(name='section_dos'))
-
-    x_fhi_aims_dos_energy = Quantity(
-        type=np.dtype(np.float64),
-        shape=[],
-        unit='joule',
-        description='''
-        -
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_dos_energy'))
-
-    x_fhi_aims_dos_value_string = Quantity(
-        type=str,
-        shape=[],
-        description='''
-        -
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_dos_value_string'))
-
-
 class section_system(public.section_system):
 
     m_def = Section(validate=False, extends_base_section=True, a_legacy=LegacyDefinition(name='section_system'))
@@ -1660,7 +1625,7 @@ class section_system(public.section_system):
         a_legacy=LegacyDefinition(name='x_fhi_aims_geometry_lattice_vector_z'))
 
 
-class section_atom_type(common.section_atom_type):
+class section_atom_type(common_dft.section_atom_type):
 
     m_def = Section(validate=False, extends_base_section=True, a_legacy=LegacyDefinition(name='section_atom_type'))
 
@@ -1668,27 +1633,6 @@ class section_atom_type(common.section_atom_type):
         sub_section=SectionProxy('x_fhi_aims_section_controlInOut_atom_species'),
         repeats=True,
         a_legacy=LegacyDefinition(name='x_fhi_aims_section_controlInOut_atom_species'))
-
-
-class section_species_projected_dos(public.section_species_projected_dos):
-
-    m_def = Section(validate=False, extends_base_section=True, a_legacy=LegacyDefinition(name='section_species_projected_dos'))
-
-    x_fhi_aims_species_projected_dos_file = Quantity(
-        type=str,
-        shape=[],
-        description='''
-        -
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_species_projected_dos_file'))
-
-    x_fhi_aims_species_projected_dos_species_label = Quantity(
-        type=str,
-        shape=[],
-        description='''
-        -
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_species_projected_dos_species_label'))
 
 
 m_package.__init_metainfo__()

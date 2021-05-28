@@ -28,7 +28,7 @@ from nomad.parsing.file_parser import TextParser, Quantity, DataTextParser
 
 from nomad.datamodel.metainfo.common_dft import Run, Method, System, XCFunctionals,\
     ScfIteration, SingleConfigurationCalculation, SamplingMethod, FrameSequence, Eigenvalues,\
-    Dos, AtomProjectedDos, SpeciesProjectedDos, KBand, KBandSegment, EnergyVanDerWaals,\
+    Dos, DosValues, KBand, KBandSegment, EnergyVanDerWaals,\
     CalculationToCalculationRefs, MethodToMethodRefs, Topology, AtomType
 from .metainfo.fhi_aims import section_run as xsection_run, section_method as xsection_method,\
     x_fhi_aims_section_parallel_task_assignement, x_fhi_aims_section_parallel_tasks,\
@@ -803,14 +803,16 @@ class FHIAimsParser(FairdiParser):
                 data = read_dos(dos_file)
                 if data is None:
                     continue
-                sec_dos = sec_scc.m_create(Dos)
-                sec_dos.dos_kind = 'electronic'
+                sec_dos = sec_scc.m_create(Dos, SingleConfigurationCalculation.dos_electronic)
                 energies = data[0] * ureg.eV
-                sec_dos.number_of_dos_values = len(energies)
+                sec_dos.n_dos_values = len(energies)
                 sec_dos.dos_energies = energies
                 # dos unit is 1/(eV-cell volume)
                 dos = (data[1: n_spin + 1] * volume) * ureg.angstrom**3 / ureg.eV
-                sec_dos.dos_values = dos.to('m**3/J').magnitude
+                for spin in range(len(dos)):
+                    sec_dos_values = sec_dos.m_create(DosValues, Dos.dos_total)
+                    sec_dos_values.dos_spin = spin
+                    sec_dos_values.dos_values = dos[spin].to('m**3/J').magnitude
 
             # parse projected
             # projected does for different spins on separate files
@@ -823,22 +825,24 @@ class FHIAimsParser(FairdiParser):
                     energies, dos = read_projected_dos(proj_dos_files)
                     if dos is None:
                         continue
-                    if projection_type == 'atom':
-                        sec_dos = sec_scc.m_create(AtomProjectedDos)
-                    else:
-                        sec_dos = sec_scc.m_create(SpeciesProjectedDos)
+                    sec_def = Dos.dos_atom_projected if projection_type == 'atom' else Dos.dos_species_projected
 
                     n_l = len(dos[1:])
-                    values = {
-                        'm_kind': 'integrated', 'energies': energies,
-                        'values_total': dos[0].to('1/J').magnitude,
-                        'values_lm': dos[1:].to('1/J').magnitude,
-                        'lm': np.column_stack((np.arange(n_l), np.zeros(n_l, dtype=np.int32)))}
-                    for key, val in values.items():
-                        setattr(sec_dos, '%s_projected_dos_%s' % (projection_type, key), val)
-
-                    if projection_type == 'species':
-                        sec_dos.species_projected_dos_species_label = species
+                    lm_values = np.column_stack((np.arange(n_l), np.zeros(n_l, dtype=np.int32)))
+                    for lm in range(len(dos)):
+                        for spin in range(len(dos[lm])):
+                            for atom in range(len(dos[lm][spin])):
+                                sec_dos_values = sec_dos.m_create(DosValues, sec_def)
+                                sec_dos.m_kind = 'integrated'
+                                if lm > 0:
+                                    # the first one is total so no lm label
+                                    sec_dos_values.dos_lm = lm_values[lm - 1]
+                                sec_dos_values.dos_spin = spin
+                                if projection_type == 'atom':
+                                    sec_dos_values.dos_atom_index = atom
+                                else:
+                                    sec_dos_values.dos_atom_label = species[atom]
+                                sec_dos_values.dos_values = dos[lm][spin][atom].to('1/J').magnitude
 
         def get_eigenvalues(section):
             data = section.get('eigenvalues', [None])[-1]

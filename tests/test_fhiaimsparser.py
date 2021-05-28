@@ -118,21 +118,18 @@ def test_band_spinpol(parser):
     assert sec_k_band.section_k_band_segment[1].band_energies[0][3][5].magnitude == approx(-1.54722007e-17)
     assert sec_k_band.section_k_band_segment[2].band_k_points[14][2] == approx(0.5)
 
-    sec_dos = sec_scc.section_dos[0]
+    sec_dos = sec_scc.dos_electronic[0]
     assert np.shape(sec_dos.dos_energies) == (50,)
-    assert np.shape(sec_dos.dos_values) == (2, 50)
+    assert np.shape(sec_dos.dos_total[1].dos_values) == (50,)
     assert sec_dos.dos_energies[46].magnitude == approx(-1.1999976e-18)
-    assert sec_dos.dos_values[0][46] == approx(1.2418252951253564e-11)
-    assert sec_dos.dos_values[1][15] == approx(3.9151704709731774e-11)
+    assert sec_dos.dos_total[0].dos_values[46] == approx(1.2418252951253564e-11)
+    assert sec_dos.dos_total[1].dos_values[15] == approx(3.9151704709731774e-11)
 
-    sec_atom_dos = sec_scc.section_atom_projected_dos[0]
-    assert np.shape(sec_atom_dos.atom_projected_dos_energies) == (50,)
-    assert np.shape(sec_atom_dos.atom_projected_dos_values_lm) == (4, 2, 1, 50)
-    assert np.shape(sec_atom_dos.atom_projected_dos_values_total) == (2, 1, 50)
-    assert sec_atom_dos.atom_projected_dos_energies[49].magnitude == approx(-1.12152364e-18)
-    assert sec_atom_dos.atom_projected_dos_values_lm[2][1][0][22] == approx(6.61986474e+18)
-    assert sec_atom_dos.atom_projected_dos_values_lm[0][0][0][8] == approx(3.35029976e+17)
-    assert sec_atom_dos.atom_projected_dos_values_total[0][0][40] == approx(9.950877863070872e+17)
+    sec_atom_dos = sec_dos.dos_atom_projected
+    assert np.shape(sec_atom_dos[8].dos_values) == (50,)
+    assert sec_atom_dos[7].dos_values[22] == approx(6.61986474e+18)
+    assert sec_atom_dos[2].dos_values[8] == approx(3.35029976e+17)
+    assert sec_atom_dos[0].dos_values[40] == approx(9.950877863070872e+17)
 
 
 def test_band_silicon(silicon):
@@ -162,9 +159,9 @@ def test_dos_silicon(silicon):
     """Tests that the DOS of silicon is parsed correctly.
     """
     scc = silicon.section_run[-1].section_single_configuration_calculation[0]
-    dos = scc.section_dos[-1]
+    dos = scc.dos_electronic[-1]
     energies = dos.dos_energies.to(ureg.electron_volt).magnitude
-    values = dos.dos_values
+    values = np.array([d.dos_values for d in dos.dos_total])
 
     # Check that an energy reference is reported
     energy_reference = scc.energy_reference_fermi
@@ -187,19 +184,16 @@ def test_dos(parser):
     parser.parse('tests/data/ClNa_dos/ClNa_dos.out', archive, None)
 
     sec_scc = archive.section_run[0].section_single_configuration_calculation[0]
-    sec_dos = sec_scc.section_dos[0]
+    sec_dos = sec_scc.dos_electronic[0]
     assert np.shape(sec_dos.dos_energies) == (50,)
-    assert np.shape(sec_dos.dos_values) == (1, 50)
+    assert np.shape(sec_dos.dos_total[0].dos_values) == (50,)
 
-    sec_species_dos = sec_scc.section_species_projected_dos[0]
-    assert np.shape(sec_species_dos.species_projected_dos_energies) == (50,)
-    assert np.shape(sec_species_dos.species_projected_dos_values_lm) == (3, 1, 2, 50)
-    assert np.shape(sec_species_dos.species_projected_dos_values_total) == (1, 2, 50)
-    assert sec_species_dos.species_projected_dos_energies[9].magnitude == approx(-1.35040602e-18)
-    assert sec_species_dos.species_projected_dos_values_total[0][0][44] == approx(3.89674869e+18)
-    assert sec_species_dos.species_projected_dos_values_total[0][1][37] == approx(7.85534487e+17)
-    assert sec_species_dos.species_projected_dos_values_lm[1][0][0][3] == approx(4.49311696e+17)
-    assert sec_species_dos.species_projected_dos_values_lm[2][0][1][5] == approx(2.46401047e+16)
+    sec_species_dos = sec_dos.dos_species_projected
+    assert np.shape(sec_species_dos[7].dos_values) == (50,)
+    assert sec_species_dos[0].dos_values[44] == approx(3.89674869e+18)
+    assert sec_species_dos[1].dos_values[37] == approx(7.85534487e+17)
+    assert sec_species_dos[4].dos_values[3] == approx(4.49311696e+17)
+    assert sec_species_dos[7].dos_values[5] == approx(2.46401047e+16)
 
 
 def test_md(parser):
