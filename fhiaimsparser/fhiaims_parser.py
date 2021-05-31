@@ -27,8 +27,8 @@ from nomad.parsing.parser import FairdiParser
 from nomad.parsing.file_parser import TextParser, Quantity, DataTextParser
 
 from nomad.datamodel.metainfo.common_dft import Run, Method, System, XCFunctionals,\
-    ScfIteration, SingleConfigurationCalculation, SamplingMethod, FrameSequence, Eigenvalues,\
-    Dos, DosValues, KBand, KBandSegment, EnergyVanDerWaals,\
+    ScfIteration, SingleConfigurationCalculation, SamplingMethod, FrameSequence,\
+    Dos, DosValues, BandEnergies, BandEnergiesValues, BandStructure, EnergyVanDerWaals,\
     CalculationToCalculationRefs, MethodToMethodRefs, Topology, AtomType
 from .metainfo.fhi_aims import section_run as xsection_run, section_method as xsection_method,\
     x_fhi_aims_section_parallel_task_assignement, x_fhi_aims_section_parallel_tasks,\
@@ -704,15 +704,14 @@ class FHIAimsParser(FairdiParser):
             # the whole run. dos output file is contained in a section
             sec_scc = sec_run.section_single_configuration_calculation[-1]
 
-            sec_k_band = sec_scc.m_create(KBand)
-            sec_k_band.band_structure_kind = 'electronic'
-
             # get the fermi energy for this SCC: if it is not found, the band
             # structure cannot be reported.
             energy_fermi = sec_scc.energy_reference_fermi
             if energy_fermi is None:
                 return
             energy_fermi_ev = energy_fermi.to(ureg.electron_volt).magnitude
+            sec_k_band = sec_scc.m_create(BandStructure, SingleConfigurationCalculation.band_structure_electronic)
+            sec_k_band.band_structure_energies_shift = energy_fermi[0]
 
             nspin = self.out_parser.get_number_of_spin_channels()
             for n in range(len(band_segments_points)):
@@ -730,16 +729,22 @@ class FHIAimsParser(FairdiParser):
 
                 data = np.transpose(data)
 
-                sec_k_band_segment = sec_k_band.m_create(KBandSegment)
-                sec_k_band_segment.band_k_points = np.transpose(data[1:4])[0]
-                sec_k_band_segment.band_occupations = np.transpose(data[4::2])
-
+                sec_k_band_segment = sec_k_band.m_create(BandEnergies)
+                sec_k_band_segment.band_energies_kpoints = np.transpose(data[1:4])[0]
+                occs = np.transpose(data[4::2])
                 # the band energies stored in the band*.out files have already
                 # been shifted to the fermi energy. This shift is undone so
                 # that the energy scales for for energy_reference_fermi, band
                 # energies and the DOS energies match.
-                sec_k_band_segment.band_energies = (np.transpose(
+                eigs = (np.transpose(
                     data[5::2]) + energy_fermi_ev[:, None, None]) * ureg.eV
+                for spin in range(len(eigs)):
+                    for kpt in range(len(eigs[spin])):
+                        sec_band_energies = sec_k_band_segment.m_create(BandEnergiesValues)
+                        sec_band_energies.band_energies_spin = spin
+                        sec_band_energies.band_energies_kpoints_index = kpt
+                        sec_band_energies.band_energies_values = eigs[spin][kpt]
+                        sec_band_energies.band_energies_occupations = occs[spin][kpt]
 
         def read_dos(dos_file):
             dos_file = self.get_fhiaims_file(dos_file)
@@ -900,11 +905,16 @@ class FHIAimsParser(FairdiParser):
             # eigenvalues scf iteration
             eigenvalues = get_eigenvalues(iteration)
             if eigenvalues is not None:
-                sec_eigenvalues = sec_scf.m_create(Eigenvalues)
+                sec_eigenvalues = sec_scf.m_create(BandEnergies)
                 if eigenvalues[0] is not None:
-                    sec_eigenvalues.eigenvalues_kpoints = eigenvalues[0]
-                sec_eigenvalues.eigenvalues_values = eigenvalues[1]
-                sec_eigenvalues.eigenvalues_occupation = eigenvalues[2]
+                    sec_eigenvalues.band_energies_kpoints = eigenvalues[0]
+                for spin in range(len(eigenvalues[1])):
+                    for kpt in range(len(eigenvalues[1][spin])):
+                        sec_eigenvalues_values = sec_eigenvalues.m_create(BandEnergiesValues)
+                        sec_eigenvalues_values.band_energies_spin = spin
+                        sec_eigenvalues_values.band_energies_kpoints_index = kpt
+                        sec_eigenvalues_values.band_energies_values = eigenvalues[1][spin][kpt]
+                        sec_eigenvalues_values.band_energies_occupations = eigenvalues[2][spin][kpt]
 
         def parse_gw(section):
             sec_scc = sec_run.section_single_configuration_calculation[-1]
@@ -1019,11 +1029,17 @@ class FHIAimsParser(FairdiParser):
             eigenvalues = get_eigenvalues(section)
             # get if from last scf iteration
             if eigenvalues is not None:
-                sec_eigenvalues = sec_scc.m_create(Eigenvalues)
+                sec_eigenvalues = sec_scc.m_create(BandEnergies)
                 if eigenvalues[0] is not None:
-                    sec_eigenvalues.eigenvalues_kpoints = eigenvalues[0]
-                sec_eigenvalues.eigenvalues_values = eigenvalues[1]
-                sec_eigenvalues.eigenvalues_occupation = eigenvalues[2]
+                    sec_eigenvalues.band_energies_kpoints = eigenvalues[0]
+
+                for spin in range(len(eigenvalues[1])):
+                    for kpt in range(len(eigenvalues[1][spin])):
+                        sec_eigenvalues_values = sec_eigenvalues.m_create(BandEnergiesValues)
+                        sec_eigenvalues_values.band_energies_spin = spin
+                        sec_eigenvalues_values.band_energies_kpoints_index = kpt
+                        sec_eigenvalues_values.band_energies_values = eigenvalues[1][spin][kpt]
+                        sec_eigenvalues_values.band_energies_occupations = eigenvalues[2][spin][kpt]
 
             # TODO add force contributions and stress
             forces = section.get('forces', None)
