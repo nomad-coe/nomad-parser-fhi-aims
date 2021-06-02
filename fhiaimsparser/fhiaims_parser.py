@@ -810,14 +810,14 @@ class FHIAimsParser(FairdiParser):
                     continue
                 sec_dos = sec_scc.m_create(Dos, SingleConfigurationCalculation.dos_electronic)
                 energies = data[0] * ureg.eV
-                sec_dos.n_dos_values = len(energies)
-                sec_dos.dos_energies = energies
+                sec_dos.n_energies = len(energies)
+                sec_dos.energies = energies
                 # dos unit is 1/(eV-cell volume)
-                dos = (data[1: n_spin + 1] * volume) * ureg.angstrom**3 / ureg.eV
+                dos = data[1: n_spin + 1] * (1 / ureg.eV) * volume
                 for spin in range(len(dos)):
-                    sec_dos_values = sec_dos.m_create(DosValues, Dos.dos_total)
-                    sec_dos_values.dos_spin = spin
-                    sec_dos_values.dos_values = dos[spin].to('m**3/J').magnitude
+                    sec_dos_values = sec_dos.m_create(DosValues, Dos.total)
+                    sec_dos_values.spin = spin
+                    sec_dos_values.value = dos[spin]
 
             # parse projected
             # projected does for different spins on separate files
@@ -830,7 +830,7 @@ class FHIAimsParser(FairdiParser):
                     energies, dos = read_projected_dos(proj_dos_files)
                     if dos is None:
                         continue
-                    sec_def = Dos.dos_atom_projected if projection_type == 'atom' else Dos.dos_species_projected
+                    sec_def = Dos.atom_projected if projection_type == 'atom' else Dos.species_projected
 
                     n_l = len(dos[1:])
                     lm_values = np.column_stack((np.arange(n_l), np.zeros(n_l, dtype=np.int32)))
@@ -841,13 +841,13 @@ class FHIAimsParser(FairdiParser):
                                 sec_dos.m_kind = 'integrated'
                                 if lm > 0:
                                     # the first one is total so no lm label
-                                    sec_dos_values.dos_lm = lm_values[lm - 1]
-                                sec_dos_values.dos_spin = spin
+                                    sec_dos_values.lm = lm_values[lm - 1]
+                                sec_dos_values.spin = spin
                                 if projection_type == 'atom':
-                                    sec_dos_values.dos_atom_index = atom
+                                    sec_dos_values.atom_index = atom
                                 else:
-                                    sec_dos_values.dos_atom_label = species[atom]
-                                sec_dos_values.dos_values = dos[lm][spin][atom].to('1/J').magnitude
+                                    sec_dos_values.atom_label = species[atom]
+                                sec_dos_values.value = dos[lm][spin][atom]
 
         def get_eigenvalues(section):
             data = section.get('eigenvalues', [None])[-1]
