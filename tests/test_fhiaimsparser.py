@@ -68,7 +68,7 @@ def test_scf_spinpol(parser):
 
     assert len(archive.section_run[0].section_single_configuration_calculation) == 1
     sec_scc = archive.section_run[0].section_single_configuration_calculation[0]
-    assert sec_scc.energy_XC_functional.magnitude == approx(-2.3433685e-16)
+    assert sec_scc.energy_XC.value.magnitude == approx(-2.3433685e-16)
     assert sec_scc.single_configuration_calculation_converged
     assert sec_scc.energy_reference_fermi[1].magnitude == approx(-1.50351795e-18)
     sec_scfs = sec_scc.section_scf_iteration
@@ -96,10 +96,10 @@ def test_geomopt(parser):
     assert len(sec_sccs) == 6
 
     assert np.shape(sec_sccs[1].eigenvalues[0].band_energies[0].value) == (20,)
-    assert sec_sccs[2].energy_C.magnitude == approx(-9.34966824e-18)
+    assert sec_sccs[2].energy_C.value.magnitude == approx(-9.34966824e-18)
     assert len(sec_sccs[3].section_scf_iteration) == 6
-    assert np.max(sec_sccs[3].atom_forces_free_raw.magnitude) == approx(2.4933233e-11)
-    assert np.max(sec_sccs[4].atom_forces_free.magnitude) == 0.
+    assert np.max(sec_sccs[3].forces_free.value_raw.magnitude) == approx(2.4933233e-11)
+    assert np.max(sec_sccs[4].forces_free.value.magnitude) == 0.
 
 
 def test_band_spinpol(parser):
@@ -200,7 +200,7 @@ def test_md(parser):
     sec_sccs = archive.section_run[0].section_single_configuration_calculation
     assert len(sec_sccs) == 6
     assert len(sec_sccs[1].section_scf_iteration) == 14
-    assert sec_sccs[4].energy_sum_eigenvalues.magnitude == approx(-1.82257271e-16)
+    assert sec_sccs[4].energy_sum_eigenvalues.value.magnitude == approx(-1.82257271e-16)
 
     sec_systems = archive.section_run[0].section_system
     assert len(sec_systems) == 6

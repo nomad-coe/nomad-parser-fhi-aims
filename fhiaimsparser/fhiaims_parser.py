@@ -17,6 +17,7 @@
 # limitations under the License.
 #
 import os
+from abinitparser import metainfo
 import numpy as np
 import logging
 
@@ -29,7 +30,7 @@ from nomad.parsing.file_parser import TextParser, Quantity, DataTextParser
 from nomad.datamodel.metainfo.common_dft import Run, Method, System, XCFunctionals,\
     ScfIteration, SingleConfigurationCalculation, SamplingMethod, FrameSequence,\
     Dos, DosValues, BandEnergies, BandEnergiesValues, BandStructure, ChannelInfo,\
-    EnergyVanDerWaals, CalculationToCalculationRefs, MethodToMethodRefs, Topology, AtomType
+    Energy, Forces, CalculationToCalculationRefs, MethodToMethodRefs, Topology, AtomType
 from .metainfo.fhi_aims import section_run as xsection_run, section_method as xsection_method,\
     x_fhi_aims_section_parallel_task_assignement, x_fhi_aims_section_parallel_tasks,\
     x_fhi_aims_section_controlIn_basis_set, x_fhi_aims_section_controlIn_basis_func,\
@@ -637,11 +638,11 @@ class FHIAimsParser(FairdiParser):
             'Electronic free energy': 'energy_free',
             'X Energy': 'energy_X',
             'C Energy GGA': 'energy_C',
-            'Total XC Energy': 'energy_XC_functional',
+            'Total XC Energy': 'energy_XC',
             'X Energy LDA': 'x_fhi_aims_energy_X_LDA',
             'C Energy LDA': 'x_fhi_aims_energy_C_LDA',
             'Sum of eigenvalues': 'energy_sum_eigenvalues',
-            'XC energy correction': 'energy_XC',
+            'XC energy correction': 'energy_correction_XC',
             'XC potential correction': 'energy_XC_potential',
             'Free-atom electrostatic energy': 'x_fhi_aims_energy_electrostatic_free_atom',
             'Hartree energy correction': 'energy_correction_hartree',
@@ -649,7 +650,7 @@ class FHIAimsParser(FairdiParser):
             'Entropy correction': 'energy_correction_entropy',
             'Total energy': 'energy_total',
             'Total energy, T -> 0': 'energy_total_T0',
-            'Kinetic energy': 'electronic_kinetic_energy',
+            'Kinetic energy': 'energy_kinetic_electronic',
             'Electrostatic energy': 'energy_electrostatic',
             'error in Hartree potential': 'energy_hartree_error',
             'Sum of eigenvalues per atom': 'energy_sum_eigenvalues_per_atom',
@@ -1015,14 +1016,23 @@ class FHIAimsParser(FairdiParser):
             energy.update(section.get('energy_xc', {}))
             for key, val in energy.items():
                 metainfo_key = self._energy_map.get(key, None)
-                if key == 'vdW energy correction':
-                    sec_energy_vdw = sec_scc.m_create(EnergyVanDerWaals)
+                if metainfo_key is None:
+                    continue
+                elif key == 'vdW energy correction':
+                    sec_energy_vdw = sec_scc.m_create(
+                        Energy, SingleConfigurationCalculation.energy_van_der_Waals)
                     kind = section.get('vdW_TS', {}).get('kind', 'Tkatchenko/Scheffler 2009')
-                    sec_energy_vdw.energy_van_der_Waals_kind = kind
-                    sec_energy_vdw.energy_van_der_Waals = val
-                elif metainfo_key is not None:
+                    sec_energy_vdw.kind = kind
+                    sec_energy_vdw.value = val
+                elif metainfo_key.startswith('x_fhi_aims_energy'):
+                    setattr(sec_scc, metainfo_key, val)
+                elif metainfo_key.startswith('energy_') and not metainfo_key.endswith('per_atom'):
                     try:
-                        setattr(sec_scc, metainfo_key, val)
+                        sec_energy = sec_scc.m_create(
+                            Energy, getattr(SingleConfigurationCalculation, metainfo_key))
+                        sec_energy.value = val
+                        if energy.get('%s_per_atom' % metainfo_key) is not None:
+                            sec_energy.value_per_atom = energy.get('%s_per_atom' % metainfo_key)
                     except Exception:
                         self.logger.warn('Error setting energy metainfo.', data=dict(key=key))
 
@@ -1045,17 +1055,18 @@ class FHIAimsParser(FairdiParser):
             # TODO add force contributions and stress
             forces = section.get('forces', None)
             if forces is not None:
-                sec_scc.atom_forces_free = forces
+                sec_forces = sec_scc.m_create(Forces, SingleConfigurationCalculation.forces_free)
+                sec_forces.value = forces
 
-            forces_raw = section.get('forces_raw', None)
-            if forces_raw is not None:
-                # we are actually reading the scf forces so we take only the last iteration
-                try:
-                    # TODO This is a temporary fix to a huge md run I cannot test.
-                    # see calc_id=a8r8KkvKXWams50UhzMGCxY0IGqH
-                    sec_scc.atom_forces_free_raw = forces_raw[-len(forces):] * ureg.eV / ureg.angstrom
-                except Exception:
-                    self.logger.warn('Error setting raw forces.')
+                forces_raw = section.get('forces_raw', None)
+                if forces_raw is not None:
+                    # we are actually reading the scf forces so we take only the last iteration
+                    try:
+                        # TODO This is a temporary fix to a huge md run I cannot test.
+                        # see calc_id=a8r8KkvKXWams50UhzMGCxY0IGqH
+                        sec_forces.value_raw = forces_raw[-len(forces):] * ureg.eV / ureg.angstrom
+                    except Exception:
+                        self.logger.warn('Error setting raw forces.')
 
             time_calculation = section.get('time_force_evaluation')
             if time_calculation is not None:
