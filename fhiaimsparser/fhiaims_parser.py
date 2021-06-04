@@ -930,7 +930,7 @@ class FHIAimsParser(FairdiParser):
             gw_eigenvalues = section.get('gw_eigenvalues')
             metainfo_map = {
                 'occ_num': 'occupations', 'e_gs': 'value_KS', 'e_x^ex': 'value_X',
-                'e_xc^gs': 'value_XC', 'e_c^nloc': 'value_C', 'e_qp': 'value_qp'}
+                'e_xc^gs': 'value_KS_XC', 'e_c^nloc': 'value_C', 'e_qp': 'value_qp'}
             if gw_eigenvalues is not None:
                 sec_gw = sec_scc.m_create(GW)
                 sec_eigs_gw = sec_gw.m_create(GWBandEnergies)
