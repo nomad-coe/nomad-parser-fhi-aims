@@ -79,9 +79,9 @@ def test_scf_spinpol(parser):
     assert len(sec_scfs[14].section_eigenvalues_scf_iteration) == 1
     sec_eig = sec_scc.eigenvalues[0]
     assert np.shape(sec_eig.kpoints) == (4, 3)
-    assert np.shape(sec_eig.band_energies[7].occupations) == (19,)
-    assert sec_eig.band_energies[6].value[4].magnitude == approx(-1.1221523e-16)
-    assert sec_eig.band_energies[3].occupations[9] == 1.0
+    assert np.shape(sec_eig.occupations[1][3]) == (19,)
+    assert sec_eig.value[1][2][4].magnitude == approx(-1.1221523e-16)
+    assert sec_eig.occupations[0][3][9] == 1.0
 
 
 def test_geomopt(parser):
@@ -95,7 +95,7 @@ def test_geomopt(parser):
     sec_sccs = archive.section_run[0].section_single_configuration_calculation
     assert len(sec_sccs) == 6
 
-    assert np.shape(sec_sccs[1].eigenvalues[0].band_energies[0].value) == (20,)
+    assert np.shape(sec_sccs[1].eigenvalues[0].value[0][0]) == (20,)
     assert sec_sccs[2].energy_C.value.magnitude == approx(-9.34966824e-18)
     assert len(sec_sccs[3].section_scf_iteration) == 6
     assert np.max(sec_sccs[3].forces_free.value_raw.magnitude) == approx(2.4933233e-11)
@@ -111,11 +111,11 @@ def test_band_spinpol(parser):
 
     sec_k_band = sec_scc.band_structure_electronic[0]
     assert len(sec_k_band.band_structure_segment) == 3
-    assert np.shape(sec_k_band.band_structure_segment[0].band_energies[29].value) == (19,)
+    assert np.shape(sec_k_band.band_structure_segment[0].value[1][14]) == (19,)
     assert np.shape(sec_k_band.band_structure_segment[1].kpoints) == (15, 3)
-    assert np.shape(sec_k_band.band_structure_segment[2].band_energies[29].occupations) == (19,)
-    assert sec_k_band.band_structure_segment[0].band_energies[24].occupations[2] == approx(1.0)
-    assert sec_k_band.band_structure_segment[1].band_energies[3].value[5].magnitude == approx(-1.54722007e-17)
+    assert np.shape(sec_k_band.band_structure_segment[2].occupations[1][14]) == (19,)
+    assert sec_k_band.band_structure_segment[0].occupations[1][9][2] == approx(1.0)
+    assert sec_k_band.band_structure_segment[1].value[0][3][5].magnitude == approx(-1.54722007e-17)
     assert sec_k_band.band_structure_segment[2].kpoints[14][2] == approx(0.5)
 
     sec_dos = sec_scc.dos_electronic[0]
@@ -132,10 +132,7 @@ def test_band_silicon(silicon):
     scc = silicon.section_run[-1].section_single_configuration_calculation[0]
     band = scc.band_structure_electronic[-1]
     segments = band.band_structure_segment
-    energies = []
-    for segment in segments:
-        energies.append([b.value.to(ureg.electron_volt).magnitude for b in segment.band_energies])
-    energies = np.array(energies)
+    energies = np.array([s.value.to(ureg.electron_volt).magnitude for s in segments])
 
     # Check that an energy reference is reported
     energy_reference = scc.energy_reference_fermi
@@ -226,7 +223,7 @@ def test_gw_eigs(parser):
     archive = EntryArchive()
     parser.parse('tests/data/CHN_gw/output.out', archive, None)
 
-    sec_gw = archive.section_run[0].section_single_configuration_calculation[0].gw[0]
-    assert sec_gw.energy_X[0].value[7].magnitude == approx(-1.16615227e-17)
-    assert sec_gw.energy_qp[0].value[71].magnitude == approx(-2.60353703e-20)
-    assert sec_gw.energy_ground_state[0].occupations[64] == 2.0
+    sec_eigs_gw = archive.section_run[0].section_single_configuration_calculation[0].gw[0].eigenvalues[0]
+    assert sec_eigs_gw.value_X[0][0][7].magnitude == approx(-1.16615227e-17)
+    assert sec_eigs_gw.value_qp[0][0][71].magnitude == approx(-2.60353703e-20)
+    assert sec_eigs_gw.occupations[0][0][64] == 2.0

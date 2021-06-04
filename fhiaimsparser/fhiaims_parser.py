@@ -26,17 +26,16 @@ from nomad.parsing.parser import FairdiParser
 
 from nomad.parsing.file_parser import TextParser, Quantity, DataTextParser
 
-from nomad.datamodel.metainfo.common_dft import Run, Method, System, XCFunctionals,\
+from nomad.datamodel.metainfo.common_dft import GWBandEnergies, Run, Method, System, XCFunctionals,\
     ScfIteration, SingleConfigurationCalculation, SamplingMethod, FrameSequence,\
-    Dos, DosValues, BandEnergies, BandEnergiesValues, BandStructure, ChannelInfo,\
+    Dos, DosValues, BandEnergies, BandStructure, ChannelInfo,\
     Energy, Forces, CalculationToCalculationRefs, MethodToMethodRefs, Topology, AtomType,\
     GW
 from .metainfo.fhi_aims import section_run as xsection_run, section_method as xsection_method,\
     x_fhi_aims_section_parallel_task_assignement, x_fhi_aims_section_parallel_tasks,\
     x_fhi_aims_section_controlIn_basis_set, x_fhi_aims_section_controlIn_basis_func,\
     x_fhi_aims_section_controlInOut_atom_species, x_fhi_aims_section_controlInOut_basis_func,\
-    x_fhi_aims_section_eigenvalues_group, x_fhi_aims_section_eigenvalues_spin,\
-    x_fhi_aims_section_eigenvalues_list_perturbativeGW, x_fhi_aims_section_vdW_TS
+    x_fhi_aims_section_vdW_TS
 
 
 re_float = r'[\d\.\-\+Ee]+'
@@ -740,13 +739,8 @@ class FHIAimsParser(FairdiParser):
                 # energies and the DOS energies match.
                 eigs = (np.transpose(
                     data[5::2]) + energy_fermi_ev[:, None, None]) * ureg.eV
-                for spin in range(len(eigs)):
-                    for kpt in range(len(eigs[spin])):
-                        sec_band_energies = sec_k_band_segment.m_create(BandEnergiesValues)
-                        sec_band_energies.spin = spin
-                        sec_band_energies.kpoints_index = kpt
-                        sec_band_energies.value = eigs[spin][kpt]
-                        sec_band_energies.occupations = occs[spin][kpt]
+                sec_k_band_segment.value = eigs
+                sec_k_band_segment.occupations = occs
 
         def read_dos(dos_file):
             dos_file = self.get_fhiaims_file(dos_file)
@@ -910,13 +904,8 @@ class FHIAimsParser(FairdiParser):
                 sec_eigenvalues = sec_scf.m_create(BandEnergies)
                 if eigenvalues[0] is not None:
                     sec_eigenvalues.kpoints = eigenvalues[0]
-                for spin in range(len(eigenvalues[1])):
-                    for kpt in range(len(eigenvalues[1][spin])):
-                        sec_eigenvalues_values = sec_eigenvalues.m_create(BandEnergiesValues)
-                        sec_eigenvalues_values.spin = spin
-                        sec_eigenvalues_values.kpoints_index = kpt
-                        sec_eigenvalues_values.value = eigenvalues[1][spin][kpt]
-                        sec_eigenvalues_values.occupations = eigenvalues[2][spin][kpt]
+                sec_eigenvalues.value = eigenvalues[1]
+                sec_eigenvalues.occupations = eigenvalues[2]
 
         def parse_gw(section):
             sec_scc = sec_run.section_single_configuration_calculation[-1]
@@ -939,15 +928,16 @@ class FHIAimsParser(FairdiParser):
                 self._electronic_structure_method = 'scGW' if len(gw_scf_energies) > 1 else 'G0W0'
 
             gw_eigenvalues = section.get('gw_eigenvalues')
+            metainfo_map = {
+                'occ_num': 'occupations', 'e_gs': 'value_KS', 'e_x^ex': 'value_X',
+                'e_xc^gs': 'value_XC', 'e_c^nloc': 'value_C', 'e_qp': 'value_qp'}
             if gw_eigenvalues is not None:
                 sec_gw = sec_scc.m_create(GW)
-                gw_metainfo_map = {
-                    'e_gs': GW.energy_ground_state, 'e_x^ex': GW.energy_X,
-                    'e_xc^gs': GW.energy_XC, 'e_c^nloc': GW.energy_C, 'e_qp': GW.energy_qp}
-                for gw_key, sec_definition in gw_metainfo_map.items():
-                    sec_gw_energies = sec_gw.m_create(BandEnergiesValues, sec_definition)
-                    sec_gw_energies.value = gw_eigenvalues[gw_key] * ureg.eV
-                    sec_gw_energies.occupations = gw_eigenvalues['occ_num']
+                sec_eigs_gw = sec_gw.m_create(GWBandEnergies)
+                for key, name in metainfo_map.items():
+                    # TODO verify shape of eigenvalues
+                    val = gw_eigenvalues[key] if key == 'occ_num' else gw_eigenvalues[key] * ureg.eV
+                    setattr(sec_eigs_gw, name, np.reshape(val, (1, 1, len(val))))
 
             sec_calc_to_calc_refs = sec_scc.m_create(CalculationToCalculationRefs)
             sec_calc_to_calc_refs.calculation_to_calculation_ref = sec_scc
@@ -1041,14 +1031,8 @@ class FHIAimsParser(FairdiParser):
                 sec_eigenvalues = sec_scc.m_create(BandEnergies)
                 if eigenvalues[0] is not None:
                     sec_eigenvalues.kpoints = eigenvalues[0]
-
-                for spin in range(len(eigenvalues[1])):
-                    for kpt in range(len(eigenvalues[1][spin])):
-                        sec_eigenvalues_values = sec_eigenvalues.m_create(BandEnergiesValues)
-                        sec_eigenvalues_values.spin = spin
-                        sec_eigenvalues_values.kpoints_index = kpt
-                        sec_eigenvalues_values.value = eigenvalues[1][spin][kpt]
-                        sec_eigenvalues_values.occupations = eigenvalues[2][spin][kpt]
+                sec_eigenvalues.value = eigenvalues[1]
+                sec_eigenvalues.occupations = eigenvalues[2]
 
             # TODO add force contributions and stress
             forces = section.get('forces', None)
