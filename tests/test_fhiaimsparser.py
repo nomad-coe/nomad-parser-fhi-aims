@@ -220,3 +220,13 @@ def test_gw(parser):
     assert len(sec_scfs) == 6
     assert sec_scfs[1].x_fhi_aims_scgw_galitskii_migdal_total_energy.magnitude == approx(-1.28528018e-17)
     assert sec_scfs[4].x_fhi_aims_single_particle_energy.magnitude == approx(-4.96262869e-18)
+
+
+def test_gw_eigs(parser):
+    archive = EntryArchive()
+    parser.parse('tests/data/CHN_gw/output.out', archive, None)
+
+    sec_gw = archive.section_run[0].section_single_configuration_calculation[0].gw[0]
+    assert sec_gw.energy_X[0].value[7].magnitude == approx(-1.16615227e-17)
+    assert sec_gw.energy_qp[0].value[71].magnitude == approx(-2.60353703e-20)
+    assert sec_gw.energy_ground_state[0].occupations[64] == 2.0

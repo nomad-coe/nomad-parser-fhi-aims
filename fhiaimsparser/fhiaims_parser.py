@@ -17,7 +17,6 @@
 # limitations under the License.
 #
 import os
-from abinitparser import metainfo
 import numpy as np
 import logging
 
@@ -30,7 +29,8 @@ from nomad.parsing.file_parser import TextParser, Quantity, DataTextParser
 from nomad.datamodel.metainfo.common_dft import Run, Method, System, XCFunctionals,\
     ScfIteration, SingleConfigurationCalculation, SamplingMethod, FrameSequence,\
     Dos, DosValues, BandEnergies, BandEnergiesValues, BandStructure, ChannelInfo,\
-    Energy, Forces, CalculationToCalculationRefs, MethodToMethodRefs, Topology, AtomType
+    Energy, Forces, CalculationToCalculationRefs, MethodToMethodRefs, Topology, AtomType,\
+    GW
 from .metainfo.fhi_aims import section_run as xsection_run, section_method as xsection_method,\
     x_fhi_aims_section_parallel_task_assignement, x_fhi_aims_section_parallel_tasks,\
     x_fhi_aims_section_controlIn_basis_set, x_fhi_aims_section_controlIn_basis_func,\
@@ -940,16 +940,14 @@ class FHIAimsParser(FairdiParser):
 
             gw_eigenvalues = section.get('gw_eigenvalues')
             if gw_eigenvalues is not None:
-                # TODO old parser cannot handle arrays, refactor metainfo for gw eigenvalues
-                xsec_eig_group = sec_scf_iteration.m_create(x_fhi_aims_section_eigenvalues_group)
-                xsec_eig_spin = xsec_eig_group.m_create(x_fhi_aims_section_eigenvalues_spin)
-                xsec_eig_list = xsec_eig_spin.m_create(x_fhi_aims_section_eigenvalues_list_perturbativeGW)
-                xsec_eig_list.x_fhi_aims_eigenvalue_occupation_perturbativeGW = gw_eigenvalues['occ_num']
-                xsec_eig_list.x_fhi_aims_eigenvalue_ks_GroundState = gw_eigenvalues['e_gs']
-                xsec_eig_list.x_fhi_aims_eigenvalue_ExactExchange_perturbativeGW = gw_eigenvalues['e_x^ex']
-                xsec_eig_list.x_fhi_aims_eigenvalue_ks_ExchangeCorrelation = gw_eigenvalues['e_xc^gs']
-                xsec_eig_list.x_fhi_aims_eigenvalue_correlation_perturbativeGW = gw_eigenvalues['e_c^nloc']
-                xsec_eig_list.x_fhi_aims_eigenvalue_quasiParticle_energy = gw_eigenvalues['e_qp']
+                sec_gw = sec_scc.m_create(GW)
+                gw_metainfo_map = {
+                    'e_gs': GW.energy_ground_state, 'e_x^ex': GW.energy_X,
+                    'e_xc^gs': GW.energy_XC, 'e_c^nloc': GW.energy_C, 'e_qp': GW.energy_qp}
+                for gw_key, sec_definition in gw_metainfo_map.items():
+                    sec_gw_energies = sec_gw.m_create(BandEnergiesValues, sec_definition)
+                    sec_gw_energies.value = gw_eigenvalues[gw_key] * ureg.eV
+                    sec_gw_energies.occupations = gw_eigenvalues['occ_num']
 
             sec_calc_to_calc_refs = sec_scc.m_create(CalculationToCalculationRefs)
             sec_calc_to_calc_refs.calculation_to_calculation_ref = sec_scc
@@ -1342,12 +1340,12 @@ class FHIAimsParser(FairdiParser):
                             sec_basis_func.x_fhi_aims_controlInOut_basis_func_gauss_N = val[i][3]
                             alpha = [val[i][j + 2] for j in range(len(val[i])) if val[i][j] == 'alpha']
                             weight = [val[i][j + 2] for j in range(len(val[i])) if val[i][j] == 'weight']
-                            alpha = alpha / ureg.angstrom ** 2
+                            alpha = np.array(alpha) / ureg.angstrom ** 2
                             sec_basis_func.x_fhi_aims_controlInOut_basis_func_gauss_alpha = alpha
                             sec_basis_func.x_fhi_aims_controlInOut_basis_func_gauss_weight = weight
                         elif len(val[i]) == 2:
                             sec_basis_func.x_fhi_aims_controlInOut_basis_func_gauss_l = val[i][0]
-                            alpha = val[i][1] / ureg.angstrom ** 2
+                            alpha = np.array(val[i][1]) / ureg.angstrom ** 2
                             sec_basis_func.x_fhi_aims_controlInOut_basis_func_primitive_gauss_alpha = alpha
 
         # add inout parameters read from main output
