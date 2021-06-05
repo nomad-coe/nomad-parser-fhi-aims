@@ -645,7 +645,7 @@ class FHIAimsParser(FairdiParser):
             'XC potential correction': 'energy_XC_potential',
             'Free-atom electrostatic energy': 'x_fhi_aims_energy_electrostatic_free_atom',
             'Hartree energy correction': 'energy_correction_hartree',
-            'vdW energy correction': 'energy_van_der_Waals_error_scf_iteration',
+            'vdW energy correction': 'energy_van_der_Waals',
             'Entropy correction': 'energy_correction_entropy',
             'Total energy': 'energy_total',
             'Total energy, T -> 0': 'energy_total_T0',
@@ -659,7 +659,7 @@ class FHIAimsParser(FairdiParser):
             # GW
             'Galitskii-Migdal Total Energy': 'x_fhi_aims_scgw_galitskii_migdal_total_energy',
             'GW Kinetic Energy': 'x_fhi_aims_scgw_kinetic_energy',
-            'Hartree energy from GW density': 'x_fhi_aims_scgw_hartree_energy_sum_eigenvalues_scf_iteration',
+            'Hartree energy from GW density': 'x_fhi_aims_scgw_hartree_energy_sum_eigenvalues',
             'GW correlation Energy': 'x_fhi_aims_energy_scgw_correlation_energy',
             'RPA correlation Energy': 'x_fhi_aims_scgw_rpa_correlation_energy',
             'Sigle Particle Energy': 'x_fhi_aims_single_particle_energy',
@@ -878,15 +878,19 @@ class FHIAimsParser(FairdiParser):
             for key, val in energies.items():
                 metainfo_key = self._energy_map.get(key, None)
                 if metainfo_key is not None:
-                    try:
-                        setattr(sec_scf, '%s_scf_iteration' % metainfo_key, val)
-                    except Exception:
-                        self.logger.warn('Error setting scf energy metainfo.', data=dict(key=metainfo_key))
+                    if metainfo_key.startswith('energy_'):
+                        sec_scf.m_add_sub_section(getattr(
+                            ScfIteration, metainfo_key), Energy(value=val))
+                    else:
+                        try:
+                            setattr(sec_scf, metainfo_key, val)
+                        except Exception:
+                            self.logger.warn('Error setting scf energy metainfo.', data=dict(key=metainfo_key))
 
             scf_quantities = {
-                'humo': 'energy_reference_highest_occupied_iteration',
-                'lumo': 'energy_reference_lowest_unoccupied_iteration',
-                'fermi_level': 'energy_reference_fermi_iteration'
+                'humo': 'energy_reference_highest_occupied',
+                'lumo': 'energy_reference_lowest_unoccupied',
+                'fermi_level': 'energy_reference_fermi'
             }
             for key, quantity in scf_quantities.items():
                 val = iteration.get(key)
@@ -909,10 +913,10 @@ class FHIAimsParser(FairdiParser):
 
         def parse_gw(section):
             sec_scc = sec_run.section_single_configuration_calculation[-1]
-            if not sec_scc.section_scf_iteration:
+            if not sec_scc.scf_iteration:
                 return
 
-            sec_scf_iteration = sec_scc.section_scf_iteration[-1]
+            sec_scf_iteration = sec_scc.scf_iteration[-1]
             gw_scf_energies = section.get('gw_self_consistency')
             if gw_scf_energies is not None:
                 for energies in gw_scf_energies:
@@ -1055,7 +1059,7 @@ class FHIAimsParser(FairdiParser):
                 sec_scc.time_calculation = time_calculation
 
             scf_iterations = section.get('self_consistency', [])
-            sec_scc.number_of_scf_iterations = len(scf_iterations)
+            sec_scc.n_scf_iterations = len(scf_iterations)
             for scf_iteration in scf_iterations:
                 parse_scf(scf_iteration)
 

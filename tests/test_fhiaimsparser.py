@@ -71,12 +71,12 @@ def test_scf_spinpol(parser):
     assert sec_scc.energy_XC.value.magnitude == approx(-2.3433685e-16)
     assert sec_scc.single_configuration_calculation_converged
     assert sec_scc.energy_reference_fermi[1].magnitude == approx(-1.50351795e-18)
-    sec_scfs = sec_scc.section_scf_iteration
+    sec_scfs = sec_scc.scf_iteration
     assert len(sec_scfs) == 15
-    assert sec_scfs[12].energy_total_T0_scf_iteration.magnitude == approx(-5.56048676e-15)
-    assert sec_scfs[5].energy_reference_lowest_unoccupied_iteration[0].magnitude == approx(-1.42557688e-18)
-    assert sec_scfs[7].energy_change_scf_iteration.magnitude == approx(9.43361602e-22)
-    assert len(sec_scfs[14].section_eigenvalues_scf_iteration) == 1
+    assert sec_scfs[12].energy_total_T0.value.magnitude == approx(-5.56048676e-15)
+    assert sec_scfs[5].energy_reference_lowest_unoccupied[0].magnitude == approx(-1.42557688e-18)
+    assert sec_scfs[7].energy_change.value.magnitude == approx(9.43361602e-22)
+    assert len(sec_scfs[14].eigenvalues) == 1
     sec_eig = sec_scc.eigenvalues[0]
     assert np.shape(sec_eig.kpoints) == (4, 3)
     assert np.shape(sec_eig.occupations[1][3]) == (19,)
@@ -97,7 +97,7 @@ def test_geomopt(parser):
 
     assert np.shape(sec_sccs[1].eigenvalues[0].value[0][0]) == (20,)
     assert sec_sccs[2].energy_C.value.magnitude == approx(-9.34966824e-18)
-    assert len(sec_sccs[3].section_scf_iteration) == 6
+    assert len(sec_sccs[3].scf_iteration) == 6
     assert np.max(sec_sccs[3].forces_free.value_raw.magnitude) == approx(2.4933233e-11)
     assert np.max(sec_sccs[4].forces_free.value.magnitude) == 0.
 
@@ -196,7 +196,7 @@ def test_md(parser):
 
     sec_sccs = archive.section_run[0].section_single_configuration_calculation
     assert len(sec_sccs) == 6
-    assert len(sec_sccs[1].section_scf_iteration) == 14
+    assert len(sec_sccs[1].scf_iteration) == 14
     assert sec_sccs[4].energy_sum_eigenvalues.value.magnitude == approx(-1.82257271e-16)
 
     sec_systems = archive.section_run[0].section_system
@@ -213,7 +213,7 @@ def test_gw(parser):
     assert len(sec_methods) == 2
     assert sec_methods[1].electronic_structure_method == 'scGW'
 
-    sec_scfs = archive.section_run[0].section_single_configuration_calculation[0].section_scf_iteration
+    sec_scfs = archive.section_run[0].section_single_configuration_calculation[0].scf_iteration
     assert len(sec_scfs) == 6
     assert sec_scfs[1].x_fhi_aims_scgw_galitskii_migdal_total_energy.magnitude == approx(-1.28528018e-17)
     assert sec_scfs[4].x_fhi_aims_single_particle_energy.magnitude == approx(-4.96262869e-18)
