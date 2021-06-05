@@ -30,7 +30,7 @@ from nomad.datamodel.metainfo.common_dft import GWBandEnergies, Run, Method, Sys
     ScfIteration, SingleConfigurationCalculation, SamplingMethod, FrameSequence,\
     Dos, DosValues, BandEnergies, BandStructure, ChannelInfo,\
     Energy, Forces, CalculationToCalculationRefs, MethodToMethodRefs, Topology, AtomType,\
-    GW
+    GW, Stress, Thermodynamics
 from .metainfo.fhi_aims import section_run as xsection_run, section_method as xsection_method,\
     x_fhi_aims_section_parallel_task_assignement, x_fhi_aims_section_parallel_tasks,\
     x_fhi_aims_section_controlIn_basis_set, x_fhi_aims_section_controlIn_basis_func,\
@@ -298,13 +298,12 @@ class FHIAimsOutParser(TextParser):
                 'energy_components',
                 r'\n *Total energy components:([\s\S]+?)((?:\n\n|\| Electronic free energy per atom\s*:\s*[Ee\d\.\-]+ eV))',
                 repeats=False, str_operation=str_to_energy_components, convert=False),
-            # TODO include scf forces, stress, pressure in metainfo
-            # Quantity(
-            #         'forces', r'\n *Total forces\([\s\d]+\)\s*:([\s\d\.\-\+Ee]+)\n', repeats=True),
-            # Quantity(
-            #     'stress_tensor', r'\n *Sum of all contributions\s*:\s*([\d\.\-\+Ee ]+\n)', repeats=False),
-            # Quantity(
-            #     'pressure', r' *\|\s*Pressure:\s*([\d\.\-\+Ee ]+)', repeats=False),
+            Quantity(
+                'forces', r'\n *Total forces\([\s\d]+\)\s*:([\s\d\.\-\+Ee]+)\n', repeats=True),
+            Quantity(
+                'stress_tensor', r'\n *Sum of all contributions\s*:\s*([\d\.\-\+Ee ]+\n)', repeats=False),
+            Quantity(
+                'pressure', r' *\|\s*Pressure:\s*([\d\.\-\+Ee ]+)', repeats=False),
             Quantity(
                 'scf_convergence',
                 r'\n *Self-consistency convergence accuracy:([\s\S]+?)(\| Change of total energy\s*:\s*[\d\.\-\+Ee V]+)',
@@ -912,6 +911,18 @@ class FHIAimsParser(FairdiParser):
                     sec_eigenvalues.kpoints = eigenvalues[0]
                 sec_eigenvalues.value = eigenvalues[1]
                 sec_eigenvalues.occupations = eigenvalues[2]
+
+            # stress tensor
+            stress_tensor = iteration.get('stress_tensor')
+            if stress_tensor is not None:
+                sec_stress = sec_scf.m_create(Stress, ScfIteration.stress_total)
+                sec_stress.value = stress_tensor
+
+            # pressure
+            pressure = iteration.get('pressure')
+            if pressure is not None:
+                sec_thermo = sec_scf.m_create(Thermodynamics)
+                sec_thermo.pressure = pressure
 
         def parse_gw(section):
             sec_scc = sec_run.section_single_configuration_calculation[-1]
