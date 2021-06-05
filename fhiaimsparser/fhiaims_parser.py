@@ -878,7 +878,9 @@ class FHIAimsParser(FairdiParser):
             for key, val in energies.items():
                 metainfo_key = self._energy_map.get(key, None)
                 if metainfo_key is not None:
-                    if metainfo_key.startswith('energy_'):
+                    if metainfo_key == 'energy_change':
+                        sec_scf.energy_change = val
+                    elif metainfo_key.startswith('energy_'):
                         sec_scf.m_add_sub_section(getattr(
                             ScfIteration, metainfo_key), Energy(value=val))
                     else:

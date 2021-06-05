@@ -75,7 +75,7 @@ def test_scf_spinpol(parser):
     assert len(sec_scfs) == 15
     assert sec_scfs[12].energy_total_T0.value.magnitude == approx(-5.56048676e-15)
     assert sec_scfs[5].energy_reference_lowest_unoccupied[0].magnitude == approx(-1.42557688e-18)
-    assert sec_scfs[7].energy_change.value.magnitude == approx(9.43361602e-22)
+    assert sec_scfs[7].energy_change.magnitude == approx(9.43361602e-22)
     assert len(sec_scfs[14].eigenvalues) == 1
     sec_eig = sec_scc.eigenvalues[0]
     assert np.shape(sec_eig.kpoints) == (4, 3)
