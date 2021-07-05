@@ -1310,7 +1310,7 @@ class FHIAimsParser(FairdiParser):
                             sec_basis_func.x_fhi_aims_controlInOut_basis_func_gauss_N = val[i][3]
                             alpha = [val[i][j + 2] for j in range(len(val[i])) if val[i][j] == 'alpha']
                             weight = [val[i][j + 2] for j in range(len(val[i])) if val[i][j] == 'weight']
-                            alpha = alpha / ureg.angstrom ** 2
+                            alpha = alpha * (1 / ureg.angstrom ** 2)
                             sec_basis_func.x_fhi_aims_controlInOut_basis_func_gauss_alpha = alpha
                             sec_basis_func.x_fhi_aims_controlInOut_basis_func_gauss_weight = weight
                         elif len(val[i]) == 2:
