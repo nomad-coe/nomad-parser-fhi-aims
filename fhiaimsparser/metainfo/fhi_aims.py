@@ -22,16 +22,7 @@ from nomad.metainfo import (  # pylint: disable=unused-import
     MSection, MCategory, Category, Package, Quantity, Section, SubSection, SectionProxy,
     Reference
 )
-from nomad.units import ureg
-from nomad.metainfo.legacy import LegacyDefinition
-
-from nomad.datamodel.metainfo import public
-from nomad.datamodel.metainfo import common_dft
-
-m_package = Package(
-    name='fhi_aims_nomadmetainfo_json',
-    description='None',
-    a_legacy=LegacyDefinition(name='fhi_aims.nomadmetainfo.json'))
+from nomad.datamodel.metainfo import run
 
 
 class x_fhi_aims_controlIn_method(MCategory):
@@ -39,8 +30,7 @@ class x_fhi_aims_controlIn_method(MCategory):
     Parameters of control.in belonging to section method.
     '''
 
-    m_def = Category(
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlIn_method'))
+    m_def = Category()
 
 
 class x_fhi_aims_controlInOut_method(MCategory):
@@ -48,8 +38,7 @@ class x_fhi_aims_controlInOut_method(MCategory):
     Parameters of aims output of parsed control.in belonging to section method.
     '''
 
-    m_def = Category(
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlInOut_method'))
+    m_def = Category()
 
 
 class x_fhi_aims_controlIn_run(MCategory):
@@ -57,9 +46,7 @@ class x_fhi_aims_controlIn_run(MCategory):
     Parameters of control.in belonging to settings run.
     '''
 
-    m_def = Category(
-        categories=[public.settings_run],
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlIn_run'))
+    m_def = Category()
 
 
 class x_fhi_aims_controlInOut_run(MCategory):
@@ -67,9 +54,7 @@ class x_fhi_aims_controlInOut_run(MCategory):
     Parameters of aims output of parsed control.in belonging to settings run.
     '''
 
-    m_def = Category(
-        categories=[public.settings_run],
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlInOut_run'))
+    m_def = Category()
 
 
 class x_fhi_aims_section_controlIn_basis_func(MSection):
@@ -77,39 +62,35 @@ class x_fhi_aims_section_controlIn_basis_func(MSection):
     definition of a single basis function in the basis set
     '''
 
-    m_def = Section(validate=False, a_legacy=LegacyDefinition(name='x_fhi_aims_section_controlIn_basis_func'))
+    m_def = Section(validate=False)
 
     x_fhi_aims_controlIn_basis_func_l = Quantity(
         type=str,
         shape=[],
         description='''
         -
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlIn_basis_func_l'))
+        ''')
 
     x_fhi_aims_controlIn_basis_func_n = Quantity(
         type=np.dtype(np.int32),
         shape=[],
         description='''
         -
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlIn_basis_func_n'))
+        ''')
 
     x_fhi_aims_controlIn_basis_func_radius = Quantity(
         type=np.dtype(np.float64),
         shape=[],
         description='''
         -
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlIn_basis_func_radius'))
+        ''')
 
     x_fhi_aims_controlIn_basis_func_type = Quantity(
         type=str,
         shape=[],
         description='''
         -
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlIn_basis_func_type'))
+        ''')
 
 
 class x_fhi_aims_section_controlIn_basis_set(MSection):
@@ -117,164 +98,144 @@ class x_fhi_aims_section_controlIn_basis_set(MSection):
     -
     '''
 
-    m_def = Section(validate=False, a_legacy=LegacyDefinition(name='x_fhi_aims_section_controlIn_basis_set'))
+    m_def = Section(validate=False)
 
     x_fhi_aims_controlIn_angular_grids_method = Quantity(
         type=str,
         shape=[],
         description='''
         angular grids method (specifed or auto)
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlIn_angular_grids_method'))
+        ''')
 
     x_fhi_aims_controlIn_basis_dep_cutoff = Quantity(
         type=np.dtype(np.float64),
         shape=[],
         description='''
         cutoff for the dependent basis
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlIn_basis_dep_cutoff'))
+        ''')
 
     x_fhi_aims_controlIn_cut_pot = Quantity(
         type=np.dtype(np.float64),
         shape=[3],
         description='''
         cut\\_pot parameters
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlIn_cut_pot'))
+        ''')
 
     x_fhi_aims_controlIn_cut_pot1 = Quantity(
         type=np.dtype(np.float64),
         shape=[],
         description='''
         first parameter of cut\\_pot
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlIn_cut_pot1'))
+        ''')
 
     x_fhi_aims_controlIn_cut_pot2 = Quantity(
         type=np.dtype(np.float64),
         shape=[],
         description='''
         second parameter of cut\\_pot
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlIn_cut_pot2'))
+        ''')
 
     x_fhi_aims_controlIn_cut_pot3 = Quantity(
         type=np.dtype(np.float64),
         shape=[],
         description='''
         third parameter of cut\\_pot
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlIn_cut_pot3'))
+        ''')
 
     x_fhi_aims_controlIn_division1 = Quantity(
         type=np.dtype(np.float64),
         shape=[],
         description='''
         first parameter of division (position)
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlIn_division1'))
+        ''')
 
     x_fhi_aims_controlIn_division2 = Quantity(
         type=np.dtype(np.int32),
         shape=[],
         description='''
         second parameter of division (n points)
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlIn_division2'))
+        ''')
 
     x_fhi_aims_controlIn_division = Quantity(
         type=np.dtype(np.float64),
         shape=['x_fhi_aims_controlIn_number_of_basis_func', 2],
         description='''
         division parameters
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlIn_division'))
+        ''')
 
     x_fhi_aims_controlIn_number_of_basis_func = Quantity(
         type=np.dtype(np.int32),
         shape=[],
         description='''
         number of basis functions
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlIn_number_of_basis_func'))
+        ''')
 
     x_fhi_aims_controlIn_l_hartree = Quantity(
         type=np.dtype(np.int32),
         shape=[],
         description='''
         angular leven for the hartreee part
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlIn_l_hartree'))
+        ''')
 
     x_fhi_aims_controlIn_mass = Quantity(
         type=np.dtype(np.float64),
         shape=[],
         description='''
         mass of the nucleus in atomic mass units
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlIn_mass'))
+        ''')
 
     x_fhi_aims_controlIn_nucleus = Quantity(
         type=np.dtype(np.float64),
         shape=[],
         description='''
         charge of the nucleus
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlIn_nucleus'))
+        ''')
 
     x_fhi_aims_controlIn_outer_grid = Quantity(
         type=np.dtype(np.float64),
         shape=[],
         description='''
         outer grid
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlIn_outer_grid'))
+        ''')
 
     x_fhi_aims_controlIn_radial_base = Quantity(
         type=np.dtype(np.float64),
         shape=[2],
         description='''
         radial\\_base parameters
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlIn_radial_base'))
+        ''')
 
     x_fhi_aims_controlIn_radial_base1 = Quantity(
         type=np.dtype(np.float64),
         shape=[],
         description='''
         first parameter of radial\\_base
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlIn_radial_base1'))
+        ''')
 
     x_fhi_aims_controlIn_radial_base2 = Quantity(
         type=np.dtype(np.float64),
         shape=[],
         description='''
         second parameter of radial\\_base
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlIn_radial_base2'))
+        ''')
 
     x_fhi_aims_controlIn_radial_multiplier = Quantity(
         type=np.dtype(np.int32),
         shape=[],
         description='''
         radial multiplier
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlIn_radial_multiplier'))
+        ''')
 
     x_fhi_aims_controlIn_species_name = Quantity(
         type=str,
         shape=[],
         description='''
         -
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlIn_species_name'))
+        ''')
 
     x_fhi_aims_section_controlIn_basis_func = SubSection(
         sub_section=SectionProxy('x_fhi_aims_section_controlIn_basis_func'),
-        repeats=True,
-        a_legacy=LegacyDefinition(name='x_fhi_aims_section_controlIn_basis_func'))
+        repeats=True)
 
 
 class x_fhi_aims_section_controlInOut_atom_species(MSection):
@@ -282,15 +243,14 @@ class x_fhi_aims_section_controlInOut_atom_species(MSection):
     -
     '''
 
-    m_def = Section(validate=False, a_legacy=LegacyDefinition(name='x_fhi_aims_section_controlInOut_atom_species'))
+    m_def = Section(validate=False)
 
     x_fhi_aims_controlInOut_pure_gaussian = Quantity(
         type=str,
         shape=[],
         description='''
         -
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlInOut_pure_gaussian'))
+        ''')
 
     x_fhi_aims_controlInOut_species_charge = Quantity(
         type=np.dtype(np.float64),
@@ -298,16 +258,14 @@ class x_fhi_aims_section_controlInOut_atom_species(MSection):
         unit='coulomb',
         description='''
         -
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlInOut_species_charge'))
+        ''')
 
     x_fhi_aims_controlInOut_species_cut_pot_scale = Quantity(
         type=np.dtype(np.float64),
         shape=[],
         description='''
         -
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlInOut_species_cut_pot_scale'))
+        ''')
 
     x_fhi_aims_controlInOut_species_cut_pot_width = Quantity(
         type=np.dtype(np.float64),
@@ -315,8 +273,7 @@ class x_fhi_aims_section_controlInOut_atom_species(MSection):
         unit='meter',
         description='''
         -
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlInOut_species_cut_pot_width'))
+        ''')
 
     x_fhi_aims_controlInOut_species_cut_pot = Quantity(
         type=np.dtype(np.float64),
@@ -324,8 +281,7 @@ class x_fhi_aims_section_controlInOut_atom_species(MSection):
         unit='meter',
         description='''
         -
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlInOut_species_cut_pot'))
+        ''')
 
     x_fhi_aims_controlInOut_species_mass = Quantity(
         type=np.dtype(np.float64),
@@ -333,26 +289,22 @@ class x_fhi_aims_section_controlInOut_atom_species(MSection):
         unit='kilogram',
         description='''
         -
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlInOut_species_mass'))
+        ''')
 
     x_fhi_aims_controlInOut_species_name = Quantity(
         type=str,
         shape=[],
         description='''
         -
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlInOut_species_name'))
+        ''')
 
     x_fhi_aims_section_controlInOut_basis_func = SubSection(
         sub_section=SectionProxy('x_fhi_aims_section_controlInOut_basis_func'),
-        repeats=True,
-        a_legacy=LegacyDefinition(name='x_fhi_aims_section_controlInOut_basis_func'))
+        repeats=True)
 
     x_fhi_aims_section_vdW_TS = SubSection(
         sub_section=SectionProxy('x_fhi_aims_section_vdW_TS'),
-        repeats=True,
-        a_legacy=LegacyDefinition(name='x_fhi_aims_section_vdW_TS'))
+        repeats=True)
 
 
 class x_fhi_aims_section_controlInOut_basis_func(MSection):
@@ -360,15 +312,14 @@ class x_fhi_aims_section_controlInOut_basis_func(MSection):
     -
     '''
 
-    m_def = Section(validate=False, a_legacy=LegacyDefinition(name='x_fhi_aims_section_controlInOut_basis_func'))
+    m_def = Section(validate=False)
 
     x_fhi_aims_controlInOut_basis_func_eff_charge = Quantity(
         type=np.dtype(np.float64),
         shape=[],
         description='''
         -
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlInOut_basis_func_eff_charge'))
+        ''')
 
     x_fhi_aims_controlInOut_basis_func_gauss_alpha = Quantity(
         type=np.dtype(np.float64),
@@ -376,56 +327,49 @@ class x_fhi_aims_section_controlInOut_basis_func(MSection):
         unit='1 / meter ** 2',
         description='''
         -
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlInOut_basis_func_gauss_alpha'))
+        ''')
 
     x_fhi_aims_controlInOut_basis_func_gauss_l = Quantity(
         type=np.dtype(np.int32),
         shape=[],
         description='''
         -
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlInOut_basis_func_gauss_l'))
+        ''')
 
     x_fhi_aims_controlInOut_basis_func_gauss_N = Quantity(
         type=np.dtype(np.int32),
         shape=[],
         description='''
         -
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlInOut_basis_func_gauss_N'))
+        ''')
 
     x_fhi_aims_controlInOut_basis_func_gauss_weight = Quantity(
         type=np.dtype(np.float64),
         shape=[],
         description='''
         -
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlInOut_basis_func_gauss_weight'))
+        ''')
 
     x_fhi_aims_controlInOut_basis_func_l = Quantity(
         type=str,
         shape=[],
         description='''
         -
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlInOut_basis_func_l'))
+        ''')
 
     x_fhi_aims_controlInOut_basis_func_n = Quantity(
         type=np.dtype(np.int32),
         shape=[],
         description='''
         -
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlInOut_basis_func_n'))
+        ''')
 
     x_fhi_aims_controlInOut_basis_func_occ = Quantity(
         type=np.dtype(np.float64),
         shape=[],
         description='''
         -
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlInOut_basis_func_occ'))
+        ''')
 
     x_fhi_aims_controlInOut_basis_func_primitive_gauss_alpha = Quantity(
         type=np.dtype(np.float64),
@@ -433,24 +377,21 @@ class x_fhi_aims_section_controlInOut_basis_func(MSection):
         unit='1 / meter ** 2',
         description='''
         -
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlInOut_basis_func_primitive_gauss_alpha'))
+        ''')
 
     x_fhi_aims_controlInOut_basis_func_radius = Quantity(
         type=np.dtype(np.float64),
         shape=[],
         description='''
         -
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlInOut_basis_func_radius'))
+        ''')
 
     x_fhi_aims_controlInOut_basis_func_type = Quantity(
         type=str,
         shape=[],
         description='''
         -
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlInOut_basis_func_type'))
+        ''')
 
 
 class x_fhi_aims_section_eigenvalues_group_perturbativeGW(MSection):
@@ -459,12 +400,11 @@ class x_fhi_aims_section_eigenvalues_group_perturbativeGW(MSection):
     perturbative GW calculation
     '''
 
-    m_def = Section(validate=False, a_legacy=LegacyDefinition(name='x_fhi_aims_section_eigenvalues_group_perturbativeGW'))
+    m_def = Section(validate=False)
 
     x_fhi_aims_section_eigenvalues_spin_perturbativeGW = SubSection(
         sub_section=SectionProxy('x_fhi_aims_section_eigenvalues_spin_perturbativeGW'),
-        repeats=True,
-        a_legacy=LegacyDefinition(name='x_fhi_aims_section_eigenvalues_spin_perturbativeGW'))
+        repeats=True)
 
 
 class x_fhi_aims_section_eigenvalues_group_ZORA(MSection):
@@ -472,12 +412,11 @@ class x_fhi_aims_section_eigenvalues_group_ZORA(MSection):
     section for full list of eigenvalues for different spin and kpoints of scaled ZORA
     '''
 
-    m_def = Section(validate=False, a_legacy=LegacyDefinition(name='x_fhi_aims_section_eigenvalues_group_ZORA'))
+    m_def = Section(validate=False)
 
     x_fhi_aims_section_eigenvalues_spin_ZORA = SubSection(
         sub_section=SectionProxy('x_fhi_aims_section_eigenvalues_spin_ZORA'),
-        repeats=True,
-        a_legacy=LegacyDefinition(name='x_fhi_aims_section_eigenvalues_spin_ZORA'))
+        repeats=True)
 
 
 class x_fhi_aims_section_eigenvalues_group(MSection):
@@ -485,12 +424,11 @@ class x_fhi_aims_section_eigenvalues_group(MSection):
     section for full list of eigenvalues for different spin and kpoints
     '''
 
-    m_def = Section(validate=False, a_legacy=LegacyDefinition(name='x_fhi_aims_section_eigenvalues_group'))
+    m_def = Section(validate=False)
 
     x_fhi_aims_section_eigenvalues_spin = SubSection(
         sub_section=SectionProxy('x_fhi_aims_section_eigenvalues_spin'),
-        repeats=True,
-        a_legacy=LegacyDefinition(name='x_fhi_aims_section_eigenvalues_spin'))
+        repeats=True)
 
 
 class x_fhi_aims_section_eigenvalues_list_perturbativeGW(MSection):
@@ -498,7 +436,7 @@ class x_fhi_aims_section_eigenvalues_list_perturbativeGW(MSection):
     section for one list of eigenvalues from a perturbative GW calculation
     '''
 
-    m_def = Section(validate=False, a_legacy=LegacyDefinition(name='x_fhi_aims_section_eigenvalues_list_perturbativeGW'))
+    m_def = Section(validate=False)
 
     x_fhi_aims_eigenvalue_correlation_perturbativeGW = Quantity(
         type=np.dtype(np.float64),
@@ -506,8 +444,7 @@ class x_fhi_aims_section_eigenvalues_list_perturbativeGW(MSection):
         unit='joule',
         description='''
         Correlation energy at a given eigenstate from perturbative GW
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_eigenvalue_correlation_perturbativeGW'))
+        ''')
 
     x_fhi_aims_eigenvalue_ExactExchange_perturbativeGW = Quantity(
         type=np.dtype(np.float64),
@@ -515,8 +452,7 @@ class x_fhi_aims_section_eigenvalues_list_perturbativeGW(MSection):
         unit='joule',
         description='''
         Exact exchange energy at given eigenstate from perturbative GW
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_eigenvalue_ExactExchange_perturbativeGW'))
+        ''')
 
     x_fhi_aims_eigenvalue_ks_ExchangeCorrelation = Quantity(
         type=np.dtype(np.float64),
@@ -525,8 +461,7 @@ class x_fhi_aims_section_eigenvalues_list_perturbativeGW(MSection):
         description='''
         KS exchange correlation energy at a given eigenstate needed to calculate the
         quasi-particle energy in perturbative GW
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_eigenvalue_ks_ExchangeCorrelation'))
+        ''')
 
     x_fhi_aims_eigenvalue_ks_GroundState = Quantity(
         type=np.dtype(np.float64),
@@ -534,16 +469,14 @@ class x_fhi_aims_section_eigenvalues_list_perturbativeGW(MSection):
         unit='joule',
         description='''
         KS ground state energy at a given eigenstate needed in perturbative GW
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_eigenvalue_ks_GroundState'))
+        ''')
 
     x_fhi_aims_eigenvalue_occupation_perturbativeGW = Quantity(
         type=np.dtype(np.float64),
         shape=[],
         description='''
         Occupation of single eigenfunction of perturbative GW
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_eigenvalue_occupation_perturbativeGW'))
+        ''')
 
     x_fhi_aims_eigenvalue_quasiParticle_energy = Quantity(
         type=np.dtype(np.float64),
@@ -551,8 +484,7 @@ class x_fhi_aims_section_eigenvalues_list_perturbativeGW(MSection):
         unit='joule',
         description='''
         Quasiparticle energy at a given eigenstate from perturbative GW
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_eigenvalue_quasiParticle_energy'))
+        ''')
 
 
 class x_fhi_aims_section_eigenvalues_list_ZORA(MSection):
@@ -560,7 +492,7 @@ class x_fhi_aims_section_eigenvalues_list_ZORA(MSection):
     section for one list of eigenvalues at specific kpoint and spin of scaled ZORA
     '''
 
-    m_def = Section(validate=False, a_legacy=LegacyDefinition(name='x_fhi_aims_section_eigenvalues_list_ZORA'))
+    m_def = Section(validate=False)
 
     x_fhi_aims_eigenvalue_eigenvalue_ZORA = Quantity(
         type=np.dtype(np.float64),
@@ -568,16 +500,14 @@ class x_fhi_aims_section_eigenvalues_list_ZORA(MSection):
         unit='joule',
         description='''
         Single eigenvalue of scaled ZORA
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_eigenvalue_eigenvalue_ZORA'))
+        ''')
 
     x_fhi_aims_eigenvalue_occupation_ZORA = Quantity(
         type=np.dtype(np.float64),
         shape=[],
         description='''
         Occupation of single eigenfunction of scaled ZORA
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_eigenvalue_occupation_ZORA'))
+        ''')
 
 
 class x_fhi_aims_section_eigenvalues_list(MSection):
@@ -585,7 +515,7 @@ class x_fhi_aims_section_eigenvalues_list(MSection):
     section for one list of eigenvalues at specific kpoint and spin
     '''
 
-    m_def = Section(validate=False, a_legacy=LegacyDefinition(name='x_fhi_aims_section_eigenvalues_list'))
+    m_def = Section(validate=False)
 
     x_fhi_aims_eigenvalue_eigenvalue = Quantity(
         type=np.dtype(np.float64),
@@ -593,16 +523,14 @@ class x_fhi_aims_section_eigenvalues_list(MSection):
         unit='joule',
         description='''
         Single eigenvalue
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_eigenvalue_eigenvalue'))
+        ''')
 
     x_fhi_aims_eigenvalue_occupation = Quantity(
         type=np.dtype(np.float64),
         shape=[],
         description='''
         Occupation of single eigenfunction
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_eigenvalue_occupation'))
+        ''')
 
 
 class x_fhi_aims_section_eigenvalues_spin_perturbativeGW(MSection):
@@ -610,7 +538,7 @@ class x_fhi_aims_section_eigenvalues_spin_perturbativeGW(MSection):
     section for one spin orientation from a perturbative GW calculation
     '''
 
-    m_def = Section(validate=False, a_legacy=LegacyDefinition(name='x_fhi_aims_section_eigenvalues_spin_perturbativeGW'))
+    m_def = Section(validate=False)
 
 
 class x_fhi_aims_section_eigenvalues_spin_ZORA(MSection):
@@ -618,36 +546,32 @@ class x_fhi_aims_section_eigenvalues_spin_ZORA(MSection):
     section for one spin orientation of scaled ZORA
     '''
 
-    m_def = Section(validate=False, a_legacy=LegacyDefinition(name='x_fhi_aims_section_eigenvalues_spin_ZORA'))
+    m_def = Section(validate=False)
 
     x_fhi_aims_eigenvalue_kpoint1_ZORA = Quantity(
         type=np.dtype(np.float64),
         shape=[],
         description='''
         Component 1 of kpoints on which the eigenvalues were evaluated of scaled ZORA
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_eigenvalue_kpoint1_ZORA'))
+        ''')
 
     x_fhi_aims_eigenvalue_kpoint2_ZORA = Quantity(
         type=np.dtype(np.float64),
         shape=[],
         description='''
         Component 2 of kpoints on which the eigenvalues were evaluated of scaled ZORA
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_eigenvalue_kpoint2_ZORA'))
+        ''')
 
     x_fhi_aims_eigenvalue_kpoint3_ZORA = Quantity(
         type=np.dtype(np.float64),
         shape=[],
         description='''
         Component 3 of kpoints on which the eigenvalues were evaluated of scaled ZORA
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_eigenvalue_kpoint3_ZORA'))
+        ''')
 
     x_fhi_aims_section_eigenvalues_list_ZORA = SubSection(
         sub_section=SectionProxy('x_fhi_aims_section_eigenvalues_list_ZORA'),
-        repeats=True,
-        a_legacy=LegacyDefinition(name='x_fhi_aims_section_eigenvalues_list_ZORA'))
+        repeats=True)
 
 
 class x_fhi_aims_section_eigenvalues_spin(MSection):
@@ -655,41 +579,36 @@ class x_fhi_aims_section_eigenvalues_spin(MSection):
     section for one spin orientation
     '''
 
-    m_def = Section(validate=False, a_legacy=LegacyDefinition(name='x_fhi_aims_section_eigenvalues_spin'))
+    m_def = Section(validate=False)
 
     x_fhi_aims_eigenvalue_kpoint1 = Quantity(
         type=np.dtype(np.float64),
         shape=[],
         description='''
         Component 1 of kpoints on which the eigenvalues were evaluated
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_eigenvalue_kpoint1'))
+        ''')
 
     x_fhi_aims_eigenvalue_kpoint2 = Quantity(
         type=np.dtype(np.float64),
         shape=[],
         description='''
         Component 2 of kpoints on which the eigenvalues were evaluated
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_eigenvalue_kpoint2'))
+        ''')
 
     x_fhi_aims_eigenvalue_kpoint3 = Quantity(
         type=np.dtype(np.float64),
         shape=[],
         description='''
         Component 3 of kpoints on which the eigenvalues were evaluated
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_eigenvalue_kpoint3'))
+        ''')
 
     x_fhi_aims_section_eigenvalues_list_perturbativeGW = SubSection(
         sub_section=SectionProxy('x_fhi_aims_section_eigenvalues_list_perturbativeGW'),
-        repeats=True,
-        a_legacy=LegacyDefinition(name='x_fhi_aims_section_eigenvalues_list_perturbativeGW'))
+        repeats=True)
 
     x_fhi_aims_section_eigenvalues_list = SubSection(
         sub_section=SectionProxy('x_fhi_aims_section_eigenvalues_list'),
-        repeats=True,
-        a_legacy=LegacyDefinition(name='x_fhi_aims_section_eigenvalues_list'))
+        repeats=True)
 
 
 class x_fhi_aims_section_eigenvalues_ZORA(MSection):
@@ -697,12 +616,11 @@ class x_fhi_aims_section_eigenvalues_ZORA(MSection):
     section for gathering eigenvalues of scaled ZORA
     '''
 
-    m_def = Section(validate=False, a_legacy=LegacyDefinition(name='x_fhi_aims_section_eigenvalues_ZORA'))
+    m_def = Section(validate=False)
 
     x_fhi_aims_section_eigenvalues_group_ZORA = SubSection(
         sub_section=SectionProxy('x_fhi_aims_section_eigenvalues_group_ZORA'),
-        repeats=False,
-        a_legacy=LegacyDefinition(name='x_fhi_aims_section_eigenvalues_group_ZORA'))
+        repeats=False)
 
 
 class x_fhi_aims_section_MD_detect(MSection):
@@ -710,7 +628,7 @@ class x_fhi_aims_section_MD_detect(MSection):
     Section to detect MD immediately during parsing of controlInOut
     '''
 
-    m_def = Section(validate=False, a_legacy=LegacyDefinition(name='x_fhi_aims_section_MD_detect'))
+    m_def = Section(validate=False)
 
 
 class x_fhi_aims_section_parallel_task_assignement(MSection):
@@ -718,23 +636,21 @@ class x_fhi_aims_section_parallel_task_assignement(MSection):
     -
     '''
 
-    m_def = Section(validate=False, a_legacy=LegacyDefinition(name='x_fhi_aims_section_parallel_task_assignement'))
+    m_def = Section(validate=False)
 
     x_fhi_aims_parallel_task_host = Quantity(
         type=str,
         shape=[],
         description='''
         -
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_parallel_task_host'))
+        ''')
 
     x_fhi_aims_parallel_task_nr = Quantity(
         type=np.dtype(np.int32),
         shape=[],
         description='''
         -
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_parallel_task_nr'))
+        ''')
 
 
 class x_fhi_aims_section_parallel_tasks(MSection):
@@ -742,12 +658,11 @@ class x_fhi_aims_section_parallel_tasks(MSection):
     -
     '''
 
-    m_def = Section(validate=False, a_legacy=LegacyDefinition(name='x_fhi_aims_section_parallel_tasks'))
+    m_def = Section(validate=False)
 
     x_fhi_aims_section_parallel_task_assignement = SubSection(
         sub_section=SectionProxy('x_fhi_aims_section_parallel_task_assignement'),
-        repeats=True,
-        a_legacy=LegacyDefinition(name='x_fhi_aims_section_parallel_task_assignement'))
+        repeats=True)
 
 
 class x_fhi_aims_section_vdW_TS(MSection):
@@ -755,39 +670,35 @@ class x_fhi_aims_section_vdW_TS(MSection):
     -
     '''
 
-    m_def = Section(validate=False, a_legacy=LegacyDefinition(name='x_fhi_aims_section_vdW_TS'))
+    m_def = Section(validate=False)
 
     x_fhi_aims_atom_type_vdW = Quantity(
         type=str,
         shape=[],
         description='''
         -
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_atom_type_vdW'))
+        ''')
 
     x_fhi_aims_free_atom_volume = Quantity(
         type=np.dtype(np.float64),
         shape=[],
         description='''
         -
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_free_atom_volume'))
+        ''')
 
     x_fhi_aims_hirschfeld_charge = Quantity(
         type=np.dtype(np.float64),
         shape=[],
         description='''
         -
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_hirschfeld_charge'))
+        ''')
 
     x_fhi_aims_hirschfeld_volume = Quantity(
         type=np.dtype(np.float64),
         shape=[],
         description='''
         -
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_hirschfeld_volume'))
+        ''')
 
     x_fhi_aims_vdW_energy_corr_TS = Quantity(
         type=np.dtype(np.float64),
@@ -795,13 +706,12 @@ class x_fhi_aims_section_vdW_TS(MSection):
         unit='joule',
         description='''
         -
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_vdW_energy_corr_TS'))
+        ''')
 
 
-class section_single_configuration_calculation(public.section_single_configuration_calculation):
+class Calculation(run.calculation.Calculation):
 
-    m_def = Section(validate=False, extends_base_section=True, a_legacy=LegacyDefinition(name='section_single_configuration_calculation'))
+    m_def = Section(validate=False, extends_base_section=True)
 
     x_fhi_aims_atom_forces_free_x = Quantity(
         type=np.dtype(np.float64),
@@ -809,9 +719,7 @@ class section_single_configuration_calculation(public.section_single_configurati
         unit='newton',
         description='''
         -
-        ''',
-        categories=[public.atom_forces_type],
-        a_legacy=LegacyDefinition(name='x_fhi_aims_atom_forces_free_x'))
+        ''',)
 
     x_fhi_aims_atom_forces_free_y = Quantity(
         type=np.dtype(np.float64),
@@ -819,9 +727,7 @@ class section_single_configuration_calculation(public.section_single_configurati
         unit='newton',
         description='''
         -
-        ''',
-        categories=[public.atom_forces_type],
-        a_legacy=LegacyDefinition(name='x_fhi_aims_atom_forces_free_y'))
+        ''',)
 
     x_fhi_aims_atom_forces_free_z = Quantity(
         type=np.dtype(np.float64),
@@ -829,9 +735,7 @@ class section_single_configuration_calculation(public.section_single_configurati
         unit='newton',
         description='''
         -
-        ''',
-        categories=[public.atom_forces_type],
-        a_legacy=LegacyDefinition(name='x_fhi_aims_atom_forces_free_z'))
+        ''',)
 
     x_fhi_aims_energy_C_LDA = Quantity(
         type=np.dtype(np.float64),
@@ -840,9 +744,7 @@ class section_single_configuration_calculation(public.section_single_configurati
         description='''
         Component of the correlation (C) energy at the LDA level calculated with the self
         consistent density of the target functional.
-        ''',
-        categories=[public.energy_value, public.energy_type_C, public.energy_component],
-        a_legacy=LegacyDefinition(name='x_fhi_aims_energy_C_LDA'))
+        ''',)
 
     x_fhi_aims_energy_X_LDA = Quantity(
         type=np.dtype(np.float64),
@@ -851,32 +753,27 @@ class section_single_configuration_calculation(public.section_single_configurati
         description='''
         Component of the exchange (X) energy at the LDA level calculated with the self
         consistent density of the target functional.
-        ''',
-        categories=[public.energy_value, public.energy_type_X, public.energy_component],
-        a_legacy=LegacyDefinition(name='x_fhi_aims_energy_X_LDA'))
+        ''',)
 
     x_fhi_aims_cube_filename = Quantity(
         type=str,
         shape=[],
         description='''
         filename of cube file
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_cube_filename'))
+        ''')
 
     x_fhi_aims_section_eigenvalues_group_perturbativeGW = SubSection(
         sub_section=SectionProxy('x_fhi_aims_section_eigenvalues_group_perturbativeGW'),
-        repeats=False,
-        a_legacy=LegacyDefinition(name='x_fhi_aims_section_eigenvalues_group_perturbativeGW'))
+        repeats=False)
 
     x_fhi_aims_section_eigenvalues_ZORA = SubSection(
         sub_section=SectionProxy('x_fhi_aims_section_eigenvalues_ZORA'),
-        repeats=False,
-        a_legacy=LegacyDefinition(name='x_fhi_aims_section_eigenvalues_ZORA'))
+        repeats=False)
 
 
-class section_scf_iteration(public.section_scf_iteration):
+class ScfIeration(run.calculation.ScfIteration):
 
-    m_def = Section(validate=False, extends_base_section=True, a_legacy=LegacyDefinition(name='section_scf_iteration'))
+    m_def = Section(validate=False, extends_base_section=True)
 
     x_fhi_aims_atom_forces_raw_x = Quantity(
         type=np.dtype(np.float64),
@@ -884,8 +781,7 @@ class section_scf_iteration(public.section_scf_iteration):
         unit='newton',
         description='''
         -
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_atom_forces_raw_x'))
+        ''')
 
     x_fhi_aims_atom_forces_raw_y = Quantity(
         type=np.dtype(np.float64),
@@ -893,8 +789,7 @@ class section_scf_iteration(public.section_scf_iteration):
         unit='newton',
         description='''
         -
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_atom_forces_raw_y'))
+        ''')
 
     x_fhi_aims_atom_forces_raw_z = Quantity(
         type=np.dtype(np.float64),
@@ -902,8 +797,7 @@ class section_scf_iteration(public.section_scf_iteration):
         unit='newton',
         description='''
         -
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_atom_forces_raw_z'))
+        ''')
 
     x_fhi_aims_energy_electrostatic_free_atom_scf_iteration = Quantity(
         type=np.dtype(np.float64),
@@ -912,9 +806,7 @@ class section_scf_iteration(public.section_scf_iteration):
         description='''
         Electrostatic energy contributions from superposition of free atom densities
         during the scf iterations
-        ''',
-        categories=[public.energy_value, public.energy_component],
-        a_legacy=LegacyDefinition(name='x_fhi_aims_energy_electrostatic_free_atom_scf_iteration'))
+        ''',)
 
     x_fhi_aims_energy_scgw_correlation_energy = Quantity(
         type=np.dtype(np.float64),
@@ -922,36 +814,28 @@ class section_scf_iteration(public.section_scf_iteration):
         unit='joule',
         description='''
         scGW correlation energy at each iteration
-        ''',
-        categories=[public.energy_value, public.energy_component],
-        a_legacy=LegacyDefinition(name='x_fhi_aims_energy_scgw_correlation_energy'))
+        ''',)
 
     x_fhi_aims_poles_fit_accuracy = Quantity(
         type=np.dtype(np.float64),
         shape=[],
         description='''
         Fit acccuracy for the Fast-Fourier Transforms necessary in the scGW formalism
-        ''',
-        categories=[public.energy_value, public.energy_component],
-        a_legacy=LegacyDefinition(name='x_fhi_aims_poles_fit_accuracy'))
+        ''',)
 
     x_fhi_aims_scf_date_start = Quantity(
         type=str,
         shape=[],
         description='''
         -
-        ''',
-        categories=[public.time_info, public.accessory_info],
-        a_legacy=LegacyDefinition(name='x_fhi_aims_scf_date_start'))
+        ''',)
 
     x_fhi_aims_scf_time_start = Quantity(
         type=str,
         shape=[],
         description='''
         -
-        ''',
-        categories=[public.time_info, public.accessory_info],
-        a_legacy=LegacyDefinition(name='x_fhi_aims_scf_time_start'))
+        ''',)
 
     x_fhi_aims_scgw_galitskii_migdal_total_energy = Quantity(
         type=np.dtype(np.float64),
@@ -959,9 +843,7 @@ class section_scf_iteration(public.section_scf_iteration):
         unit='joule',
         description='''
         scGW total energy at each iteration calculated using the Galitskii-Migdal formula
-        ''',
-        categories=[public.energy_value, public.energy_component],
-        a_legacy=LegacyDefinition(name='x_fhi_aims_scgw_galitskii_migdal_total_energy'))
+        ''',)
 
     x_fhi_aims_scgw_hartree_energy_sum_eigenvalues_scf_iteration = Quantity(
         type=np.dtype(np.float64),
@@ -970,9 +852,7 @@ class section_scf_iteration(public.section_scf_iteration):
         description='''
         scGW sum of eigenvalues calculated from the trace over the Hamiltonian times the
         Greens function matrices
-        ''',
-        categories=[public.energy_value, public.energy_component],
-        a_legacy=LegacyDefinition(name='x_fhi_aims_scgw_hartree_energy_sum_eigenvalues_scf_iteration'))
+        ''',)
 
     x_fhi_aims_scgw_kinetic_energy = Quantity(
         type=np.dtype(np.float64),
@@ -980,9 +860,7 @@ class section_scf_iteration(public.section_scf_iteration):
         unit='joule',
         description='''
         scGW kinetic energy at each iteration
-        ''',
-        categories=[public.energy_value, public.energy_component],
-        a_legacy=LegacyDefinition(name='x_fhi_aims_scgw_kinetic_energy'))
+        ''',)
 
     x_fhi_aims_scgw_rpa_correlation_energy = Quantity(
         type=np.dtype(np.float64),
@@ -991,17 +869,14 @@ class section_scf_iteration(public.section_scf_iteration):
         description='''
         The RPA correlation energy calculated from the Green's functions of the scGW at
         each iteration
-        ''',
-        categories=[public.energy_value, public.energy_component],
-        a_legacy=LegacyDefinition(name='x_fhi_aims_scgw_rpa_correlation_energy'))
+        ''',)
 
     x_fhi_aims_single_configuration_calculation_converged = Quantity(
         type=str,
         shape=[],
         description='''
         Determines whether a single configuration calculation is converged.
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_single_configuration_calculation_converged'))
+        ''')
 
     x_fhi_aims_single_particle_energy = Quantity(
         type=np.dtype(np.float64),
@@ -1009,67 +884,59 @@ class section_scf_iteration(public.section_scf_iteration):
         unit='joule',
         description='''
         scGW single particle energy at each iteration
-        ''',
-        categories=[public.energy_value, public.energy_component],
-        a_legacy=LegacyDefinition(name='x_fhi_aims_single_particle_energy'))
+        ''',)
 
     x_fhi_aims_section_eigenvalues_group = SubSection(
         sub_section=SectionProxy('x_fhi_aims_section_eigenvalues_group'),
-        repeats=False,
-        a_legacy=LegacyDefinition(name='x_fhi_aims_section_eigenvalues_group'))
+        repeats=False)
 
     x_fhi_aims_energy_reference_fermi = Quantity(
-        type=float, unit=ureg.eV, a_legacy=LegacyDefinition(name='x_fhi_aims_energy_reference_fermi'))
+        type=float, unit='eV')
 
 
-class section_k_band(public.section_k_band):
+class BandStructure(run.calculation.BandStructure):
 
-    m_def = Section(validate=False, extends_base_section=True, a_legacy=LegacyDefinition(name='section_k_band'))
+    m_def = Section(validate=False, extends_base_section=True)
 
     x_fhi_aims_band_k1 = Quantity(
         type=np.dtype(np.float64),
         shape=[],
         description='''
         -
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_band_k1'))
+        ''')
 
     x_fhi_aims_band_k2 = Quantity(
         type=np.dtype(np.float64),
         shape=[],
         description='''
         -
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_band_k2'))
+        ''')
 
     x_fhi_aims_band_k3 = Quantity(
         type=np.dtype(np.float64),
         shape=[],
         description='''
         -
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_band_k3'))
+        ''')
 
     x_fhi_aims_band_occupations_eigenvalue_string = Quantity(
         type=str,
         shape=[],
         description='''
         -
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_band_occupations_eigenvalue_string'))
+        ''')
 
     x_fhi_aims_band_segment = Quantity(
         type=np.dtype(np.int32),
         shape=[],
         description='''
         -
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_band_segment'))
+        ''')
 
 
-class section_method(public.section_method):
+class Method(run.method.Method):
 
-    m_def = Section(validate=False, extends_base_section=True, a_legacy=LegacyDefinition(name='section_method'))
+    m_def = Section(validate=False, extends_base_section=True)
 
     x_fhi_aims_controlIn_charge = Quantity(
         type=np.dtype(np.float64),
@@ -1077,8 +944,7 @@ class section_method(public.section_method):
         description='''
         -
         ''',
-        categories=[x_fhi_aims_controlIn_method],
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlIn_charge'))
+        categories=[x_fhi_aims_controlIn_method])
 
     x_fhi_aims_controlIn_hse_omega = Quantity(
         type=np.dtype(np.float64),
@@ -1086,18 +952,14 @@ class section_method(public.section_method):
         unit='1 / meter',
         description='''
         -
-        ''',
-        categories=[x_fhi_aims_controlIn_method, public.settings_potential_energy_surface, public.settings_XC, public.settings_XC_functional],
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlIn_hse_omega'))
+        ''',)
 
     x_fhi_aims_controlIn_hse_unit = Quantity(
         type=str,
         shape=[],
         description='''
         -
-        ''',
-        categories=[x_fhi_aims_controlIn_method, public.settings_potential_energy_surface, public.settings_XC, public.settings_XC_functional],
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlIn_hse_unit'))
+        ''',)
 
     x_fhi_aims_controlIn_hybrid_xc_coeff = Quantity(
         type=np.dtype(np.float64),
@@ -1105,8 +967,7 @@ class section_method(public.section_method):
         description='''
         -
         ''',
-        categories=[x_fhi_aims_controlIn_method],
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlIn_hybrid_xc_coeff'))
+        categories=[x_fhi_aims_controlIn_method])
 
     x_fhi_aims_controlIn_k1 = Quantity(
         type=np.dtype(np.int32),
@@ -1114,8 +975,7 @@ class section_method(public.section_method):
         description='''
         -
         ''',
-        categories=[x_fhi_aims_controlIn_method],
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlIn_k1'))
+        categories=[x_fhi_aims_controlIn_method])
 
     x_fhi_aims_controlIn_k2 = Quantity(
         type=np.dtype(np.int32),
@@ -1123,8 +983,7 @@ class section_method(public.section_method):
         description='''
         -
         ''',
-        categories=[x_fhi_aims_controlIn_method],
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlIn_k2'))
+        categories=[x_fhi_aims_controlIn_method])
 
     x_fhi_aims_controlIn_k3 = Quantity(
         type=np.dtype(np.int32),
@@ -1132,8 +991,7 @@ class section_method(public.section_method):
         description='''
         -
         ''',
-        categories=[x_fhi_aims_controlIn_method],
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlIn_k3'))
+        categories=[x_fhi_aims_controlIn_method])
 
     x_fhi_aims_controlIn_k_grid = Quantity(
         type=np.dtype(np.int32),
@@ -1141,8 +999,7 @@ class section_method(public.section_method):
         description='''
         -
         ''',
-        categories=[x_fhi_aims_controlIn_method],
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlIn_k_grid'))
+        categories=[x_fhi_aims_controlIn_method])
 
     x_fhi_aims_controlIn_occupation_order = Quantity(
         type=np.dtype(np.int32),
@@ -1150,8 +1007,7 @@ class section_method(public.section_method):
         description='''
         -
         ''',
-        categories=[x_fhi_aims_controlIn_method],
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlIn_occupation_order'))
+        categories=[x_fhi_aims_controlIn_method])
 
     x_fhi_aims_controlIn_occupation_type = Quantity(
         type=str,
@@ -1159,8 +1015,7 @@ class section_method(public.section_method):
         description='''
         -
         ''',
-        categories=[x_fhi_aims_controlIn_method],
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlIn_occupation_type'))
+        categories=[x_fhi_aims_controlIn_method])
 
     x_fhi_aims_controlIn_occupation_width = Quantity(
         type=np.dtype(np.float64),
@@ -1168,35 +1023,28 @@ class section_method(public.section_method):
         description='''
         -
         ''',
-        categories=[x_fhi_aims_controlIn_method],
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlIn_occupation_width'))
+        categories=[x_fhi_aims_controlIn_method])
 
     x_fhi_aims_controlIn_override_relativity = Quantity(
         type=str,
         shape=[],
         description='''
         -
-        ''',
-        categories=[x_fhi_aims_controlIn_method, public.settings_potential_energy_surface, public.settings_XC, public.settings_relativity],
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlIn_override_relativity'))
+        ''',)
 
     x_fhi_aims_controlIn_relativistic_threshold = Quantity(
         type=np.dtype(np.float64),
         shape=[],
         description='''
         -
-        ''',
-        categories=[x_fhi_aims_controlIn_method, public.settings_potential_energy_surface, public.settings_XC, public.settings_relativity],
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlIn_relativistic_threshold'))
+        ''',)
 
     x_fhi_aims_controlIn_relativistic = Quantity(
         type=str,
         shape=[],
         description='''
         -
-        ''',
-        categories=[x_fhi_aims_controlIn_method, public.settings_potential_energy_surface, public.settings_XC, public.settings_relativity],
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlIn_relativistic'))
+        ''',)
 
     x_fhi_aims_controlIn_sc_accuracy_eev = Quantity(
         type=np.dtype(np.float64),
@@ -1204,8 +1052,7 @@ class section_method(public.section_method):
         description='''
         -
         ''',
-        categories=[x_fhi_aims_controlIn_method],
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlIn_sc_accuracy_eev'))
+        categories=[x_fhi_aims_controlIn_method])
 
     x_fhi_aims_controlIn_sc_accuracy_etot = Quantity(
         type=np.dtype(np.float64),
@@ -1213,8 +1060,7 @@ class section_method(public.section_method):
         description='''
         -
         ''',
-        categories=[x_fhi_aims_controlIn_method],
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlIn_sc_accuracy_etot'))
+        categories=[x_fhi_aims_controlIn_method])
 
     x_fhi_aims_controlIn_sc_accuracy_forces = Quantity(
         type=np.dtype(np.float64),
@@ -1222,8 +1068,7 @@ class section_method(public.section_method):
         description='''
         -
         ''',
-        categories=[x_fhi_aims_controlIn_method],
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlIn_sc_accuracy_forces'))
+        categories=[x_fhi_aims_controlIn_method])
 
     x_fhi_aims_controlIn_sc_accuracy_rho = Quantity(
         type=np.dtype(np.float64),
@@ -1231,8 +1076,7 @@ class section_method(public.section_method):
         description='''
         -
         ''',
-        categories=[x_fhi_aims_controlIn_method],
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlIn_sc_accuracy_rho'))
+        categories=[x_fhi_aims_controlIn_method])
 
     x_fhi_aims_controlIn_sc_accuracy_stress = Quantity(
         type=np.dtype(np.float64),
@@ -1240,8 +1084,7 @@ class section_method(public.section_method):
         description='''
         -
         ''',
-        categories=[x_fhi_aims_controlIn_method],
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlIn_sc_accuracy_stress'))
+        categories=[x_fhi_aims_controlIn_method])
 
     x_fhi_aims_controlIn_sc_iter_limit = Quantity(
         type=np.dtype(np.int32),
@@ -1249,8 +1092,7 @@ class section_method(public.section_method):
         description='''
         -
         ''',
-        categories=[x_fhi_aims_controlIn_method],
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlIn_sc_iter_limit'))
+        categories=[x_fhi_aims_controlIn_method])
 
     x_fhi_aims_controlIn_spin = Quantity(
         type=str,
@@ -1258,8 +1100,7 @@ class section_method(public.section_method):
         description='''
         -
         ''',
-        categories=[x_fhi_aims_controlIn_method],
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlIn_spin'))
+        categories=[x_fhi_aims_controlIn_method])
 
     x_fhi_aims_controlIn_verbatim_writeout = Quantity(
         type=str,
@@ -1267,17 +1108,14 @@ class section_method(public.section_method):
         description='''
         -
         ''',
-        categories=[x_fhi_aims_controlIn_method],
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlIn_verbatim_writeout'))
+        categories=[x_fhi_aims_controlIn_method])
 
     x_fhi_aims_controlIn_xc = Quantity(
         type=str,
         shape=[],
         description='''
         -
-        ''',
-        categories=[x_fhi_aims_controlIn_method, public.settings_potential_energy_surface, public.settings_XC, public.settings_XC_functional],
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlIn_xc'))
+        ''',)
 
     x_fhi_aims_controlInOut_band_segment_end1 = Quantity(
         type=np.dtype(np.float64),
@@ -1285,8 +1123,7 @@ class section_method(public.section_method):
         description='''
         -
         ''',
-        categories=[x_fhi_aims_controlInOut_method],
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlInOut_band_segment_end1'))
+        categories=[x_fhi_aims_controlInOut_method])
 
     x_fhi_aims_controlInOut_band_segment_end2 = Quantity(
         type=np.dtype(np.float64),
@@ -1294,8 +1131,7 @@ class section_method(public.section_method):
         description='''
         -
         ''',
-        categories=[x_fhi_aims_controlInOut_method],
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlInOut_band_segment_end2'))
+        categories=[x_fhi_aims_controlInOut_method])
 
     x_fhi_aims_controlInOut_band_segment_end3 = Quantity(
         type=np.dtype(np.float64),
@@ -1303,8 +1139,7 @@ class section_method(public.section_method):
         description='''
         -
         ''',
-        categories=[x_fhi_aims_controlInOut_method],
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlInOut_band_segment_end3'))
+        categories=[x_fhi_aims_controlInOut_method])
 
     x_fhi_aims_controlInOut_band_segment_start1 = Quantity(
         type=np.dtype(np.float64),
@@ -1312,8 +1147,7 @@ class section_method(public.section_method):
         description='''
         -
         ''',
-        categories=[x_fhi_aims_controlInOut_method],
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlInOut_band_segment_start1'))
+        categories=[x_fhi_aims_controlInOut_method])
 
     x_fhi_aims_controlInOut_band_segment_start2 = Quantity(
         type=np.dtype(np.float64),
@@ -1321,8 +1155,7 @@ class section_method(public.section_method):
         description='''
         -
         ''',
-        categories=[x_fhi_aims_controlInOut_method],
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlInOut_band_segment_start2'))
+        categories=[x_fhi_aims_controlInOut_method])
 
     x_fhi_aims_controlInOut_band_segment_start3 = Quantity(
         type=np.dtype(np.float64),
@@ -1330,8 +1163,7 @@ class section_method(public.section_method):
         description='''
         -
         ''',
-        categories=[x_fhi_aims_controlInOut_method],
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlInOut_band_segment_start3'))
+        categories=[x_fhi_aims_controlInOut_method])
 
     x_fhi_aims_controlInOut_hse_omega = Quantity(
         type=np.dtype(np.float64),
@@ -1339,18 +1171,14 @@ class section_method(public.section_method):
         unit='1 / meter',
         description='''
         -
-        ''',
-        categories=[x_fhi_aims_controlInOut_method, public.settings_XC, public.settings_potential_energy_surface, public.settings_XC_functional],
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlInOut_hse_omega'))
+        ''',)
 
     x_fhi_aims_controlInOut_hse_unit = Quantity(
         type=str,
         shape=[],
         description='''
         -
-        ''',
-        categories=[x_fhi_aims_controlInOut_method, public.settings_XC, public.settings_potential_energy_surface, public.settings_XC_functional],
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlInOut_hse_unit'))
+        ''',)
 
     x_fhi_aims_controlInOut_hybrid_xc_coeff = Quantity(
         type=np.dtype(np.float64),
@@ -1358,8 +1186,7 @@ class section_method(public.section_method):
         description='''
         -
         ''',
-        categories=[x_fhi_aims_controlInOut_method],
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlInOut_hybrid_xc_coeff'))
+        categories=[x_fhi_aims_controlInOut_method])
 
     x_fhi_aims_controlInOut_k1 = Quantity(
         type=np.dtype(np.int32),
@@ -1367,8 +1194,7 @@ class section_method(public.section_method):
         description='''
         -
         ''',
-        categories=[x_fhi_aims_controlInOut_method],
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlInOut_k1'))
+        categories=[x_fhi_aims_controlInOut_method])
 
     x_fhi_aims_controlInOut_k2 = Quantity(
         type=np.dtype(np.int32),
@@ -1376,8 +1202,7 @@ class section_method(public.section_method):
         description='''
         -
         ''',
-        categories=[x_fhi_aims_controlInOut_method],
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlInOut_k2'))
+        categories=[x_fhi_aims_controlInOut_method])
 
     x_fhi_aims_controlInOut_k3 = Quantity(
         type=np.dtype(np.int32),
@@ -1385,8 +1210,7 @@ class section_method(public.section_method):
         description='''
         -
         ''',
-        categories=[x_fhi_aims_controlInOut_method],
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlInOut_k3'))
+        categories=[x_fhi_aims_controlInOut_method])
 
     x_fhi_aims_controlInOut_k_grid = Quantity(
         type=np.dtype(np.int32),
@@ -1394,8 +1218,7 @@ class section_method(public.section_method):
         description='''
         -
         ''',
-        categories=[x_fhi_aims_controlInOut_method],
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlInOut_k_grid'))
+        categories=[x_fhi_aims_controlInOut_method])
 
     x_fhi_aims_controlInOut_number_of_spin_channels = Quantity(
         type=np.dtype(np.int32),
@@ -1403,59 +1226,48 @@ class section_method(public.section_method):
         description='''
         -
         ''',
-        categories=[x_fhi_aims_controlInOut_method],
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlInOut_number_of_spin_channels'))
+        categories=[x_fhi_aims_controlInOut_method])
 
     x_fhi_aims_controlInOut_override_relativity = Quantity(
         type=str,
         shape=[],
         description='''
         -
-        ''',
-        categories=[x_fhi_aims_controlInOut_method, public.settings_XC, public.settings_potential_energy_surface, public.settings_relativity],
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlInOut_override_relativity'))
+        ''',)
 
     x_fhi_aims_controlInOut_relativistic_threshold = Quantity(
         type=np.dtype(np.float64),
         shape=[],
         description='''
         -
-        ''',
-        categories=[x_fhi_aims_controlInOut_method, public.settings_potential_energy_surface, public.settings_XC, public.settings_relativity],
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlInOut_relativistic_threshold'))
+        ''',)
 
     x_fhi_aims_controlInOut_relativistic = Quantity(
         type=str,
         shape=[],
         description='''
         -
-        ''',
-        categories=[x_fhi_aims_controlInOut_method, public.settings_potential_energy_surface, public.settings_XC, public.settings_relativity],
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlInOut_relativistic'))
+        ''',)
 
     x_fhi_aims_controlInOut_xc = Quantity(
         type=str,
         shape=[],
         description='''
         -
-        ''',
-        categories=[x_fhi_aims_controlInOut_method, public.settings_XC, public.settings_potential_energy_surface, public.settings_XC_functional],
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlInOut_xc'))
+        ''',)
 
     x_fhi_aims_section_controlIn_basis_set = SubSection(
         sub_section=SectionProxy('x_fhi_aims_section_controlIn_basis_set'),
-        repeats=True,
-        a_legacy=LegacyDefinition(name='x_fhi_aims_section_controlIn_basis_set'))
+        repeats=True)
 
     x_fhi_aims_section_MD_detect = SubSection(
         sub_section=SectionProxy('x_fhi_aims_section_MD_detect'),
-        repeats=True,
-        a_legacy=LegacyDefinition(name='x_fhi_aims_section_MD_detect'))
+        repeats=True)
 
 
-class section_run(public.section_run):
+class Run(run.run.Run):
 
-    m_def = Section(validate=False, extends_base_section=True, a_legacy=LegacyDefinition(name='section_run'))
+    m_def = Section(validate=False, extends_base_section=True)
 
     x_fhi_aims_controlIn_MD_time_step = Quantity(
         type=np.dtype(np.float64),
@@ -1463,9 +1275,7 @@ class section_run(public.section_run):
         unit='second',
         description='''
         -
-        ''',
-        categories=[public.settings_run, x_fhi_aims_controlIn_run],
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlIn_MD_time_step'))
+        ''',)
 
     x_fhi_aims_controlInOut_MD_time_step = Quantity(
         type=np.dtype(np.float64),
@@ -1473,75 +1283,65 @@ class section_run(public.section_run):
         unit='second',
         description='''
         -
-        ''',
-        categories=[public.settings_run, x_fhi_aims_controlInOut_run],
-        a_legacy=LegacyDefinition(name='x_fhi_aims_controlInOut_MD_time_step'))
+        ''',)
 
     x_fhi_aims_geometry_optimization_converged = Quantity(
         type=str,
         shape=[],
         description='''
         Determines whether a geoemtry optimization is converged.
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_geometry_optimization_converged'))
+        ''')
 
     x_fhi_aims_number_of_tasks = Quantity(
         type=str,
         shape=[],
         description='''
         -
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_number_of_tasks'))
+        ''')
 
     x_fhi_aims_program_compilation_date = Quantity(
         type=str,
         shape=[],
         description='''
         -
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_program_compilation_date'))
+        ''')
 
     x_fhi_aims_program_compilation_time = Quantity(
         type=str,
         shape=[],
         description='''
         -
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_program_compilation_time'))
+        ''')
 
     x_fhi_aims_program_execution_date = Quantity(
         type=str,
         shape=[],
         description='''
         -
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_program_execution_date'))
+        ''')
 
     x_fhi_aims_program_execution_time = Quantity(
         type=str,
         shape=[],
         description='''
         -
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_program_execution_time'))
+        ''')
 
     x_fhi_aims_section_parallel_tasks = SubSection(
         sub_section=SectionProxy('x_fhi_aims_section_parallel_tasks'),
-        repeats=False,
-        a_legacy=LegacyDefinition(name='x_fhi_aims_section_parallel_tasks'))
+        repeats=False)
 
 
-class section_system(public.section_system):
+class System(run.system.System):
 
-    m_def = Section(validate=False, extends_base_section=True, a_legacy=LegacyDefinition(name='section_system'))
+    m_def = Section(validate=False, extends_base_section=True)
 
     x_fhi_aims_geometry_atom_labels = Quantity(
         type=str,
         shape=[],
         description='''
         labels of atom
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_geometry_atom_labels'))
+        ''')
 
     x_fhi_aims_geometry_atom_positions_x = Quantity(
         type=np.dtype(np.float64),
@@ -1549,8 +1349,7 @@ class section_system(public.section_system):
         unit='meter',
         description='''
         x component of atomic position
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_geometry_atom_positions_x'))
+        ''')
 
     x_fhi_aims_geometry_atom_positions_y = Quantity(
         type=np.dtype(np.float64),
@@ -1558,8 +1357,7 @@ class section_system(public.section_system):
         unit='meter',
         description='''
         y component of atomic position
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_geometry_atom_positions_y'))
+        ''')
 
     x_fhi_aims_geometry_atom_positions_z = Quantity(
         type=np.dtype(np.float64),
@@ -1567,8 +1365,7 @@ class section_system(public.section_system):
         unit='meter',
         description='''
         z component of atomic position
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_geometry_atom_positions_z'))
+        ''')
 
     x_fhi_aims_geometry_atom_velocity_x = Quantity(
         type=np.dtype(np.float64),
@@ -1576,8 +1373,7 @@ class section_system(public.section_system):
         unit='meter / second',
         description='''
         x component of atomic velocity
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_geometry_atom_velocity_x'))
+        ''')
 
     x_fhi_aims_geometry_atom_velocity_y = Quantity(
         type=np.dtype(np.float64),
@@ -1585,8 +1381,7 @@ class section_system(public.section_system):
         unit='meter / second',
         description='''
         y component of atomic velocity
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_geometry_atom_velocity_y'))
+        ''')
 
     x_fhi_aims_geometry_atom_velocity_z = Quantity(
         type=np.dtype(np.float64),
@@ -1594,8 +1389,7 @@ class section_system(public.section_system):
         unit='meter / second',
         description='''
         z component of atomic velocity
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_geometry_atom_velocity_z'))
+        ''')
 
     x_fhi_aims_geometry_lattice_vector_x = Quantity(
         type=np.dtype(np.float64),
@@ -1603,8 +1397,7 @@ class section_system(public.section_system):
         unit='meter',
         description='''
         x component of lattice vector
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_geometry_lattice_vector_x'))
+        ''')
 
     x_fhi_aims_geometry_lattice_vector_y = Quantity(
         type=np.dtype(np.float64),
@@ -1612,8 +1405,7 @@ class section_system(public.section_system):
         unit='meter',
         description='''
         y component of lattice vector
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_geometry_lattice_vector_y'))
+        ''')
 
     x_fhi_aims_geometry_lattice_vector_z = Quantity(
         type=np.dtype(np.float64),
@@ -1621,18 +1413,13 @@ class section_system(public.section_system):
         unit='meter',
         description='''
         z component of lattice vector
-        ''',
-        a_legacy=LegacyDefinition(name='x_fhi_aims_geometry_lattice_vector_z'))
+        ''')
 
 
-class section_atom_type(common_dft.section_atom_type):
+class AtomParameters(run.method.AtomParameters):
 
-    m_def = Section(validate=False, extends_base_section=True, a_legacy=LegacyDefinition(name='section_atom_type'))
+    m_def = Section(validate=False, extends_base_section=True)
 
     x_fhi_aims_section_controlInOut_atom_species = SubSection(
         sub_section=SectionProxy('x_fhi_aims_section_controlInOut_atom_species'),
-        repeats=True,
-        a_legacy=LegacyDefinition(name='x_fhi_aims_section_controlInOut_atom_species'))
-
-
-m_package.__init_metainfo__()
+        repeats=True)
