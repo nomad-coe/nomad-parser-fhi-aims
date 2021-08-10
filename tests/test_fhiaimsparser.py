@@ -76,7 +76,7 @@ def test_scf_spinpol(parser):
     assert sec_scfs[12].energy.total_t0.value.magnitude == approx(-5.56048676e-15)
     # assert sec_scfs[5].energy_reference_lowest_unoccupied[0].magnitude == approx(-1.42557688e-18)
     assert sec_scfs[7].energy.change.magnitude == approx(9.43361602e-22)
-    sec_eig = sec_scc.eigenvalues
+    sec_eig = sec_scc.eigenvalues[0]
     assert np.shape(sec_eig.kpoints) == (4, 3)
     assert np.shape(sec_eig.occupations[1][3]) == (19,)
     assert sec_eig.value[1][2][4].magnitude == approx(-1.1221523e-16)
@@ -94,7 +94,7 @@ def test_geomopt(parser):
     sec_sccs = archive.run[0].calculation
     assert len(sec_sccs) == 6
 
-    assert np.shape(sec_sccs[1].eigenvalues.value[0][0]) == (20,)
+    assert np.shape(sec_sccs[1].eigenvalues[0].value[0][0]) == (20,)
     assert sec_sccs[2].energy.correlation.value.magnitude == approx(-9.34966824e-18)
     assert len(sec_sccs[3].scf_iteration) == 6
     assert np.max(sec_sccs[3].forces.free.value_raw.magnitude) == approx(2.4933233e-11)
@@ -108,7 +108,7 @@ def test_band_spinpol(parser):
     assert len(archive.run[0].calculation) == 1
     sec_scc = archive.run[0].calculation[0]
 
-    sec_k_band = sec_scc.band_structure_electronic
+    sec_k_band = sec_scc.band_structure_electronic[0]
     assert len(sec_k_band.band_structure_segment) == 3
     assert np.shape(sec_k_band.band_structure_segment[0].value[1][14]) == (19,)
     assert np.shape(sec_k_band.band_structure_segment[1].kpoints) == (15, 3)
@@ -117,7 +117,7 @@ def test_band_spinpol(parser):
     assert sec_k_band.band_structure_segment[1].value[0][3][5].magnitude == approx(-1.54722007e-17)
     assert sec_k_band.band_structure_segment[2].kpoints[14][2] == approx(0.5)
 
-    sec_dos = sec_scc.dos_electronic
+    sec_dos = sec_scc.dos_electronic[0]
     assert np.shape(sec_dos.energies) == (50,)
     assert np.shape(sec_dos.total[1].value) == (50,)
     assert sec_dos.energies[46].magnitude == approx(-1.1999976e-18)
@@ -129,7 +129,7 @@ def test_band_silicon(silicon):
     """Tests that the band structure of silicon is parsed correctly.
     """
     scc = silicon.run[-1].calculation[0]
-    band = scc.band_structure_electronic
+    band = scc.band_structure_electronic[0]
     segments = band.band_structure_segment
     energies = np.array([s.value.to(ureg.electron_volt).magnitude for s in segments])
 
@@ -152,7 +152,7 @@ def test_dos_silicon(silicon):
     """Tests that the DOS of silicon is parsed correctly.
     """
     scc = silicon.run[-1].calculation[0]
-    dos = scc.dos_electronic
+    dos = scc.dos_electronic[0]
     energies = dos.energies.to(ureg.electron_volt).magnitude
     values = np.array([d.value for d in dos.total])
 
@@ -177,7 +177,7 @@ def test_dos(parser):
     parser.parse('tests/data/ClNa_dos/ClNa_dos.out', archive, None)
 
     sec_scc = archive.run[0].calculation[0]
-    sec_dos = sec_scc.dos_electronic
+    sec_dos = sec_scc.dos_electronic[0]
     assert np.shape(sec_dos.energies) == (50,)
     assert np.shape(sec_dos.total[0].value) == (50,)
 
@@ -222,7 +222,7 @@ def test_gw_eigs(parser):
     archive = EntryArchive()
     parser.parse('tests/data/CHN_gw/output.out', archive, None)
 
-    sec_eigs_gw = archive.run[0].calculation[0].gw.eigenvalues
+    sec_eigs_gw = archive.run[0].calculation[0].gw[0].eigenvalues[0]
     assert sec_eigs_gw.value_exchange[0][0][7].magnitude == approx(-1.16615227e-17)
     assert sec_eigs_gw.value_qp[0][0][71].magnitude == approx(-2.60353703e-20)
     assert sec_eigs_gw.occupations[0][0][64] == 2.0
