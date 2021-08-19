@@ -745,7 +745,7 @@ class FHIAimsParser(FairdiParser):
                 # energies and the DOS energies match.
                 eigs = (np.transpose(
                     data[5::2]) + energy_fermi_ev) * ureg.eV
-                sec_k_band_segment.value = eigs
+                sec_k_band_segment.energies = eigs
                 sec_k_band_segment.occupations = occs
 
         def read_dos(dos_file):
@@ -905,7 +905,7 @@ class FHIAimsParser(FairdiParser):
                 sec_eigenvalues = sec_scf.m_create(BandEnergies)
                 if eigenvalues[0] is not None:
                     sec_eigenvalues.kpoints = eigenvalues[0]
-                sec_eigenvalues.value = eigenvalues[1]
+                sec_eigenvalues.energies = eigenvalues[1]
                 sec_eigenvalues.occupations = eigenvalues[2]
 
             # stress tensor
@@ -1039,7 +1039,7 @@ class FHIAimsParser(FairdiParser):
                 sec_eigenvalues = sec_scc.m_create(BandEnergies)
                 if eigenvalues[0] is not None:
                     sec_eigenvalues.kpoints = eigenvalues[0]
-                sec_eigenvalues.value = eigenvalues[1]
+                sec_eigenvalues.energies = eigenvalues[1]
                 sec_eigenvalues.occupations = eigenvalues[2]
 
             # TODO add force contributions and stress
