@@ -25,6 +25,9 @@ from nomad.metainfo import (  # pylint: disable=unused-import
 from nomad.datamodel.metainfo import run
 
 
+m_package = Package()
+
+
 class x_fhi_aims_controlIn_method(MCategory):
     '''
     Parameters of control.in belonging to section method.

@@ -121,8 +121,8 @@ def test_band_spinpol(parser):
     assert np.shape(sec_dos.energies) == (50,)
     assert np.shape(sec_dos.total[1].value) == (50,)
     assert sec_dos.energies[46].magnitude == approx(-1.1999976e-18)
-    assert sec_dos.total[0].value[46].magnitude == approx(1.2418253e+19)
-    assert sec_dos.total[1].value[15].magnitude == approx(3.91517047e+19)
+    assert sec_dos.total[0].value[46].magnitude == approx(1.2418253e-11)
+    assert sec_dos.total[1].value[15].magnitude == approx(3.91517047e-11)
 
 
 def test_band_silicon(silicon):

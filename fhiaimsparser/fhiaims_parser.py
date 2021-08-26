@@ -27,7 +27,8 @@ from nomad.parsing.file_parser import TextParser, Quantity, DataTextParser
 
 from nomad.datamodel.metainfo.run.run import Run, Program, TimeRun
 from nomad.datamodel.metainfo.run.method import (
-    Electronic, Method, MethodReference, XCFunctional, Functional, AtomParameters, DFT
+    Electronic, Method, MethodReference, XCFunctional, Functional, AtomParameters, DFT,
+    BasisSet
 )
 from nomad.datamodel.metainfo.run.system import (
     System, SystemReference, Atoms
@@ -801,8 +802,8 @@ class FHIAimsParser(FairdiParser):
             lattice_vectors = section.get(
                 'lattice_vectors', self.out_parser.get('lattice_vectors'))
             if lattice_vectors is None:
-                lattice_vectors = np.eye(3) * ureg.m
-            volume = np.abs(np.linalg.det(lattice_vectors.magnitude))
+                lattice_vectors = np.eye(3) * ureg.angstrom
+            volume = np.abs(np.linalg.det(lattice_vectors.magnitude)) * ureg.angstrom ** 3
             n_spin = self.out_parser.get_number_of_spin_channels()
             # parse total first, we expect only one file
             total_dos_files, _ = section.get('total_dos_files', [['KS_DOS_total_raw.dat'], []])
@@ -815,7 +816,7 @@ class FHIAimsParser(FairdiParser):
                 sec_dos.n_energies = len(energies)
                 sec_dos.energies = energies
                 # dos unit is 1/(eV-cell volume)
-                dos = data[1: n_spin + 1] * (1 / ureg.eV) * volume
+                dos = data[1: n_spin + 1] * (1 / ureg.eV) * volume.to('m**3').magnitude
                 for spin in range(len(dos)):
                     sec_dos_values = sec_dos.m_create(DosValues, Dos.total)
                     sec_dos_values.spin = spin
@@ -982,6 +983,7 @@ class FHIAimsParser(FairdiParser):
                             except Exception:
                                 self.logger.warn('Error setting vdW metainfo.', data=dict(key=metainfo_name))
                             # TODO add the remanining properties
+            self._electronic_structure_method = 'DFT'
             sec_run.method[-1].electronic.van_der_waals_method = 'TS'
 
         def parse_section(section):
@@ -1088,7 +1090,6 @@ class FHIAimsParser(FairdiParser):
             parse_vdW(section)
 
             if self._electronic_structure_method in ['DFT', 'G0W0', 'scGW']:
-                # TODO i do not understand the idea for multiple method sections
                 sec_method = sec_run.m_create(Method)
                 sec_scc.method_ref.append(MethodReference(value=sec_run.method[-1]))
                 sec_method.electronic = Electronic(method=self._electronic_structure_method)
@@ -1117,7 +1118,9 @@ class FHIAimsParser(FairdiParser):
     def parse_method(self):
         sec_run = self.archive.run[-1]
         sec_method = sec_run.m_create(Method)
+        sec_method.basis_set.append(BasisSet(type='numeric AOs'))
         sec_electronic = sec_method.m_create(Electronic)
+        sec_electronic.method = self._electronic_structure_method
         sec_dft = sec_method.m_create(DFT)
 
         # control parameters from out file
