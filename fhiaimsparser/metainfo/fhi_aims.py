@@ -22,7 +22,7 @@ from nomad.metainfo import (  # pylint: disable=unused-import
     MSection, MCategory, Category, Package, Quantity, Section, SubSection, SectionProxy,
     Reference
 )
-from nomad.datamodel.metainfo import run
+from nomad.datamodel.metainfo import simulation
 
 
 m_package = Package()
@@ -712,7 +712,7 @@ class x_fhi_aims_section_vdW_TS(MSection):
         ''')
 
 
-class Calculation(run.calculation.Calculation):
+class Calculation(simulation.calculation.Calculation):
 
     m_def = Section(validate=False, extends_base_section=True)
 
@@ -774,7 +774,7 @@ class Calculation(run.calculation.Calculation):
         repeats=False)
 
 
-class ScfIeration(run.calculation.ScfIteration):
+class ScfIeration(simulation.calculation.ScfIteration):
 
     m_def = Section(validate=False, extends_base_section=True)
 
@@ -897,7 +897,7 @@ class ScfIeration(run.calculation.ScfIteration):
         type=float, unit='eV')
 
 
-class BandStructure(run.calculation.BandStructure):
+class BandStructure(simulation.calculation.BandStructure):
 
     m_def = Section(validate=False, extends_base_section=True)
 
@@ -937,7 +937,7 @@ class BandStructure(run.calculation.BandStructure):
         ''')
 
 
-class Method(run.method.Method):
+class Method(simulation.method.Method):
 
     m_def = Section(validate=False, extends_base_section=True)
 
@@ -1268,7 +1268,7 @@ class Method(run.method.Method):
         repeats=True)
 
 
-class Run(run.run.Run):
+class Run(simulation.run.Run):
 
     m_def = Section(validate=False, extends_base_section=True)
 
@@ -1335,7 +1335,7 @@ class Run(run.run.Run):
         repeats=False)
 
 
-class System(run.system.System):
+class System(simulation.system.System):
 
     m_def = Section(validate=False, extends_base_section=True)
 
@@ -1419,7 +1419,7 @@ class System(run.system.System):
         ''')
 
 
-class AtomParameters(run.method.AtomParameters):
+class AtomParameters(simulation.method.AtomParameters):
 
     m_def = Section(validate=False, extends_base_section=True)
 

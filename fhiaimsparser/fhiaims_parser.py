@@ -25,18 +25,18 @@ from nomad.parsing.parser import FairdiParser
 
 from nomad.parsing.file_parser import TextParser, Quantity, DataTextParser
 
-from nomad.datamodel.metainfo.run.run import Run, Program, TimeRun
-from nomad.datamodel.metainfo.run.method import (
-    Electronic, Method, MethodReference, XCFunctional, Functional, AtomParameters, DFT,
+from nomad.datamodel.metainfo.simulation.run import Run, Program, TimeRun
+from nomad.datamodel.metainfo.simulation.method import (
+    Electronic, Method, XCFunctional, Functional, AtomParameters, DFT,
     BasisSet
 )
-from nomad.datamodel.metainfo.run.system import (
-    System, SystemReference, Atoms
+from nomad.datamodel.metainfo.simulation.system import (
+    System, Atoms
 )
-from nomad.datamodel.metainfo.run.calculation import (
-    Calculation, BandStructure, BandEnergies, ElectronicStructureInfo, Dos, DosValues,
+from nomad.datamodel.metainfo.simulation.calculation import (
+    Calculation, BandStructure, BandEnergies, ChannelInfo, Dos, DosValues,
     ScfIteration, Energy, EnergyEntry, Stress, StressEntry, Thermodynamics, GW,
-    GWBandEnergies, CalculationReference, Forces, ForcesEntry
+    GWBandEnergies, Forces, ForcesEntry
 )
 from nomad.datamodel.metainfo.workflow import Workflow
 
@@ -718,7 +718,7 @@ class FHIAimsParser(FairdiParser):
                 return
             energy_fermi_ev = energy_fermi.to(ureg.electron_volt).magnitude
             sec_k_band = sec_scc.m_create(BandStructure, Calculation.band_structure_electronic)
-            sec_energies_info = sec_k_band.m_create(ElectronicStructureInfo)
+            sec_energies_info = sec_k_band.m_create(ChannelInfo)
             sec_energies_info.energy_fermi = energy_fermi
 
             nspin = self.out_parser.get_number_of_spin_channels()
@@ -953,8 +953,6 @@ class FHIAimsParser(FairdiParser):
                     val = gw_eigenvalues[key] if key == 'occ_num' else gw_eigenvalues[key] * ureg.eV
                     setattr(sec_eigs_gw, name, np.reshape(val, (1, 1, len(val))))
 
-            sec_scc.calculation_ref.append(CalculationReference(value=sec_scc, kind='pertubative GW'))
-
         def parse_vdW(section):
             # these are not actually vdW outputs but vdW control parameters but are
             # printed within the calculation section.
@@ -1009,7 +1007,7 @@ class FHIAimsParser(FairdiParser):
                 sec_atoms.velocities = velocities * ureg.angstrom / ureg.ps
 
             sec_scc = sec_run.m_create(Calculation)
-            sec_scc.system_ref.append(SystemReference(value=sec_system))
+            sec_scc.system_ref = sec_system
 
             sec_energy = sec_scc.m_create(Energy)
             energy = section.get('energy', {})
@@ -1091,10 +1089,13 @@ class FHIAimsParser(FairdiParser):
 
             if self._electronic_structure_method in ['DFT', 'G0W0', 'scGW']:
                 sec_method = sec_run.m_create(Method)
-                sec_scc.method_ref.append(MethodReference(value=sec_run.method[-1]))
+                sec_scc.method_ref = sec_run.method[-1]
                 sec_method.electronic = Electronic(method=self._electronic_structure_method)
-                kind = 'core_settings' if self._electronic_structure_method == 'DFT' else 'starting_point'
-                sec_method.method_ref.append(MethodReference(value=sec_run.method[0], kind=kind))
+                if self._electronic_structure_method == 'DFT':
+                    sec_method.core_method_ref = sec_run.method[0]
+                else:
+                    sec_method.starting_method_ref = sec_run.method[0]
+                sec_method.methods_ref = [sec_run.method[0]]
 
         for section in self.out_parser.get('full_scf', []):
             parse_section(section)
