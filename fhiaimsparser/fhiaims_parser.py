@@ -34,7 +34,7 @@ from nomad.datamodel.metainfo.simulation.system import (
     System, Atoms
 )
 from nomad.datamodel.metainfo.simulation.calculation import (
-    Calculation, BandStructure, BandEnergies, ChannelInfo, Dos, DosValues,
+    Calculation, BandStructure, BandEnergies, Dos, DosValues,
     ScfIteration, Energy, EnergyEntry, Stress, StressEntry, Thermodynamics, GW,
     GWBandEnergies, Forces, ForcesEntry
 )
@@ -718,8 +718,7 @@ class FHIAimsParser(FairdiParser):
                 return
             energy_fermi_ev = energy_fermi.to(ureg.electron_volt).magnitude
             sec_k_band = sec_scc.m_create(BandStructure, Calculation.band_structure_electronic)
-            sec_energies_info = sec_k_band.m_create(ChannelInfo)
-            sec_energies_info.energy_fermi = energy_fermi
+            sec_k_band.energy_fermi = energy_fermi
 
             nspin = self.out_parser.get_number_of_spin_channels()
             for n in range(len(band_segments_points)):
