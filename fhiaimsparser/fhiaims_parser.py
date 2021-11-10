@@ -676,7 +676,7 @@ class FHIAimsParser(FairdiParser):
         }
 
         self._relativity_map = {
-            'Non-relativistic': '',
+            'Non-relativistic': None,
             'ZORA': 'scalar_relativistic',
             'on-site free-atom approximation to ZORA': 'scalar_relativistic_atomic_ZORA'
         }
