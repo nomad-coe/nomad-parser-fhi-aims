@@ -274,7 +274,7 @@ class FHIAimsOutParser(TextParser):
 
         structure_quantities = [
             Quantity(
-                'labels', r'(?:Species\s*([A-Z][a-z]?)|([A-Z][a-z]?)\w+\n)', repeats=True),
+                'labels', r'(?:Species\s*([A-Z][a-z]*)|([A-Z][a-z]*)\w*\n)', repeats=True),
             Quantity(
                 'positions',
                 rf'({re_float})\s+({re_float})\s+({re_float})',
@@ -286,7 +286,7 @@ class FHIAimsOutParser(TextParser):
 
         eigenvalues = Quantity(
             'eigenvalues',
-            r'Writing Kohn\-Sham eigenvalues\.([\s\S]+?)(?:\n\n +[A-RT-Z])',
+            r'Writing Kohn\-Sham eigenvalues\.([\s\S]+?State[\s\S]+?)(?:\n\n +[A-RT-Z])',
             repeats=True, sub_parser=TextParser(quantities=[
                 Quantity(
                     'kpoints',
@@ -294,7 +294,7 @@ class FHIAimsOutParser(TextParser):
                     dtype=float, repeats=True),
                 Quantity(
                     'occupation_eigenvalue',
-                    rf'\d+\s*({re_float})\s*({re_float})\s*{re_float}',
+                    rf'\n *\d+\s*({re_float})\s*({re_float})\s*{re_float}',
                     repeats=True)]))
 
         scf_quantities = [
@@ -366,7 +366,11 @@ class FHIAimsOutParser(TextParser):
                 convert=False),
             Quantity(
                 'structure',
-                r'Atomic structure.+\n.*x \[A\]\s*y \[A\]\s*z \[A\].*\n([\s\S]+?)\n\n',
+                r'Atomic structure.*:\n.*x \[A\]\s*y \[A\]\s*z \[A\].*\n(.+[\s\S]+?)(?:\n *\n| 1\: )',
+                repeats=False, convert=False, sub_parser=TextParser(quantities=structure_quantities)),
+            Quantity(
+                'structure',
+                rf'\n *(atom +{re_float}[\s\S]+?(?:\n *\n|\-\-\-))',
                 repeats=False, convert=False, sub_parser=TextParser(quantities=structure_quantities)),
             Quantity(
                 'lattice_vectors',
@@ -536,7 +540,7 @@ class FHIAimsOutParser(TextParser):
                 repeats=False, unit='angstrom', shape=(3, 3), dtype=float),
             Quantity(
                 'structure',
-                r'Atomic structure.+\n.*x \[A\]\s*y \[A\]\s*z \[A\].*\n([\s\S]+?)\n\n',
+                r'Atomic structure.*:\n.*x \[A\]\s*y \[A\]\s*z \[A\].*\n(.+[\s\S]+?)(?:\n *\n| 1\: )',
                 repeats=False, convert=False, sub_parser=TextParser(quantities=structure_quantities)),
             Quantity(
                 'full_scf',
@@ -735,6 +739,12 @@ class FHIAimsParser(FairdiParser):
                     continue
 
                 data = np.transpose(data)
+                eigs = (np.transpose(
+                    data[5::2]) + energy_fermi_ev) * ureg.eV
+                nbands = np.shape(eigs)[-1] if n == 0 else nbands
+                if nbands != np.shape(eigs)[-1]:
+                    self.logger.warn('Inconsistent number of bands found in bandstructure data.')
+                    continue
 
                 sec_k_band_segment = sec_k_band.m_create(BandEnergies)
                 sec_k_band_segment.kpoints = np.transpose(data[1:4])[0]
@@ -743,8 +753,6 @@ class FHIAimsParser(FairdiParser):
                 # been shifted to the fermi energy. This shift is undone so
                 # that the energy scales for for energy_reference_fermi, band
                 # energies and the DOS energies match.
-                eigs = (np.transpose(
-                    data[5::2]) + energy_fermi_ev) * ureg.eV
                 sec_k_band_segment.energies = eigs
                 sec_k_band_segment.occupations = occs
 
@@ -829,6 +837,8 @@ class FHIAimsParser(FairdiParser):
                     '%s_projected_dos_files' % projection_type, [[], []])
                 proj_dos_files = [f for f in proj_dos_files if 'spin_dn' not in f]
                 if proj_dos_files:
+                    if sec_dos is None:
+                        sec_dos = sec_scc.m_create(Dos, Calculation.dos_electronic)
                     energies, dos = read_projected_dos(proj_dos_files)
                     if dos is None:
                         continue
@@ -858,6 +868,9 @@ class FHIAimsParser(FairdiParser):
             n_spin = self.out_parser.get_number_of_spin_channels()
 
             kpts = data.get('kpoints', [np.zeros(3)] * n_spin)
+            if len(kpts) % n_spin != 0:
+                self.logger.warn('Inconsistent number of spin channels found.')
+                n_spin -= 1
             kpts = np.reshape(kpts, (len(kpts) // n_spin, n_spin, 3))
             kpts = np.transpose(kpts, axes=(1, 0, 2))[0]
             kpts = None if len(kpts) == 0 else kpts
@@ -967,7 +980,7 @@ class FHIAimsParser(FairdiParser):
 
             for sec in sec_atom_type:
                 for atom in atoms:
-                    if sec.atom_type_name == atom['atom']:
+                    if sec.label == atom['atom']:
                         sec_vdW_ts = sec.x_fhi_aims_section_controlInOut_atom_species[-1].m_create(
                             x_fhi_aims_section_vdW_TS)
                         for key, val in atom.items():
