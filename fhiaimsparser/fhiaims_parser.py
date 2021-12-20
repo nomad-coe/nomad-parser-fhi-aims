@@ -47,7 +47,8 @@ from .metainfo.fhi_aims import Run as xsection_run, Method as xsection_method,\
     x_fhi_aims_section_vdW_TS
 
 
-re_float = r'[\d\.\-\+Ee]+'
+re_float = r'[-+]?\d+\.?\d*(?:[Ee][-+]\d+)?'
+re_n = r'[\n\r]'
 
 
 class FHIAimsControlParser(TextParser):
@@ -66,12 +67,12 @@ class FHIAimsControlParser(TextParser):
 
     def init_quantities(self):
         def str_to_species(val_in):
-            val = val_in.strip().split('\n')
+            val = val_in.strip().splitlines()
             data = []
             species = dict()
             for v in val:
-                v = v.strip()
-                if v.startswith('#') or not v or not v[0].isalpha():
+                v = v.strip().split('#')[0]
+                if not v or not v[0].isalpha():
                     continue
                 if v.startswith('species'):
                     if species:
@@ -90,54 +91,57 @@ class FHIAimsControlParser(TextParser):
         self._quantities = [
             Quantity(
                 xsection_method.x_fhi_aims_controlIn_charge,
-                rf'\n *charge\s*({re_float})', repeats=False),
+                rf'{re_n} *charge\s*({re_float})', repeats=False),
             Quantity(
                 xsection_method.x_fhi_aims_controlIn_hse_unit,
-                r'\n *hse_unit\s*([\w\-]+)', str_operation=self.str_to_unit, repeats=False),
+                rf'{re_n} *hse_unit\s*([\w\-]+)', str_operation=self.str_to_unit, repeats=False),
             Quantity(
                 xsection_method.x_fhi_aims_controlIn_hybrid_xc_coeff,
-                rf'\n *hybrid_xc_coeff\s*({re_float})', repeats=False),
+                rf'{re_n} *hybrid_xc_coeff\s*({re_float})', repeats=False),
             Quantity(
                 xsection_run.x_fhi_aims_controlIn_MD_time_step,
-                rf'\n *MD_time_step\s*({re_float})', repeats=False),
+                rf'{re_n} *MD_time_step\s*({re_float})', repeats=False),
             Quantity(
                 xsection_method.x_fhi_aims_controlIn_k_grid,
-                r'\n *k\_grid\s*([\d ]+)', repeats=False),
+                rf'{re_n} *k\_grid\s*([\d ]+)', repeats=False),
             Quantity(
-                'occupation_type', r'\n *occupation_type\s*([\w\. \-\+]+)', repeats=False),
+                'occupation_type',
+                rf'{re_n} *occupation_type\s*([\w\. \-\+]+)', repeats=False),
             Quantity(
                 xsection_method.x_fhi_aims_controlIn_override_relativity,
-                r'\n *override_relativity\s*([\.\w]+)', repeats=False),
+                rf'{re_n} *override_relativity\s*([\.\w]+)', repeats=False),
             Quantity(
-                'relativistic', r'\n *relativistic\s*([\w\. \-\+]+)', repeats=False),
+                'relativistic',
+                rf'{re_n} *relativistic\s*([\w\. \-\+]+)', repeats=False),
             Quantity(
                 xsection_method.x_fhi_aims_controlIn_sc_accuracy_rho,
-                rf'\n *sc_accuracy_rho\s*({re_float})', repeats=False),
+                rf'{re_n} *sc_accuracy_rho\s*({re_float})', repeats=False),
             Quantity(
                 xsection_method.x_fhi_aims_controlIn_sc_accuracy_eev,
-                rf'\n *sc_accuracy_eev\s*({re_float})', repeats=False),
+                rf'{re_n} *sc_accuracy_eev\s*({re_float})', repeats=False),
             Quantity(
                 xsection_method.x_fhi_aims_controlIn_sc_accuracy_etot,
-                rf'\n *sc_accuracy_etot\s*({re_float})', repeats=False),
+                rf'{re_n} *sc_accuracy_etot\s*({re_float})', repeats=False),
             Quantity(
                 xsection_method.x_fhi_aims_controlIn_sc_accuracy_forces,
-                rf'\n *sc_accuracy_forces\s*({re_float})', repeats=False),
+                rf'{re_n} *sc_accuracy_forces\s*({re_float})', repeats=False),
             Quantity(
                 xsection_method.x_fhi_aims_controlIn_sc_accuracy_stress,
-                rf'\n *sc_accuracy_stress\s*({re_float})', repeats=False),
+                rf'{re_n} *sc_accuracy_stress\s*({re_float})', repeats=False),
             Quantity(
                 xsection_method.x_fhi_aims_controlIn_sc_iter_limit,
-                r'\n *sc_iter_limit\s*([\d]+)', repeats=False),
+                rf'{re_n} *sc_iter_limit\s*([\d]+)', repeats=False),
             Quantity(
                 xsection_method.x_fhi_aims_controlIn_spin,
-                r'\n *spin\s*([\w]+)', repeats=False),
+                rf'{re_n} *spin\s*([\w]+)', repeats=False),
             Quantity(
                 xsection_method.x_fhi_aims_controlIn_verbatim_writeout,
-                r'\n *verbatim_writeout\s*([\w]+)', repeats=False),
+                rf'{re_n} *verbatim_writeout\s*([\w]+)', repeats=False),
             Quantity(
-                'xc', r'\n *xc\s*([\w\. \-\+]+)', repeats=False),
+                'xc',
+                rf'{re_n} *xc\s*([\w\. \-\+]+)', repeats=False),
             Quantity(
-                'species', r'\n *(species\s*[A-Z][a-z]?[\s\S]+?)'
+                'species', rf'{re_n} *(species\s*[A-Z][a-z]?[\s\S]+?)'
                 r'(?:species\s*[A-Z][a-z]?|Completed|\-{10})',
                 str_operation=str_to_species, repeats=False)]
 
@@ -150,7 +154,7 @@ class FHIAimsOutParser(TextParser):
         units_mapping = {'Ha': ureg.hartree, 'eV': ureg.eV}
 
         def str_to_energy_components(val_in):
-            val = [v.strip() for v in val_in.strip().split('\n')]
+            val = [v.strip() for v in val_in.strip().splitlines()]
             res = dict()
             for v in val:
                 v = v.lstrip(' |').strip().split(':')
@@ -165,7 +169,7 @@ class FHIAimsOutParser(TextParser):
 
         def str_to_scf_convergence(val_in):
             res = dict()
-            for v in val_in.strip().split('\n'):
+            for v in val_in.strip().splitlines():
                 v = v.lstrip(' |').split(':')
                 if len(v) != 2:
                     break
@@ -177,12 +181,12 @@ class FHIAimsOutParser(TextParser):
             return res
 
         def str_to_atomic_forces(val_in):
-            val = [v.lstrip(' |').split() for v in val_in.strip().split('\n')]
+            val = [v.lstrip(' |').split() for v in val_in.strip().splitlines()]
             forces = np.array([v[1:4] for v in val if len(v) == 4], dtype=float)
             return forces * ureg.eV / ureg.angstrom
 
         def str_to_dos_files(val_in):
-            val = [v.strip() for v in val_in.strip().split('\n')]
+            val = [v.strip() for v in val_in.strip().splitlines()]
             files = []
             species = []
             for v in val[1:]:
@@ -195,7 +199,7 @@ class FHIAimsOutParser(TextParser):
             return files, list(set(species))
 
         def str_to_gw_eigs(val_in):
-            val = [v.split() for v in val_in.split('\n')]
+            val = [v.split() for v in val_in.splitlines()]
             keys = val[0]
             data = []
             for v in val[1:]:
@@ -207,7 +211,7 @@ class FHIAimsOutParser(TextParser):
             return res
 
         def str_to_gw_scf(val_in):
-            val = [v.split(':') for v in val_in.split('\n')]
+            val = [v.split(':') for v in val_in.splitlines()]
             data = {}
             for v in val:
                 if len(v) == 2:
@@ -217,11 +221,11 @@ class FHIAimsOutParser(TextParser):
             return data
 
         def str_to_array_size_parameters(val_in):
-            val = [v.lstrip(' |').split(':') for v in val_in.strip().split('\n')]
+            val = [v.lstrip(' |').split(':') for v in val_in.strip().splitlines()]
             return {v[0].strip(): int(v[1]) for v in val if len(v) == 2}
 
         def str_to_species_in(val_in):
-            val = [v.strip() for v in val_in.split('\n')]
+            val = [v.strip() for v in val_in.splitlines()]
             data = []
             species = dict()
             for i in range(len(val)):
@@ -250,7 +254,7 @@ class FHIAimsOutParser(TextParser):
 
         def str_to_species(val_in):
             data = dict()
-            val = [v.strip() for v in val_in.split('\n')]
+            val = [v.strip() for v in val_in.splitlines()]
             for i in range(len(val)):
                 if val[i].startswith('species'):
                     data['species'] = val[i].split()[1]
@@ -274,10 +278,15 @@ class FHIAimsOutParser(TextParser):
 
         structure_quantities = [
             Quantity(
-                'labels', r'(?:Species\s*([A-Z][a-z]*)|([A-Z][a-z]*)\w*\n)', repeats=True),
+                'labels',
+                rf'(?:Species\s*([A-Z][a-z]*)|([A-Z][a-z]*)\w*{re_n})', repeats=True),
             Quantity(
                 'positions',
-                rf'({re_float})\s+({re_float})\s+({re_float})',
+                rf'({re_float})\s+({re_float})\s+({re_float}) *{re_n}',
+                dtype=np.dtype(np.float64), repeats=True),
+            Quantity(
+                'positions',
+                rf'atom +({re_float})\s+({re_float})\s+({re_float})',
                 dtype=np.dtype(np.float64), repeats=True),
             Quantity(
                 'velocities',
@@ -286,36 +295,36 @@ class FHIAimsOutParser(TextParser):
 
         eigenvalues = Quantity(
             'eigenvalues',
-            r'Writing Kohn\-Sham eigenvalues\.([\s\S]+?State[\s\S]+?)(?:\n\n +[A-RT-Z])',
+            rf'Writing Kohn\-Sham eigenvalues\.([\s\S]+?State[\s\S]+?)(?:{re_n}{re_n} +[A-RT-Z])',
             repeats=True, sub_parser=TextParser(quantities=[
                 Quantity(
                     'kpoints',
-                    rf'K-point:\s*\d+ at\s*({re_float})\s*({re_float})\s*({re_float})',
+                    rf'{re_n} *K-point:\s*\d+ at\s*({re_float})\s*({re_float})\s*({re_float})',
                     dtype=float, repeats=True),
                 Quantity(
                     'occupation_eigenvalue',
-                    rf'\n *\d+\s*({re_float})\s*({re_float})\s*{re_float}',
+                    rf'{re_n} *\d+\s*({re_float})\s*({re_float})\s*{re_float}',
                     repeats=True)]))
 
         scf_quantities = [
             Quantity(
-                'date_time', r'\n *Date\s*:(\s*\d+), Time\s*:(\s*[\d\.]+)\s*',
+                'date_time', rf'{re_n} *Date\s*:(\s*\d+), Time\s*:(\s*[\d\.]+)\s*',
                 repeats=False, convert=False),
             # TODO add section_eigenvalues to scf_iteration
             eigenvalues,
             Quantity(
                 'energy_components',
-                r'\n *Total energy components:([\s\S]+?)((?:\n\n|\| Electronic free energy per atom\s*:\s*[Ee\d\.\-]+ eV))',
+                rf'{re_n} *Total energy components:([\s\S]+?)((?:{re_n}{re_n}|\| Electronic free energy per atom\s*:\s*[Ee\d\.\-]+ eV))',
                 repeats=False, str_operation=str_to_energy_components, convert=False),
             Quantity(
-                'forces', r'\n *Total forces\([\s\d]+\)\s*:([\s\d\.\-\+Ee]+)\n', repeats=True),
+                'forces', rf'{re_n} *Total forces\([\s\d]+\)\s*:([\s\d\.\-\+Ee]+){re_n}', repeats=True),
             Quantity(
-                'stress_tensor', r'\n *Sum of all contributions\s*:\s*([\d\.\-\+Ee ]+\n)', repeats=False),
+                'stress_tensor', rf'{re_n} *Sum of all contributions\s*:\s*([\d\.\-\+Ee ]+{re_n})', repeats=False),
             Quantity(
                 'pressure', r' *\|\s*Pressure:\s*([\d\.\-\+Ee ]+)', repeats=False),
             Quantity(
                 'scf_convergence',
-                r'\n *Self-consistency convergence accuracy:([\s\S]+?)(\| Change of total energy\s*:\s*[\d\.\-\+Ee V]+)',
+                rf'{re_n} *Self-consistency convergence accuracy:([\s\S]+?)(\| Change of total energy\s*:\s*[\d\.\-\+Ee V]+)',
                 repeats=False, str_operation=str_to_scf_convergence, convert=False),
             Quantity(
                 'humo', r'Highest occupied state \(VBM\) at\s*([\d\.\-\+Ee ]+) (?P<__unit>\w+)',
@@ -324,7 +333,7 @@ class FHIAimsOutParser(TextParser):
                 'lumo', r'Lowest unoccupied state \(CBM\) at\s*([\d\.\-\+Ee ]+) (?P<__unit>\w+)',
                 repeats=False, dtype=float),
             Quantity(
-                'fermi_level', r'\n *\| Chemical potential \(Fermi level\) in (?P<__unit>\w+)\s*:([\d\.\-\+Ee ]+)',
+                'fermi_level', rf'{re_n} *\| Chemical potential \(Fermi level\) in (?P<__unit>\w+)\s*:([\d\.\-\+Ee ]+)',
                 repeats=False, dtype=float)]
 
         def str_to_scf_convergence2(val_in):
@@ -335,7 +344,7 @@ class FHIAimsOutParser(TextParser):
             return {'Change of total energy': energy}
 
         def str_to_hirshfeld(val_in):
-            val = [v.strip() for v in val_in.strip().split('\n')]
+            val = [v.strip() for v in val_in.strip().splitlines()]
             data = dict(atom=val[0])
             for v in val[1:]:
                 if v.startswith('|'):
@@ -354,7 +363,7 @@ class FHIAimsOutParser(TextParser):
             # different format for scf loop
             Quantity(
                 'self_consistency',
-                r'\n *SCF\s*\d+\s*:([ \|\-\+Ee\d\.s]+)', repeats=True,
+                rf'{re_n} *SCF\s*\d+\s*:([ \|\-\+Ee\d\.s]+)', repeats=True,
                 sub_parser=TextParser(quantities=[Quantity(
                     'scf_convergence', r'([\s\S]+)', str_operation=str_to_scf_convergence2,
                     repeats=False, convert=False)])),
@@ -362,46 +371,46 @@ class FHIAimsOutParser(TextParser):
                 'gw_self_consistency', r'GW Total Energy Calculation([\s\S]+?)\-{5}',
                 repeats=True, str_operation=str_to_gw_scf, convert=False),
             Quantity(
-                'date_time', r'\n *Date\s*:(\s*\d+), Time\s*:(\s*[\d\.]+)\s*', repeats=False,
+                'date_time', rf'{re_n} *Date\s*:(\s*\d+), Time\s*:(\s*[\d\.]+)\s*', repeats=False,
                 convert=False),
             Quantity(
                 'structure',
-                r'Atomic structure.*:\n.*x \[A\]\s*y \[A\]\s*z \[A\].*\n(.+[\s\S]+?)(?:\n *\n| 1\: )',
+                rf'Atomic structure.*:\s+.*x \[A\]\s*y \[A\]\s*z \[A\]([\s\S]+?Species[\s\S]+?(?:{re_n} *{re_n}| 1\: ))',
                 repeats=False, convert=False, sub_parser=TextParser(quantities=structure_quantities)),
             Quantity(
                 'structure',
-                rf'\n *(atom +{re_float}[\s\S]+?(?:\n *\n|\-\-\-))',
+                rf'{re_n} *(atom +{re_float}[\s\S]+?(?:{re_n} *{re_n}|\-\-\-))',
                 repeats=False, convert=False, sub_parser=TextParser(quantities=structure_quantities)),
             Quantity(
                 'lattice_vectors',
-                r'\n *lattice_vector([\d\.\- ]+)\n *lattice_vector([\d\.\- ]+)\n *lattice_vector([\d\.\- ]+)',
+                rf'{re_n} *lattice_vector([\d\.\- ]+){re_n} *lattice_vector([\d\.\- ]+){re_n} *lattice_vector([\d\.\- ]+)',
                 unit='angstrom', repeats=False, shape=(3, 3), dtype=float),
             Quantity(
                 'energy',
-                r'\n *Energy and forces in a compact form:([\s\S]+?(?:\n\n|Electronic free energy\s*:\s*[\d\.\-Ee]+ eV))',
+                rf'{re_n} *Energy and forces in a compact form:([\s\S]+?(?:{re_n}{re_n}|Electronic free energy\s*:\s*[\d\.\-Ee]+ eV))',
                 str_operation=str_to_energy_components, repeats=False, convert=False),
             # in some cases, the energy components are also printed for after a calculation
             # same format as in scf iteration, they are printed also in initialization
             # so we should get last occurence
             Quantity(
                 'energy_components',
-                r'\n *Total energy components:([\s\S]+?)((?:\n\n|\| Electronic free energy per atom\s*:\s*[\d\.\-Ee]+ eV))',
+                rf'{re_n} *Total energy components:([\s\S]+?)((?:{re_n}{re_n}|\| Electronic free energy per atom\s*:\s*[\d\.\-Ee]+ eV))',
                 repeats=True, str_operation=str_to_energy_components, convert=False),
             Quantity(
                 'energy_xc',
-                r'\n *Start decomposition of the XC Energy([\s\S]+?)End decomposition of the XC Energy',
+                rf'{re_n} *Start decomposition of the XC Energy([\s\S]+?)End decomposition of the XC Energy',
                 str_operation=str_to_energy_components, repeats=False, convert=False),
             eigenvalues,
             Quantity(
-                'forces', r'\n *Total atomic forces.*?\[eV/Ang\]:\s*([\d\.Ee\-\+\s\|]+)',
+                'forces', rf'{re_n} *Total atomic forces.*?\[eV/Ang\]:\s*([\d\.Ee\-\+\s\|]+)',
                 str_operation=str_to_atomic_forces, repeats=False, convert=False),
             # TODO no metainfo for scf forces but old parser put it in atom_forces_free_raw
             Quantity(
-                'forces_raw', r'\n *Total forces\([\s\d]+\)\s*:([\s\d\.\-\+Ee]+)\n', repeats=True,
+                'forces_raw', rf'{re_n} *Total forces\([\s\d]+\)\s*:([\s\d\.\-\+Ee]+){re_n}', repeats=True,
                 dtype=float),
             Quantity(
                 'time_force_evaluation',
-                r'\n *\| Time for this force evaluation\s*:\s*([\d\.]+) s\s*([\d\.]+) s',
+                rf'{re_n} *\| Time for this force evaluation\s*:\s*([\d\.]+) s\s*([\d\.]+) s',
                 repeats=False, dtype=float),
             Quantity(
                 'total_dos_files', r'Calculating total density of states([\s\S]+?)\-{5}',
@@ -417,7 +426,7 @@ class FHIAimsOutParser(TextParser):
                 str_operation=str_to_gw_eigs, repeats=False, convert=False),
             Quantity(
                 'vdW_TS',
-                r'(Evaluating non\-empirical van der Waals correction[\s\S]+?)(?:\|\s*Converged\.|\-{5}\n\n)',
+                rf'(Evaluating non\-empirical van der Waals correction[\s\S]+?)(?:\|\s*Converged\.|\-{5}{re_n}{re_n})',
                 repeats=False, sub_parser=TextParser(quantities=[
                     Quantity(
                         'kind', r'Evaluating non\-empirical van der Waals correction \(([\w /]+)\)',
@@ -452,7 +461,7 @@ class FHIAimsOutParser(TextParser):
                 xsection_run.x_fhi_aims_program_execution_date, r'Date\s*:\s*([0-9]+)',
                 repeats=False),
             Quantity(
-                xsection_run.x_fhi_aims_program_execution_time, r'Time\s*:\s*([0-9\.]+)\n',
+                xsection_run.x_fhi_aims_program_execution_time, rf'Time\s*:\s*([0-9\.]+){re_n}',
                 repeats=False),
             Quantity(
                 TimeRun.cpu1_start,
@@ -481,51 +490,51 @@ class FHIAimsOutParser(TextParser):
                 str_operation=str_to_array_size_parameters, convert=False),
             Quantity(
                 xsection_method.x_fhi_aims_controlInOut_hse_unit,
-                r'\n *hse_unit: Unit for the HSE06 hybrid functional screening parameter set to\s*(\w)',
+                r'hse_unit: Unit for the HSE06 hybrid functional screening parameter set to\s*(\w)',
                 str_operation=FHIAimsControlParser.str_to_unit, repeats=False),
             Quantity(
                 xsection_method.x_fhi_aims_controlInOut_hybrid_xc_coeff,
-                r'\n *hybrid_xc_coeff: Mixing coefficient for hybrid-functional exact exchange modified to\s*([\d\.]+)',
+                r'hybrid_xc_coeff: Mixing coefficient for hybrid-functional exact exchange modified to\s*([\d\.]+)',
                 repeats=False),
             Quantity(
                 xsection_method.x_fhi_aims_controlInOut_k_grid,
-                r'\n *Found k-point grid:\s*([\d ]+)', repeats=False),
+                rf'{re_n} *Found k-point grid:\s*([\d ]+)', repeats=False),
             Quantity(
                 xsection_run.x_fhi_aims_controlInOut_MD_time_step,
-                r'\n *Molecular dynamics time step\s*=\s*([\d\.]+)\s*(?P<__unit>[\w]+)',
+                rf'{re_n} *Molecular dynamics time step\s*=\s*([\d\.]+)\s*(?P<__unit>[\w]+)',
                 repeats=False),
             Quantity(
                 xsection_method.x_fhi_aims_controlInOut_relativistic,
-                r'\n *Scalar relativistic treatment of kinetic energy:\s*([\w\- ]+)',
+                rf'{re_n} *Scalar relativistic treatment of kinetic energy:\s*([\w\- ]+)',
                 repeats=False),
             Quantity(
                 xsection_method.x_fhi_aims_controlInOut_relativistic,
-                r'\n *(Non-relativistic) treatment of kinetic energy',
+                rf'{re_n} *(Non-relativistic) treatment of kinetic energy',
                 repeats=False),
             Quantity(
                 xsection_method.x_fhi_aims_controlInOut_relativistic_threshold,
-                r'\n *Threshold value for ZORA:\s*([\d\.Ee\-\+])', repeats=False),
+                rf'{re_n} *Threshold value for ZORA:\s*([\d\.Ee\-\+])', repeats=False),
             Quantity(
                 xsection_method.x_fhi_aims_controlInOut_xc,
-                r'\n *XC:\s*(?:Using)*\s*([\w\- ]+) with OMEGA =\s*([\d\.Ee\-\+]+)',
+                rf'{re_n} *XC:\s*(?:Using)*\s*([\w\- ]+) with OMEGA =\s*([\d\.Ee\-\+]+)',
                 repeats=False, dtype=None),
             Quantity(
                 xsection_method.x_fhi_aims_controlInOut_xc,
                 r'XC: (?:Running|Using) ([\-\w \(\) ]+)', repeats=False),
             Quantity(
                 xsection_method.x_fhi_aims_controlInOut_xc,
-                r'\n *(Hartree-Fock) calculation starts \.\.\.', repeats=False),
+                rf'{re_n} *(Hartree-Fock) calculation starts \.\.\.', repeats=False),
             Quantity(
                 'band_segment_points',
                 r'Plot band\s*\d+\s*\|\s*begin[ \d\.\-]+\s*\|\s*end[ \d\.\-]+\s*\|\s*number of points:\s*(\d+)',
                 repeats=True),
             Quantity(
                 'species',
-                r'(Reading configuration options for species [\s\S]+?)(?:\n *Finished|\n *\n)',
+                rf'(Reading configuration options for species [\s\S]+?)(?:{re_n} *Finished|{re_n} *{re_n})',
                 str_operation=str_to_species_in, repeats=False),
             Quantity(
                 'control_inout',
-                r'\n *Reading file control\.in\.\s*\-*\s*([\s\S]+?)'
+                rf'{re_n} *Reading file control\.in\.\s*\-*\s*([\s\S]+?)'
                 r'(?:Finished reading input file \'control\.in\'|Input file control\.in ends\.)', repeats=False,
                 sub_parser=TextParser(quantities=[
                     Quantity(
@@ -540,7 +549,7 @@ class FHIAimsOutParser(TextParser):
                 repeats=False, unit='angstrom', shape=(3, 3), dtype=float),
             Quantity(
                 'structure',
-                r'Atomic structure.*:\n.*x \[A\]\s*y \[A\]\s*z \[A\].*\n(.+[\s\S]+?)(?:\n *\n| 1\: )',
+                rf'Atomic structure.*:\s+.*x \[A\]\s*y \[A\]\s*z \[A\]([\s\S]+?Species[\s\S]+?(?:{re_n} *{re_n}| 1\: ))',
                 repeats=False, convert=False, sub_parser=TextParser(quantities=structure_quantities)),
             Quantity(
                 'full_scf',
@@ -549,12 +558,12 @@ class FHIAimsOutParser(TextParser):
                 repeats=True, sub_parser=TextParser(quantities=calculation_quantities)),
             Quantity(
                 'geometry_optimization',
-                r'\n *Geometry optimization: Attempting to predict improved coordinates\.'
+                rf'{re_n} *Geometry optimization: Attempting to predict improved coordinates\.'
                 rf'([\s\S]+?(?:{tail}))',
                 repeats=True, sub_parser=TextParser(quantities=calculation_quantities)),
             Quantity(
                 'molecular_dynamics',
-                r'\n *Molecular dynamics: Attempting to update all nuclear coordinates\.'
+                rf'{re_n} *Molecular dynamics: Attempting to update all nuclear coordinates\.'
                 rf'([\s\S]+?(?:{tail}))',
                 repeats=True, sub_parser=TextParser(quantities=calculation_quantities))]
 
@@ -662,7 +671,7 @@ class FHIAimsParser(FairdiParser):
             'Total energy, T -> 0': 'energy_total_t0',
             'Kinetic energy': 'energy_kinetic_electronic',
             'Electrostatic energy': 'energy_electrostatic',
-            'error in Hartree potential': 'energy_hartree_error',
+            'error in Hartree potential': 'energy_correction_hartree',
             'Sum of eigenvalues per atom': 'energy_sum_eigenvalues_per_atom',
             'Total energy (T->0) per atom': 'energy_total_t0_per_atom',
             'Electronic free energy per atom': 'energy_free_per_atom',
@@ -725,6 +734,7 @@ class FHIAimsParser(FairdiParser):
             sec_k_band.energy_fermi = energy_fermi
 
             nspin = self.out_parser.get_number_of_spin_channels()
+            nbands = None
             for n in range(len(band_segments_points)):
                 bandstructure_files = [os.path.join(
                     self.out_parser.maindir, 'band%d%03d.out' % (s + 1, n + 1)) for s in range(nspin)]
@@ -741,7 +751,7 @@ class FHIAimsParser(FairdiParser):
                 data = np.transpose(data)
                 eigs = (np.transpose(
                     data[5::2]) + energy_fermi_ev) * ureg.eV
-                nbands = np.shape(eigs)[-1] if n == 0 else nbands
+                nbands = np.shape(eigs)[-1] if n == 0 else nbands if nbands is not None else np.shape(eigs)[-1]
                 if nbands != np.shape(eigs)[-1]:
                     self.logger.warn('Inconsistent number of bands found in bandstructure data.')
                     continue
@@ -772,7 +782,7 @@ class FHIAimsParser(FairdiParser):
             l_max = []
             for dos_file in dos_files:
                 data = read_dos(dos_file)
-                if data is None:
+                if data is None or np.size(data) == 0:
                     continue
                 # we first read the spin_dn just to make sure the spin dn component exists
                 if 'spin_up' in dos_file:
@@ -816,7 +826,7 @@ class FHIAimsParser(FairdiParser):
             total_dos_files, _ = section.get('total_dos_files', [['KS_DOS_total_raw.dat'], []])
             for dos_file in total_dos_files:
                 data = read_dos(dos_file)
-                if data is None:
+                if data is None or np.size(data) == 0:
                     continue
                 sec_dos = sec_scc.m_create(Dos, Calculation.dos_electronic)
                 energies = data[0] * ureg.eV
@@ -900,9 +910,15 @@ class FHIAimsParser(FairdiParser):
                 if metainfo_key is not None:
                     if metainfo_key == 'energy_change':
                         sec_energy.change = val
-                    elif metainfo_key.startswith('energy_'):
-                        sec_energy.m_add_sub_section(getattr(
-                            Energy, metainfo_key.replace('energy_', '')), EnergyEntry(value=val))
+                    elif metainfo_key.startswith('energy_') and not metainfo_key.endswith('per_atom'):
+                        try:
+                            sec_energy_entry = sec_energy.m_create(
+                                EnergyEntry, getattr(Energy, metainfo_key.replace('energy_', '')))
+                            sec_energy_entry.value = val
+                            if energies.get('%s_per_atom' % metainfo_key) is not None:
+                                sec_energy_entry.value_per_atom = energies.get('%s_per_atom' % metainfo_key)
+                        except Exception:
+                            self.logger.warn('Error setting scf energy metainfo.', data=dict(key=metainfo_key))
                     else:
                         try:
                             setattr(sec_scf, metainfo_key, val)
@@ -1187,6 +1203,8 @@ class FHIAimsParser(FairdiParser):
                 continue
             if key.startswith('x_fhi_aims_controlIn'):
                 try:
+                    if key == 'x_fhi_aims_controlIn_hse_unit':
+                        val = str(val)
                     setattr(sec_method, key, val)
                 except Exception:
                     self.logger.warn('Error setting controlIn metainfo.', data=dict(key=key))
