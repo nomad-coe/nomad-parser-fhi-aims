@@ -47,7 +47,7 @@ from .metainfo.fhi_aims import Run as xsection_run, Method as xsection_method,\
     x_fhi_aims_section_vdW_TS
 
 
-re_float = r'[-+]?\d+\.?\d*(?:[Ee][-+]\d+)?'
+re_float = r'[-+]?\d+\.\d*(?:[Ee][-+]\d+)?'
 re_n = r'[\n\r]'
 
 
