@@ -573,10 +573,11 @@ class FHIAimsOutParser(TextParser):
         return self.get('array_size_parameters', {}).get('Number of spin channels', 1)
 
     def get_calculation_type(self):
-        calculation_type = 'geometry_optimization'
-        if self.get('molecular_dynamics', None) is not None:
+        calculation_type = 'single_point'
+        if self.get('geometry_optimization') is not None:
+            calculation_type = 'geometry_optimization'
+        elif self.get('molecular_dynamics', None) is not None:
             calculation_type = 'molecular_dynamics'
-        # TODO there should be a single point calculation type
         return calculation_type
 
 
