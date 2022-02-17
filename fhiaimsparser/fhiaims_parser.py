@@ -28,7 +28,7 @@ from nomad.parsing.file_parser import TextParser, Quantity, DataTextParser
 from nomad.datamodel.metainfo.simulation.run import Run, Program, TimeRun
 from nomad.datamodel.metainfo.simulation.method import (
     Electronic, Method, XCFunctional, Functional, AtomParameters, DFT,
-    BasisSet
+    BasisSet, GW as GWMethod
 )
 from nomad.datamodel.metainfo.simulation.system import (
     System, Atoms
@@ -1123,6 +1123,7 @@ class FHIAimsParser(FairdiParser):
                 if self._electronic_structure_method == 'DFT':
                     sec_method.core_method_ref = sec_run.method[0]
                 else:
+                    sec_method.gw = GWMethod(type=self._electronic_structure_method)
                     sec_method.starting_method_ref = sec_run.method[0]
                 sec_method.methods_ref = [sec_run.method[0]]
 
